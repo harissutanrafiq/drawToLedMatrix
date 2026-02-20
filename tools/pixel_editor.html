@@ -2,12 +2,12 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Pixel Pro Studio v12.0 - Iqomah Sequence Engine</title>
+    <title>Pixel Pro Studio v15.0 - Screen Management & Deletion</title>
     <style>
         :root { --bg: #1a1a1b; --side: #252526; --accent: #2ecc71; --text: #eee; --border: #3e3e42; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        .sidebar-left { width: 260px; flex-shrink: 0; background: var(--side); padding: 15px; border-right: 1px solid var(--border); overflow-y: auto; z-index: 10; display: flex; flex-direction: column; gap: 15px; }
+        .sidebar-left { width: 270px; flex-shrink: 0; background: var(--side); padding: 15px; border-right: 1px solid var(--border); overflow-y: auto; z-index: 10; display: flex; flex-direction: column; gap: 15px; }
         .sidebar-right { width: 320px; flex-shrink: 0; background: var(--side); padding: 15px; border-left: 1px solid var(--border); overflow-y: auto; z-index: 10; display: flex; flex-direction: column; gap: 12px; }
         
         .main-workspace { flex-grow: 1; flex-shrink: 1; min-width: 0; display: flex; flex-direction: column; background: #000; position: relative; }
@@ -30,8 +30,9 @@
         input[type="checkbox"] { width: 14px; height: 14px; margin:0; cursor: pointer; }
         
         button { cursor: pointer; transition: 0.2s; border: 1px solid transparent; font-weight: 500; }
-        button:hover { background: #444; }
+        button:hover:not(:disabled) { background: #444; }
         button.active { background: var(--accent); color: #000; font-weight: bold; }
+        button:disabled { cursor: not-allowed !important; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
@@ -60,9 +61,14 @@
         .screen-item { font-weight: bold; color: var(--accent); background: #2a2a2b; margin-top: 5px; border-left: 2px solid transparent; }
         .screen-item.active-screen { background: #3a3a3c; border-left: 2px solid var(--accent); }
         
-        /* Pewarnaan Khusus Screen Iqomah di Tree Browser */
+        .screen-splash { color: #f1c40f !important; }
+        .screen-splash.active-screen { border-left: 2px solid #f1c40f !important; }
+        .screen-main { color: #2ecc71 !important; }
+        .screen-main.active-screen { border-left: 2px solid #2ecc71 !important; }
         .screen-iqomah { color: #e74c3c !important; }
         .screen-iqomah.active-screen { border-left: 2px solid #e74c3c !important; }
+        .screen-adzan { color: #9b59b6 !important; }
+        .screen-adzan.active-screen { border-left: 2px solid #9b59b6 !important; }
 
         .obj-item { margin-left: 10px; }
         .obj-item.selected { background: var(--accent); color: #000; font-weight: bold; }
@@ -79,10 +85,13 @@
         <div class="group">
             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                 <h3>Object Browser</h3>
-                <div>
-                    <button onclick="addScreen('generic')" style="width: auto; padding: 2px 6px; font-size: 10px; background: #3498db;">+ Screen</button>
-                    <button onclick="addScreen('iqomah')" style="width: auto; padding: 2px 6px; font-size: 10px; background: #e74c3c;">+ Iqomah</button>
-                </div>
+            </div>
+            <div style="display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap;">
+                <button onclick="addScreen('splash')" style="flex:1 1 45%; padding: 4px; font-size: 10px; background: #f1c40f; color:#000; font-weight:bold;">+ Splash</button>
+                <button onclick="addScreen('main')" style="flex:1 1 45%; padding: 4px; font-size: 10px; background: #27ae60; font-weight:bold;">+ Main</button>
+                <button onclick="addScreen('generic')" style="flex:1 1 30%; padding: 4px; font-size: 10px; background: #3498db;">+ Screen</button>
+                <button onclick="addScreen('adzan')" style="flex:1 1 30%; padding: 4px; font-size: 10px; background: #9b59b6;">+ Adzan</button>
+                <button onclick="addScreen('iqomah')" style="flex:1 1 30%; padding: 4px; font-size: 10px; background: #e74c3c;">+ Iqomah</button>
             </div>
             <div id="treeBrowser"></div>
         </div>
@@ -99,11 +108,11 @@
         <div class="group" style="flex-grow: 1;">
             <h3>Project Actions</h3>
             <button onclick="addPixelObject('text')" class="btn-blue" style="margin-bottom: 6px;">+ Text Object</button>
-            <button onclick="addPixelObject('drawing')" class="btn-blue" style="margin-bottom: 6px; background:#9b59b6;">+ Draw Object</button>
+            <button onclick="addPixelObject('drawing')" class="btn-blue" style="margin-bottom: 6px; background:#f39c12; color:#000;">+ Draw Object</button>
             <button onclick="addPixelObject('image')" class="btn-blue" style="margin-bottom: 6px; background:#e67e22;">+ Image Object</button>
-            <button onclick="addPixelObject('sholat')" class="btn-blue" style="margin-bottom: 6px; background:#16a085;">+ Waktu Sholat</button>
             
-            <button onclick="addPixelObject('iqomah')" class="btn-blue" style="margin-bottom: 6px; background:#e74c3c;">+ Counter Iqomah</button>
+            <button id="btnAddSholat" onclick="addPixelObject('sholat')" class="btn-blue" style="margin-bottom: 6px; background:#16a085;">+ Waktu Sholat</button>
+            <button id="btnAddIqomah" onclick="addPixelObject('iqomah')" class="btn-blue" style="margin-bottom: 6px; background:#e74c3c;">+ Counter Iqomah</button>
             
             <button onclick="exportToJerryScript()" class="btn-green" style="margin-bottom: 6px; margin-top: 10px;">💾 Export Logic (JS)</button>
         </div>
@@ -141,7 +150,11 @@
             <div class="group">
                 <label>Screen Name (ID)</label>
                 <input type="text" id="propScreenName" oninput="updateScreenProp()" placeholder="Screen_1">
+                
+                <p id="splashScreenTag" style="color:#f1c40f; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🚀 DEDICATED SPLASH SCREEN<br><span style="font-weight:normal; color:#aaa;">Transisi otomatis ke Main Screen</span></p>
+                <p id="mainScreenTag" style="color:#2ecc71; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🏠 DEDICATED MAIN SCREEN</p>
                 <p id="iqomahScreenTag" style="color:#e74c3c; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🚨 DEDICATED IQOMAH SCREEN</p>
+                <p id="adzanScreenTag" style="color:#9b59b6; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🕌 DEDICATED ADZAN SCREEN</p>
             </div>
 
             <div class="group">
@@ -153,7 +166,7 @@
             </div>
 
             <div class="group">
-                <label>Screen Duration Logic</label>
+                <label>Durasi Tampil Screen</label>
                 <select id="propScreenDurMode" onchange="updateScreenPropUI()" style="margin-bottom: 6px;">
                     <option value="fixed">Fixed Time (HH:MM:SS)</option>
                     <option value="anim">Wait For Object Anim</option>
@@ -172,8 +185,8 @@
                 </div>
             </div>
             
-            <div style="margin-top:20px; padding-top:15px; border-top:1px solid #444;">
-                <p style="font-size:10px; color:#aaa; line-height:1.5;"><b>Keyboard Shortcuts:</b><br>• <b>Del</b> : Hapus objek terpilih<br>• <b>Ctrl+Z</b> : Undo aksi terakhir<br>• <b>Shift+Klik</b> : Pilih banyak objek</p>
+            <div style="margin-top:15px; padding-top:15px; border-top:1px solid #444;">
+                <button onclick="deleteCurrentScreen()" class="btn-red" style="padding: 10px;">🗑️ Delete This Screen</button>
             </div>
         </div>
         
@@ -258,14 +271,21 @@
             </div>
 
             <div class="group" id="boxColors">
-                <label>Colors</label>
+                <label>Colors & Frame</label>
                 <div class="grid-2">
                     <div><label>Text / Pen</label><input type="color" id="propColor" oninput="updateFromProp()"></div>
                     <div><label>Frame / BG</label><input type="color" id="propFColor" oninput="updateFromProp()"></div>
                 </div>
+                
                 <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
                     <input type="checkbox" id="propTransparent" onchange="updateFromProp()">
                     <label style="margin:0; text-transform:none; font-weight:normal; font-size:11px; cursor:pointer;" for="propTransparent">Transparent Background / Frame</label>
+                </div>
+
+                <div style="display:flex; align-items:center; gap:6px; margin-top:12px;">
+                    <label style="margin:0; width:90px; color:#f39c12;">Frame Radius</label>
+                    <input type="range" id="propRadius" min="0" max="16" value="0" oninput="updateFromProp()" style="padding:0;">
+                    <span id="radiusVal" style="font-size:11px; color:var(--accent); font-family:monospace; width:20px; text-align:right;">0</span>
                 </div>
                 
                 <div id="boxAlign">
@@ -298,13 +318,6 @@
                     <label>Speed <span id="speedVal" style="color:var(--accent); font-family:monospace; margin-left:5px;">1.0x</span></label>
                     <input type="range" id="propSpeed" min="0.1" max="5" step="0.1" value="1" oninput="updateFromProp()" style="margin-top:4px;">
                 </div>
-            </div>
-
-            <div class="group">
-                <label>JerryScript Logic Hooks</label>
-                <textarea id="fnBefore" oninput="updateFromProp()" placeholder="Hook: Before Anim..."></textarea>
-                <textarea id="fnAfter" oninput="updateFromProp()" placeholder="Hook: After Anim..."></textarea>
-                <textarea id="fnCall" oninput="updateFromProp()" placeholder="Hook: On Called..."></textarea>
             </div>
 
             <button onclick="deleteSelected()" class="btn-red" style="margin-top: 5px; padding: 10px;">🗑️ Delete Selected</button>
@@ -345,7 +358,6 @@
         const BASE_GRID_SIZE = 12;
         let GRID_SIZE = 12; 
         
-        // --- SCREEN ARCHITECTURE ---
         let screens = [];
         let activeScreenIdx = 0;
         let objects = []; 
@@ -355,7 +367,6 @@
         let mode = 'pen', isDrawing = false, isDragging = false, isResizing = false;
         let resizeDir = ''; let dragOffsets = [];
 
-        // DITAMBAH FORMAT IQOMAH
         const FORMATS = { 
             clock: ['HH:mm:ss', 'HH:mm', 'hh:mm A'], 
             cal_masehi: ['DD/MM/YYYY', 'DD-MM-YYYY', 'DD MMM YYYY'], 
@@ -373,10 +384,7 @@
 
         function getAllObjectNames(objList) {
             let names = [];
-            objList.forEach(o => {
-                names.push(o.name);
-                if (o.type === 'group' && o.children) { names = names.concat(getAllObjectNames(o.children)); }
-            });
+            objList.forEach(o => { names.push(o.name); if (o.type === 'group' && o.children) { names = names.concat(getAllObjectNames(o.children)); } });
             return names;
         }
 
@@ -387,6 +395,7 @@
                 this.h = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah') ? 10 : 10;  
                 this.text = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah' || type === 'group') ? "" : "PIXEL"; 
                 this.format = ""; this.font = "custom"; this.color = "#ffffff"; this.fColor = "#00ff00"; this.transparentBG = true; 
+                this.radius = 0; 
                 this.alignH = 'center'; this.alignV = 'middle'; this.anim = 'none'; this.speed = 1.0; this.scrollOffset = 0;
                 this.opacity = 1; this.fadeDir = 1; this.fnBefore = ""; this.fnAfter = ""; this.fnCall = "";
                 this.sholatType = 'Subuh';
@@ -439,22 +448,37 @@
             draw() {
                 if (!this.visible) return;
                 const renderX = this.x * GRID_SIZE; const renderY = this.y * GRID_SIZE; const dW = this.w * GRID_SIZE; const dH = this.h * GRID_SIZE;
+                const rPx = this.radius * Math.min(GRID_SIZE/2, 4);
 
                 if (this.type === 'group') {
                     ctx.save(); let scrollPixelOffset = 0;
                     if (this.anim === 'scroll') { this.scrollOffset += 0.1 * this.speed; if (this.scrollOffset > this.w) this.scrollOffset = -this.w; scrollPixelOffset = this.scrollOffset * GRID_SIZE; ctx.translate(-scrollPixelOffset, 0); } 
                     else if (this.anim === 'fade') { this.opacity += 0.02 * this.fadeDir * this.speed; if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1; }
                     ctx.globalAlpha = Math.max(0, Math.min(1, this.opacity));
-                    if (!this.transparentBG) { ctx.fillStyle = this.fColor; ctx.fillRect(renderX + scrollPixelOffset, renderY, dW, dH); }
+                    if (!this.transparentBG) { 
+                        ctx.fillStyle = this.fColor; ctx.beginPath(); 
+                        if(ctx.roundRect) ctx.roundRect(renderX + scrollPixelOffset, renderY, dW, dH, rPx); else ctx.rect(renderX + scrollPixelOffset, renderY, dW, dH);
+                        ctx.fill(); 
+                    }
                     this.children.forEach(c => { let origX = c.x, origY = c.y; c.x = this.x + c.x; c.y = this.y + c.y; c.draw(); c.x = origX; c.y = origY; });
                     ctx.restore();
-                    if (selectedObjs.includes(this)) { ctx.globalAlpha = 1; ctx.strokeStyle = this.fColor; ctx.lineWidth = 2; ctx.strokeRect(renderX, renderY, dW, dH); } return;
+                    if (selectedObjs.includes(this)) { 
+                        ctx.globalAlpha = 1; ctx.strokeStyle = this.fColor; ctx.lineWidth = 2; ctx.beginPath(); 
+                        if(ctx.roundRect) ctx.roundRect(renderX, renderY, dW, dH, rPx); else ctx.rect(renderX, renderY, dW, dH); 
+                        ctx.stroke(); 
+                    } 
+                    return;
                 }
                 
                 this.updateContent(); ctx.save();
                 let align = this.calcAlign(); let aX = align.aX, aY = align.aY;
 
-                if (!this.transparentBG) { ctx.fillStyle = this.fColor; ctx.fillRect(renderX, renderY, dW, dH); }
+                if (!this.transparentBG) { 
+                    ctx.fillStyle = this.fColor; ctx.beginPath(); 
+                    if(ctx.roundRect) ctx.roundRect(renderX, renderY, dW, dH, rPx); else ctx.rect(renderX, renderY, dW, dH);
+                    ctx.fill(); 
+                }
+
                 if (this.anim === 'scroll') { this.scrollOffset += 0.1 * this.speed; if (this.scrollOffset > this.textWidth) this.scrollOffset = -this.w; }
                 else if (this.anim === 'fade') { this.opacity += 0.02 * this.fadeDir * this.speed; if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1; }
                 else if (this.anim === 'explode') { this.particles.forEach(p => { p.x += p.vx * 0.1 * this.speed; p.y += p.vy * 0.1 * this.speed; }); }
@@ -471,7 +495,10 @@
                 });
 
                 if (selectedObjs.includes(this)) {
-                    ctx.globalAlpha = 1; ctx.strokeStyle = this.transparentBG ? this.fColor : "#2ecc71"; ctx.lineWidth = 2; ctx.strokeRect(renderX, renderY, dW, dH);
+                    ctx.globalAlpha = 1; ctx.strokeStyle = this.transparentBG ? this.fColor : "#2ecc71"; ctx.lineWidth = 2; ctx.beginPath();
+                    if(ctx.roundRect) ctx.roundRect(renderX, renderY, dW, dH, rPx); else ctx.rect(renderX, renderY, dW, dH);
+                    ctx.stroke();
+
                     if (mode === 'select' && selectedObjs.length === 1) { 
                         const hs = 10; ctx.fillStyle = "#e74c3c";
                         ctx.fillRect(renderX + dW/2 - hs/2, renderY - hs/2, hs, hs); ctx.fillRect(renderX + dW/2 - hs/2, renderY + dH - hs/2, hs, hs); 
@@ -482,17 +509,15 @@
             }
         }
 
-        // --- TREE BROWSER ENGINE ---
         function renderTree() {
             const container = document.getElementById('treeBrowser'); container.innerHTML = '';
             screens.forEach((scr, sIdx) => {
                 let sDiv = document.createElement('div'); 
                 
-                // Pewarnaan Tag Iqomah
-                let iqomahClass = scr.type === 'iqomah' ? ' screen-iqomah' : '';
-                sDiv.className = 'tree-item screen-item' + iqomahClass + (sIdx === activeScreenIdx ? ' active-screen' : '');
+                let sClass = scr.type === 'splash' ? ' screen-splash' : scr.type === 'main' ? ' screen-main' : scr.type === 'iqomah' ? ' screen-iqomah' : scr.type === 'adzan' ? ' screen-adzan' : '';
+                sDiv.className = 'tree-item screen-item' + sClass + (sIdx === activeScreenIdx ? ' active-screen' : '');
                 
-                let scrIcon = scr.type === 'iqomah' ? '🚨' : '📺';
+                let scrIcon = scr.type === 'splash' ? '🚀' : scr.type === 'main' ? '🏠' : scr.type === 'iqomah' ? '🚨' : scr.type === 'adzan' ? '🕌' : '📺';
                 sDiv.innerHTML = `<span>${scrIcon} ${scr.id}</span>`; 
                 sDiv.onclick = () => switchScreen(sIdx); container.appendChild(sDiv);
 
@@ -521,20 +546,57 @@
             } findAndToggle(objects); syncPropPanel(); renderTree();
         }
 
-        // FUNGSI TAMBAH SCREEN DIMODIFIKASI UNTUK IQOMAH
-        function addScreen(type = 'generic') {
-            if (type === 'iqomah' && screens.some(s => s.type === 'iqomah')) {
-                alert("Maksimal hanya boleh ada 1 Screen khusus Iqomah!"); return;
+        // --- BUTTON VALIDATION LOGIC ---
+        function updateSidebarButtons() {
+            if(!screens[activeScreenIdx]) return;
+            let type = screens[activeScreenIdx].type;
+            let btnSholat = document.getElementById('btnAddSholat');
+            let btnIqomah = document.getElementById('btnAddIqomah');
+            
+            if (type === 'iqomah') {
+                btnSholat.disabled = true; btnSholat.style.opacity = '0.3';
+                btnIqomah.disabled = false; btnIqomah.style.opacity = '1';
+            } else if (type === 'adzan' || type === 'splash') {
+                btnSholat.disabled = true; btnSholat.style.opacity = '0.3';
+                btnIqomah.disabled = true; btnIqomah.style.opacity = '0.3';
+            } else {
+                // generic & main
+                btnSholat.disabled = false; btnSholat.style.opacity = '1';
+                btnIqomah.disabled = true; btnIqomah.style.opacity = '0.3';
             }
+        }
+
+        function addScreen(type = 'generic') {
+            if (type === 'splash' && screens.some(s => s.type === 'splash')) { alert("Maksimal hanya boleh ada 1 Splash Screen!"); return; }
+            if (type === 'main' && screens.some(s => s.type === 'main')) { alert("Maksimal hanya boleh ada 1 Main Screen!"); return; }
+            if (type === 'iqomah' && screens.some(s => s.type === 'iqomah')) { alert("Maksimal hanya boleh ada 1 Screen khusus Iqomah!"); return; }
+            if (type === 'adzan' && screens.some(s => s.type === 'adzan')) { alert("Maksimal hanya boleh ada 1 Screen khusus Adzan!"); return; }
+            
             saveState(); 
-            let newId = type === 'iqomah' ? "Screen_Iqomah" : "Screen_" + (screens.length + 1);
-            screens.push({ id: newId, type: type, objects: [], w: 64, h: 32, durationMode: 'fixed', durationFixed: '00:00:10', durationAnimObj: '' });
+            let newId = type === 'splash' ? "Screen_Splash" : type === 'main' ? "Screen_Main" : type === 'iqomah' ? "Screen_Iqomah" : type === 'adzan' ? "Screen_Adzan" : "Screen_" + (screens.length + 1);
+            let durFixed = type === 'splash' ? '00:00:03' : '00:00:10';
+            screens.push({ id: newId, type: type, objects: [], w: 64, h: 32, durationMode: 'fixed', durationFixed: durFixed, durationAnimObj: '' });
             switchScreen(screens.length - 1);
         }
 
         function switchScreen(idx) {
             saveState(); activeScreenIdx = idx; objects = screens[idx].objects; selectedObjs = [];
-            resizeCanvas(); syncPropPanel(); renderTree();
+            resizeCanvas(); updateSidebarButtons(); syncPropPanel(); renderTree();
+        }
+
+        // --- FUNGSI HAPUS SCREEN ---
+        function deleteCurrentScreen() {
+            if (screens.length <= 1) {
+                alert("Tidak bisa menghapus screen terakhir! Proyek harus memiliki minimal 1 screen.");
+                return;
+            }
+            let scrName = screens[activeScreenIdx].id;
+            if (confirm(`Hapus screen '${scrName}' beserta seluruh objek di dalamnya?`)) {
+                saveState();
+                screens.splice(activeScreenIdx, 1);
+                let newIdx = activeScreenIdx > 0 ? activeScreenIdx - 1 : 0;
+                switchScreen(newIdx);
+            }
         }
 
         function changeZoom(delta) { let newSize = GRID_SIZE + delta; if (newSize >= 4 && newSize <= 50) { GRID_SIZE = newSize; document.getElementById('zoomLabel').innerText = Math.round((GRID_SIZE / BASE_GRID_SIZE) * 100) + "%"; resizeCanvas(); } }
@@ -554,21 +616,10 @@
             objects = objects.filter(o => o !== group); screens[activeScreenIdx].objects = objects; selectedObjs = [...group.children]; syncPropPanel(); renderTree();
         }
 
-        // --- KEYBOARD SHORTCUTS ---
         window.addEventListener('keydown', (e) => {
             const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
-            
-            // DELETE KEY
-            if (e.key === 'Delete' && !isInput) {
-                if (selectedObjs.length > 0) {
-                    if (confirm(`Hapus ${selectedObjs.length} objek terpilih dari Screen ini?`)) { deleteSelected(true); }
-                }
-            }
-            
-            // CTRL + Z (UNDO)
-            if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !isInput) {
-                e.preventDefault(); undo();
-            }
+            if (e.key === 'Delete' && !isInput) { if (selectedObjs.length > 0) { if (confirm(`Hapus ${selectedObjs.length} objek terpilih dari Screen ini?`)) { deleteSelected(true); } } }
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !isInput) { e.preventDefault(); undo(); }
         });
 
         window.addEventListener('contextmenu', (e) => {
@@ -594,23 +645,22 @@
             }; reader.readAsDataURL(file); event.target.value = '';
         }
 
-        function resizeCanvas() { 
-            let scr = screens[activeScreenIdx];
-            canvas.width = scr.w * GRID_SIZE; canvas.height = scr.h * GRID_SIZE; 
-        }
-
+        function resizeCanvas() { let scr = screens[activeScreenIdx]; canvas.width = scr.w * GRID_SIZE; canvas.height = scr.h * GRID_SIZE; }
         function setMode(m) { mode = m; document.querySelectorAll('.sidebar-left button').forEach(b => b.classList.remove('active')); document.getElementById(m+'Btn').classList.add('active'); canvas.style.cursor = m === 'select' ? 'default' : 'crosshair'; }
         function setAlign(type, val) { if(selectedObj && !['drawing','image','sholat','group'].includes(selectedObj.type)) { if(type === 'h') selectedObj.alignH = val; else selectedObj.alignV = val; syncGeometryUI(); } }
         
         function changeObjType() { 
             if (!selectedObj) return; 
             let newType = document.getElementById('propType').value;
-            
-            // VALIDASI PINDAH TIPE KE IQOMAH DARI PROPERTY PANEL
-            if (newType === 'iqomah' && screens[activeScreenIdx].type !== 'iqomah') {
+            let scrType = screens[activeScreenIdx].type;
+
+            if (newType === 'iqomah' && scrType !== 'iqomah') {
                 alert("Object Counter Iqomah HANYA bisa digunakan di Screen khusus Iqomah!");
-                document.getElementById('propType').value = selectedObj.type; // revert
-                return;
+                document.getElementById('propType').value = selectedObj.type; return;
+            }
+            if (newType === 'sholat' && (scrType === 'iqomah' || scrType === 'adzan' || scrType === 'splash')) {
+                alert("Object Jadwal Sholat TIDAK bisa digunakan di Screen Adzan, Iqomah, atau Splash!");
+                document.getElementById('propType').value = selectedObj.type; return;
             }
             
             selectedObj.type = newType; 
@@ -629,9 +679,8 @@
             } else if (selectedObj.type === 'image') { bImg.classList.remove('hidden');
             } else if (selectedObj.type === 'sholat') { bSholat.classList.remove('hidden'); bFont.classList.remove('hidden'); bAnim.classList.add('hidden'); document.getElementById('propSholatType').value = selectedObj.sholatType;
             } else if (selectedObj.type === 'iqomah') { 
-                // KHUSUS IQOMAH: SEMBUNYIKAN ANIMASI, TAMPILKAN FORMAT
                 bF.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden'); bAnim.classList.add('hidden');
-                selectedObj.anim = 'none'; // Force lock animation to none
+                selectedObj.anim = 'none'; 
                 let sF = document.getElementById('propFormat'); sF.innerHTML = ""; FORMATS[selectedObj.type].forEach(f => { let o = document.createElement('option'); o.value = f; o.innerText = f; sF.appendChild(o); }); 
                 if (!selectedObj.format || !FORMATS[selectedObj.type].includes(selectedObj.format)) { selectedObj.format = sF.options[0].value; } sF.value = selectedObj.format;
             } else if (selectedObj.type === 'text') { bT.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden');
@@ -674,7 +723,8 @@
                 document.getElementById('propName').value = selectedObj.name; document.getElementById('propVisible').checked = selectedObj.visible; syncGeometryUI(); 
                 document.getElementById('propType').value = selectedObj.type; document.getElementById('propFont').value = selectedObj.font; 
                 document.getElementById('propText').value = selectedObj.text; document.getElementById('propColor').value = selectedObj.color; document.getElementById('propFColor').value = selectedObj.fColor; document.getElementById('propAnim').value = selectedObj.anim;
-                document.getElementById('propTransparent').checked = selectedObj.transparentBG; document.getElementById('propSpeed').value = selectedObj.speed; document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
+                document.getElementById('propTransparent').checked = selectedObj.transparentBG; document.getElementById('propRadius').value = selectedObj.radius; document.getElementById('radiusVal').innerText = selectedObj.radius;
+                document.getElementById('propSpeed').value = selectedObj.speed; document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
                 
                 setupFormatDropdown(); if(!['text', 'drawing', 'image', 'sholat', 'iqomah', 'group'].includes(selectedObj.type)) document.getElementById('propFormat').value = selectedObj.format; 
             } else {
@@ -683,7 +733,10 @@
                 document.getElementById('propScreenName').value = scr.id; document.getElementById('propScreenW').value = scr.w; document.getElementById('propScreenH').value = scr.h;
                 document.getElementById('propScreenDurMode').value = scr.durationMode || 'fixed'; document.getElementById('propScreenDurFixed').value = scr.durationFixed || '00:00:10';
                 
-                if (scr.type === 'iqomah') { document.getElementById('iqomahScreenTag').style.display = 'block'; } else { document.getElementById('iqomahScreenTag').style.display = 'none'; }
+                document.getElementById('splashScreenTag').style.display = scr.type === 'splash' ? 'block' : 'none';
+                document.getElementById('mainScreenTag').style.display = scr.type === 'main' ? 'block' : 'none';
+                document.getElementById('iqomahScreenTag').style.display = scr.type === 'iqomah' ? 'block' : 'none';
+                document.getElementById('adzanScreenTag').style.display = scr.type === 'adzan' ? 'block' : 'none';
 
                 let animSelect = document.getElementById('propScreenDurAnim'); animSelect.innerHTML = '<option value="">-- Pilih Objek --</option>'; let allObjNames = getAllObjectNames(scr.objects);
                 allObjNames.forEach(n => { let opt = document.createElement('option'); opt.value = n; opt.innerText = n; if(scr.durationAnimObj === n) opt.selected = true; animSelect.appendChild(opt); });
@@ -700,10 +753,12 @@
             if (selectedObj) {
                 if(selectedObj.type !== 'group') selectedObj.type = document.getElementById('propType').value; 
                 selectedObj.visible = document.getElementById('propVisible').checked; selectedObj.font = document.getElementById('propFont').value; selectedObj.text = document.getElementById('propText').value; 
-                selectedObj.color = document.getElementById('propColor').value; selectedObj.fColor = document.getElementById('propFColor').value; selectedObj.anim = document.getElementById('propAnim').value; selectedObj.transparentBG = document.getElementById('propTransparent').checked; selectedObj.speed = parseFloat(document.getElementById('propSpeed').value);
+                selectedObj.color = document.getElementById('propColor').value; selectedObj.fColor = document.getElementById('propFColor').value; selectedObj.anim = document.getElementById('propAnim').value; selectedObj.transparentBG = document.getElementById('propTransparent').checked; 
+                selectedObj.radius = parseInt(document.getElementById('propRadius').value); document.getElementById('radiusVal').innerText = selectedObj.radius;
+                selectedObj.speed = parseFloat(document.getElementById('propSpeed').value);
                 
                 if (selectedObj.type === 'sholat') selectedObj.sholatType = document.getElementById('propSholatType').value; 
-                else if (selectedObj.type === 'iqomah') { selectedObj.format = document.getElementById('propFormat').value; selectedObj.anim = 'none'; } // Kunci animasi Iqomah
+                else if (selectedObj.type === 'iqomah') { selectedObj.format = document.getElementById('propFormat').value; selectedObj.anim = 'none'; } 
                 else if (!['text', 'drawing', 'image', 'group'].includes(selectedObj.type)) selectedObj.format = document.getElementById('propFormat').value;
                 
                 document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x'; selectedObj.updateContent(); syncGeometryUI(); renderTree();
@@ -779,16 +834,14 @@
             if (history.length > 0) { 
                 const s = history.pop(); screens = s.screens.map(scr => { scr.objects = scr.objects.map(o => restoreObject(o)); return scr; });
                 activeScreenIdx = s.activeScreenIdx; objects = screens[activeScreenIdx].objects; selectedObjs = [];
-                resizeCanvas(); syncPropPanel(); renderTree();
+                resizeCanvas(); updateSidebarButtons(); syncPropPanel(); renderTree();
             } 
         }
 
-        // FUNGSI TAMBAH OBJECT DIMODIFIKASI UNTUK VALIDASI IQOMAH
         function addPixelObject(type) { 
-            if (type === 'iqomah' && screens[activeScreenIdx].type !== 'iqomah') {
-                alert("Object Counter Iqomah HANYA bisa ditambahkan di dalam Screen khusus Iqomah!");
-                return;
-            }
+            let scrType = screens[activeScreenIdx].type;
+            if (type === 'iqomah' && scrType !== 'iqomah') { return; } 
+            if (type === 'sholat' && (scrType === 'iqomah' || scrType === 'adzan' || scrType === 'splash')) { return; } 
             
             saveState(); 
             let base = type === 'drawing' ? "Draw" : type === 'image' ? "Img" : type === 'sholat' ? "Jadwal" : type === 'iqomah' ? "Count" : "Layer";
@@ -806,7 +859,7 @@
 
         function serializeObj(o) {
             let align = o.calcAlign();
-            let objData = { id: o.name, type: o.type, visible: o.visible, frameX: o.x, frameY: o.y, w: o.w, h: o.h, contentX: o.x + align.aX, contentY: o.y + align.aY, font: o.font, color: o.color, format: o.format, anim: o.anim, speed: o.speed, hooks: { before: o.fnBefore, after: o.fnAfter, call: o.fnCall } };
+            let objData = { id: o.name, type: o.type, visible: o.visible, frameX: o.x, frameY: o.y, w: o.w, h: o.h, contentX: o.x + align.aX, contentY: o.y + align.aY, font: o.font, color: o.color, format: o.format, anim: o.anim, speed: o.speed, radius: o.radius, hooks: { before: o.fnBefore, after: o.fnAfter, call: o.fnCall } };
             if (o.type === 'drawing' || o.type === 'image') objData.pixels = o.pixels; 
             if (o.type === 'sholat') { objData.sholatType = o.sholatType; objData.bgColor = o.transparentBG ? "transparent" : o.fColor; }
             if (!['sholat','drawing','image','group'].includes(o.type)) objData.bgColor = o.transparentBG ? "transparent" : o.fColor;
@@ -823,7 +876,7 @@
                     objects: scr.objects.filter(o=>o.visible).map(serializeObj) 
                 }))
             };
-            document.getElementById('outputArea').innerText = "/* \n * JerryScript Logic \n * Multi-Screen Duration & Sequencer Export \n */\n\nvar sceneData = " + JSON.stringify(out, null, 2) + ";";
+            document.getElementById('outputArea').innerText = "/* \n * JerryScript Logic \n * Full JWS Sequence Export \n */\n\nvar sceneData = " + JSON.stringify(out, null, 2) + ";";
             document.getElementById('exportModal').style.display = 'block';
         }
 
@@ -837,9 +890,11 @@
             if(selectedObj && selectedObjs.length === 1 && (selectedObj.anim !== 'none' || !['text','drawing','image','sholat','iqomah','group'].includes(selectedObj.type))) syncGeometryUI();
         }
 
-        // INIT
-        screens.push({ id: "Screen_1", type: "generic", objects: [], w: 64, h: 32, durationMode: 'fixed', durationFixed: '00:00:10', durationAnimObj: '' });
+        // INIT PROJECT DEFAULTS (SPLASH -> MAIN)
+        screens.push({ id: "Screen_Splash", type: "splash", objects: [], w: 64, h: 32, durationMode: 'fixed', durationFixed: '00:00:03', durationAnimObj: '' });
+        screens.push({ id: "Screen_Main", type: "main", objects: [], w: 64, h: 32, durationMode: 'fixed', durationFixed: '00:00:10', durationAnimObj: '' });
         switchScreen(0);
+        updateSidebarButtons();
         animate();
     </script>
 </body>
