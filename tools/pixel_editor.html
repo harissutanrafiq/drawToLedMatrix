@@ -2,28 +2,33 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Pixel Pro Studio v6.1 - Font & Calendar Engine</title>
+    <title>Pixel Pro Studio v8.0 - Image Engine & Fixed Layout</title>
     <style>
         :root { --bg: #1a1a1b; --side: #252526; --accent: #2ecc71; --text: #eee; --border: #3e3e42; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        .sidebar-left { width: 240px; background: var(--side); padding: 15px; border-right: 1px solid var(--border); overflow-y: auto; z-index: 10; display: flex; flex-direction: column; gap: 15px; }
-        .main-workspace { flex-grow: 1; display: flex; flex-direction: column; background: #000; position: relative; }
-        .sidebar-right { width: 320px; background: var(--side); padding: 15px; border-left: 1px solid var(--border); overflow-y: auto; z-index: 10; display: flex; flex-direction: column; gap: 12px; }
-
-        .top-bar { height: 50px; background: #1e1e1e; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 15px; z-index: 5; }
-        .canvas-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; overflow: auto; background: #111; padding: 20px; }
-
-        canvas { background: #0a0a0a; border: 2px solid #555; image-rendering: pixelated; box-shadow: 0 0 30px rgba(0,0,0,0.8); cursor: crosshair; }
+        /* LAYOUT FIX: Sidebar Kiri & Kanan di-Lock (flex-shrink: 0) */
+        .sidebar-left { width: 240px; flex-shrink: 0; background: var(--side); padding: 15px; border-right: 1px solid var(--border); overflow-y: auto; z-index: 10; display: flex; flex-direction: column; gap: 15px; }
+        .sidebar-right { width: 320px; flex-shrink: 0; background: var(--side); padding: 15px; border-left: 1px solid var(--border); overflow-y: auto; z-index: 10; display: flex; flex-direction: column; gap: 12px; }
+        
+        /* Area Workspace di Tengah dengan Scrollbar Otomatis */
+        .main-workspace { flex-grow: 1; flex-shrink: 1; min-width: 0; display: flex; flex-direction: column; background: #000; position: relative; }
+        .top-bar { height: 50px; flex-shrink: 0; background: #1e1e1e; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 15px; z-index: 5; }
+        
+        /* Container Canvas mendukung scrolling penuh tanpa memotong top/left */
+        .canvas-container { flex-grow: 1; overflow: auto; padding: 30px; display: grid; place-items: center; background: #111; }
+        canvas { background: #0a0a0a; border: 2px solid #555; image-rendering: pixelated; box-shadow: 0 0 30px rgba(0,0,0,0.8); cursor: crosshair; margin: auto; }
 
         .group { display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
         .group:last-child { border-bottom: none; }
         h3 { margin: 0; font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
         label { font-size: 10px; color: #aaa; text-transform: uppercase; font-weight: bold; }
         
-        input, button, select, textarea { padding: 8px; border-radius: 4px; border: none; font-size: 12px; background: #333; color: white; width: 100%; box-sizing: border-box; outline: none; }
+        input, button, textarea { padding: 8px; border-radius: 4px; border: none; font-size: 12px; background: #333; color: white; width: 100%; box-sizing: border-box; outline: none; font-family: inherit; }
+        select { padding: 0 8px; height: 28px; border-radius: 4px; border: none; font-size: 12px; background: #333; color: white; width: 100%; box-sizing: border-box; outline: none; font-family: inherit; }
+        
         textarea { height: 50px; font-family: 'Consolas', monospace; font-size: 11px; resize: vertical; }
-        input[readonly] { background: #1e1e1e; color: #666; cursor: not-allowed; text-align: center; }
+        input[readonly] { background: #1a1a1b; color: #888; cursor: not-allowed; text-align: center; border: 1px solid #333; }
         input[type="color"] { padding: 2px 4px; height: 30px; cursor: pointer; }
         
         button { cursor: pointer; transition: 0.2s; border: 1px solid transparent; font-weight: 500; }
@@ -34,15 +39,18 @@
         .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
         .hidden { display: none !important; }
 
-        #hoverTooltip { position: absolute; background: rgba(0,0,0,0.9); color: var(--accent); padding: 10px; border-radius: 6px; font-size: 11px; font-family: monospace; pointer-events: none; z-index: 100; border: 1px solid var(--accent); display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        #hoverTooltip { position: fixed; background: rgba(0,0,0,0.9); color: var(--accent); padding: 8px 12px; border-radius: 6px; font-size: 11px; font-family: monospace; pointer-events: none; z-index: 1000; border: 1px solid var(--accent); display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.5); line-height: 1.4; transform: translateX(-50%); }
 
         .btn-blue { background: #3498db; }
         .btn-green { background: #27ae60; font-weight: bold; }
         .btn-red { background: #e74c3c; font-weight: bold; }
         .btn-orange { background: #f39c12; color: #000; font-weight: bold; }
+        
+        .zoom-btn { background: transparent; font-size: 14px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+        .zoom-btn:hover { background: #555; }
 
-        #exportModal { display:none; position:fixed; top:5%; left:5%; width:90%; height:90%; background:var(--side); padding:20px; border:2px solid var(--accent); z-index:2000; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
-        #outputArea { background:#0a0a0a; color:#2ecc71; padding:15px; font-family:'Consolas', monospace; font-size: 13px; height: calc(100% - 100px); overflow:auto; white-space: pre-wrap; border: 1px solid #444; }
+        #exportModal { display:none; position:fixed; top:5%; left:5%; width:90%; height:90%; background:var(--side); padding:20px; border:2px solid var(--accent); z-index:2000; box-shadow: 0 0 50px rgba(0,0,0,0.8); border-radius: 8px; }
+        #outputArea { background:#0a0a0a; color:#2ecc71; padding:15px; font-family:'Consolas', monospace; font-size: 13px; height: calc(100% - 100px); overflow:auto; white-space: pre-wrap; border: 1px solid #444; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -68,8 +76,11 @@
 
         <div class="group" style="flex-grow: 1;">
             <h3>Project Actions</h3>
-            <button onclick="addPixelObject()" class="btn-blue" style="margin-bottom: 6px;">+ Add New Object</button>
-            <button onclick="undo()" class="btn-orange" style="margin-bottom: 6px;">⬅ Undo Draw/Move</button>
+            <button onclick="addPixelObject('text')" class="btn-blue" style="margin-bottom: 6px;">+ Add Text Object</button>
+            <button onclick="addPixelObject('drawing')" class="btn-blue" style="margin-bottom: 6px; background:#9b59b6;">+ Add Drawing Object</button>
+            <button onclick="addPixelObject('image')" class="btn-blue" style="margin-bottom: 6px; background:#e67e22;">+ Add Image Object</button>
+            
+            <button onclick="undo()" class="btn-orange" style="margin-bottom: 6px;">⬅ Undo Action</button>
             <button onclick="exportToJerryScript()" class="btn-green" style="margin-bottom: 6px;">💾 Export Logic (JS)</button>
             <button onclick="clearCanvas()" class="btn-red">🗑️ Reset Canvas</button>
         </div>
@@ -78,9 +89,15 @@
     <div class="main-workspace">
         <div class="top-bar">
             <label style="width: 130px; margin:0;">Object Navigator :</label>
-            <select id="globalObjSelect" onchange="jumpToSelectedObject()" style="max-width: 300px;">
+            <select id="globalObjSelect" onchange="jumpToSelectedObject()" style="max-width: 250px;">
                 <option value="">-- No Object Selected --</option>
             </select>
+
+            <div style="margin-left:20px; display: flex; align-items: center; gap: 6px; background: #333; padding: 4px 8px; border-radius: 6px; border: 1px solid #444;">
+                <button onclick="changeZoom(-2)" class="zoom-btn" title="Zoom Out">➖</button>
+                <span id="zoomLabel" style="font-size: 12px; font-family: monospace; width: 45px; text-align: center; color: var(--accent); font-weight: bold;">100%</span>
+                <button onclick="changeZoom(2)" class="zoom-btn" title="Zoom In">➕</button>
+            </div>
         </div>
         <div class="canvas-container" id="canvasWrapper">
             <div id="hoverTooltip"></div>
@@ -99,16 +116,22 @@
             
             <div class="group">
                 <label>Object Name (ID)</label>
-                <input type="text" id="propName" oninput="updateFromProp()">
+                <input type="text" id="propName" oninput="updateFromProp()" placeholder="Layer_1">
             </div>
 
             <div class="group">
                 <label>Geometry (Grid Units)</label>
+                <div class="grid-2" style="margin-bottom: 4px;">
+                    <div><label>Frame X</label><input type="text" id="propX" readonly></div>
+                    <div><label>Frame Y</label><input type="text" id="propY" readonly></div>
+                </div>
+                <div class="grid-2" style="margin-bottom: 8px;">
+                    <div><label>Frame W</label><input type="text" id="propW" readonly></div>
+                    <div><label>Frame H</label><input type="text" id="propH" readonly></div>
+                </div>
                 <div class="grid-2">
-                    <div><label>Pos X</label><input type="text" id="propX" readonly></div>
-                    <div><label>Pos Y</label><input type="text" id="propY" readonly></div>
-                    <div><label>Size W</label><input type="text" id="propW" readonly></div>
-                    <div><label>Size H</label><input type="text" id="propH" readonly></div>
+                    <div><label style="color:var(--accent)">Content X</label><input type="text" id="propObjX" readonly style="color:var(--accent); font-weight:bold;"></div>
+                    <div><label style="color:var(--accent)">Content Y</label><input type="text" id="propObjY" readonly style="color:var(--accent); font-weight:bold;"></div>
                 </div>
             </div>
 
@@ -119,9 +142,18 @@
                     <option value="clock">Clock (Real-time)</option>
                     <option value="cal_masehi">Masehi Calendar</option>
                     <option value="cal_hijri">Hijriah Calendar</option>
+                    <option value="drawing">Custom Drawing</option>
+                    <option value="image">Image (Pixel Art)</option>
                 </select>
 
-                <div style="margin-top:5px;">
+                <div id="boxImage" class="hidden" style="margin-top:10px;">
+                    <label style="color:#e67e22;">Source Image</label>
+                    <input type="file" id="imageUploader" accept="image/png, image/jpeg, image/gif, image/webp" style="display:none;" onchange="handleImageUpload(event)">
+                    <button onclick="document.getElementById('imageUploader').click()" style="background:#444; margin-top:4px;">📂 Choose Image File...</button>
+                    <p style="font-size:9px; color:#888; margin: 4px 0 0 0;">(Image will be auto-scaled to Frame W & H)</p>
+                </div>
+
+                <div id="boxFont" style="margin-top:5px;">
                     <label>Font Style</label>
                     <select id="propFont" onchange="updateFromProp()">
                         <option value="custom">Retro Mono5x7 (HEX)</option>
@@ -144,47 +176,40 @@
             <div class="group">
                 <label>Colors</label>
                 <div class="grid-2">
-                    <div><label>Object</label><input type="color" id="propColor" oninput="updateFromProp()"></div>
+                    <div><label>Object/Pen</label><input type="color" id="propColor" oninput="updateFromProp()"></div>
                     <div><label>Frame</label><input type="color" id="propFColor" oninput="updateFromProp()"></div>
                 </div>
                 
-                <label style="margin-top:8px;">Horizontal Align</label>
-                <div class="grid-3">
-                    <button onclick="setAlign('h','left')">Left</button>
-                    <button onclick="setAlign('h','center')">Center</button>
-                    <button onclick="setAlign('h','right')">Right</button>
-                </div>
-                
-                <label style="margin-top:8px;">Vertical Align</label>
-                <div class="grid-3">
-                    <button onclick="setAlign('v','top')">Top</button>
-                    <button onclick="setAlign('v','middle')">Mid</button>
-                    <button onclick="setAlign('v','bottom')">Bot</button>
-                </div>
-            </div>
-
-            <div class="group">
-                <label>Animation Engine</label>
-                <div class="grid-2">
-                    <select id="propAnim" onchange="updateFromProp()">
-                        <option value="none">Static</option>
-                        <option value="scroll">Scroll</option>
-                        <option value="fade">Fade</option>
-                        <option value="explode">Explode</option>
-                        <option value="pixel-fade">Pixel Fade</option>
-                    </select>
-                    <div>
-                        <label>Speed <span id="speedVal">1.0x</span></label>
-                        <input type="range" id="propSpeed" min="0.1" max="5" step="0.1" value="1" oninput="updateFromProp()">
+                <div id="boxAlign">
+                    <label style="margin-top:8px;">Horizontal Align</label>
+                    <div class="grid-3">
+                        <button onclick="setAlign('h','left')">Left</button>
+                        <button onclick="setAlign('h','center')">Center</button>
+                        <button onclick="setAlign('h','right')">Right</button>
+                    </div>
+                    
+                    <label style="margin-top:8px;">Vertical Align</label>
+                    <div class="grid-3">
+                        <button onclick="setAlign('v','top')">Top</button>
+                        <button onclick="setAlign('v','middle')">Mid</button>
+                        <button onclick="setAlign('v','bottom')">Bot</button>
                     </div>
                 </div>
             </div>
 
             <div class="group">
-                <label>JerryScript Logic Hooks</label>
-                <textarea id="fnBefore" oninput="updateFromProp()" placeholder="Hook: Before Anim..."></textarea>
-                <textarea id="fnAfter" oninput="updateFromProp()" placeholder="Hook: After Anim..."></textarea>
-                <textarea id="fnCall" oninput="updateFromProp()" placeholder="Hook: On Called..."></textarea>
+                <label>Animation Engine</label>
+                <select id="propAnim" onchange="updateFromProp()" style="margin-bottom: 8px;">
+                    <option value="none">Static</option>
+                    <option value="scroll">Scroll</option>
+                    <option value="fade">Fade</option>
+                    <option value="explode">Explode</option>
+                    <option value="pixel-fade">Pixel Fade</option>
+                </select>
+                <div>
+                    <label>Speed <span id="speedVal" style="color:var(--accent); font-family:monospace; margin-left:5px;">1.0x</span></label>
+                    <input type="range" id="propSpeed" min="0.1" max="5" step="0.1" value="1" oninput="updateFromProp()" style="margin-top:4px;">
+                </div>
             </div>
 
             <button onclick="deleteSelected()" class="btn-red" style="margin-top: 5px; padding: 10px;">🗑️ Delete This Object</button>
@@ -219,17 +244,27 @@
         const canvas = document.getElementById('editorCanvas');
         const ctx = canvas.getContext('2d');
         const tooltip = document.getElementById('hoverTooltip');
-        
-        // OffCanvas untuk render font sistem
         const offCanvas = document.createElement('canvas');
         const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
 
-        const GRID_SIZE = 12; 
-        let objects = [], selectedObj = null, manualPixels = [], history = [];
+        const BASE_GRID_SIZE = 12;
+        let GRID_SIZE = 12; 
+        
+        function changeZoom(delta) {
+            let newSize = GRID_SIZE + delta;
+            if (newSize >= 4 && newSize <= 50) {
+                GRID_SIZE = newSize;
+                let percent = Math.round((GRID_SIZE / BASE_GRID_SIZE) * 100);
+                document.getElementById('zoomLabel').innerText = percent + "%";
+                resizeCanvas(); 
+            }
+        }
+
+        let objects = [], selectedObj = null, history = [];
         let mode = 'pen', isDrawing = false, isDragging = false, isResizing = false;
+        let resizeDir = ''; 
         let offset = {x:0, y:0};
 
-        // FORMAT LOGIC: Added (H) logic for Hijriah
         const FORMATS = {
             clock: ['HH:mm:ss', 'HH:mm', 'hh:mm A'],
             cal_masehi: ['DD/MM/YYYY', 'DD-MM-YYYY', 'DD MMM YYYY'],
@@ -238,35 +273,34 @@
 
         class PixelObject {
             constructor(name, type, gridX, gridY) {
-                this.name = name; 
-                this.type = type; 
-                this.x = gridX * GRID_SIZE; 
-                this.y = gridY * GRID_SIZE;
-                this.w = 32; this.h = 9;  
+                this.name = name; this.type = type; 
+                this.x = gridX; this.y = gridY; 
                 
-                this.text = "PIXEL"; 
-                this.format = "";
-                this.font = "custom"; // FONT FEATURE KEMBALI
-                this.color = "#ffffff"; 
-                this.fColor = "#3498db";
-                this.alignH = 'center'; 
-                this.alignV = 'middle';
-                this.anim = 'none'; 
-                this.speed = 1.0; 
-                this.scrollOffset = 0;
-                this.opacity = 1; 
-                this.fadeDir = 1;
+                this.w = (type === 'drawing' || type === 'image') ? 16 : 32; 
+                this.h = (type === 'drawing' || type === 'image') ? 16 : 10;  
                 
+                this.text = (type === 'drawing' || type === 'image') ? "" : "PIXEL"; 
+                this.format = ""; this.font = "custom";
+                this.color = "#ffffff"; this.fColor = "#3498db";
+                this.alignH = 'center'; this.alignV = 'middle';
+                this.anim = 'none'; this.speed = 1.0; this.scrollOffset = 0;
+                this.opacity = 1; this.fadeDir = 1;
                 this.fnBefore = ""; this.fnAfter = ""; this.fnCall = "";
                 
-                this.pixels = [];
+                this.pixels = []; 
+                this.customPixels = []; 
                 this.particles = [];
-                this.textWidth = 0;
-                this.textHeight = 7; 
+                this.textWidth = 0; this.textHeight = 7; 
+                
+                // Variabel Khusus Image Engine
+                this.imageObj = new Image();
+                this.lastW = 0; this.lastH = 0;
+                
                 this.updateContent();
             }
 
             getDisplayString() {
+                if (this.type === 'drawing' || this.type === 'image') return "";
                 const now = new Date();
                 if (this.type === 'clock') {
                     const h = String(now.getHours()).padStart(2,'0'), m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0');
@@ -275,66 +309,90 @@
                     return `${h}:${m}:${s}`;
                 }
                 if (this.type === 'cal_masehi') {
-                    const d = String(now.getDate()).padStart(2,'0');
-                    const m = String(now.getMonth()+1).padStart(2,'0');
-                    const y = now.getFullYear();
+                    const d = String(now.getDate()).padStart(2,'0'), m = String(now.getMonth()+1).padStart(2,'0'), y = now.getFullYear();
                     if(this.format === 'DD-MM-YYYY') return `${d}-${m}-${y}`;
                     if(this.format === 'DD MMM YYYY') return now.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase();
-                    return `${d}/${m}/${y}`; // Default DD/MM/YYYY
+                    return `${d}/${m}/${y}`;
                 }
                 if (this.type === 'cal_hijri') {
-                    if (this.format === 'DD/MM/YYYY (H)') {
-                        return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'2-digit',month:'2-digit',year:'numeric'}).format(now);
-                    }
+                    if (this.format === 'DD/MM/YYYY (H)') return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'2-digit',month:'2-digit',year:'numeric'}).format(now);
                     return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'numeric',month:'long',year:'numeric'}).format(now).toUpperCase();
                 }
                 return this.text.toUpperCase();
             }
 
             updateContent() {
-                const str = this.getDisplayString();
-                this.pixels = []; 
-                
-                if (this.font === 'custom') {
-                    // Logic Mono5x7 Hex
-                    let xOff = 0;
-                    for (let char of str) {
-                        const code = char.charCodeAt(0) - 32;
-                        if (code >= 0 && code < MONO5X7_HEX.length/5) {
-                            for (let col = 0; col < 5; col++) {
-                                const byte = MONO5X7_HEX[code * 5 + col];
-                                for (let row = 0; row < 7; row++) { 
-                                    if ((byte >> row) & 1) this.pixels.push({ x: col + xOff, y: row });
+                if (this.type === 'drawing') {
+                    this.pixels = this.customPixels.map(p => ({ x: p.x, y: p.y, c: p.c }));
+                    this.textWidth = this.w; this.textHeight = this.h;
+                } else if (this.type === 'image') {
+                    // IMAGE ENGINE RASTERIZER
+                    if (!this.imageObj || !this.imageObj.src) return;
+                    
+                    // Hanya re-kalkulasi gambar jika ukuran frame berubah (Optimasi Performa)
+                    if (this.lastW === this.w && this.lastH === this.h && this.pixels.length > 0) return;
+                    this.lastW = this.w; this.lastH = this.h;
+                    
+                    offCanvas.width = this.w; offCanvas.height = this.h;
+                    offCtx.clearRect(0, 0, this.w, this.h);
+                    
+                    // Gambar image ke off-canvas seukuran Frame W dan H (Otomatis Scaled/Stretched)
+                    offCtx.drawImage(this.imageObj, 0, 0, this.w, this.h);
+                    const data = offCtx.getImageData(0, 0, this.w, this.h).data;
+                    
+                    this.pixels = [];
+                    for(let y=0; y<this.h; y++){
+                        for(let x=0; x<this.w; x++){
+                            let idx = (y * this.w + x) * 4;
+                            if(data[idx+3] > 0) { // Cek Alpha Channel (Tidak transparan)
+                                this.pixels.push({
+                                    x: x, y: y, 
+                                    c: `rgba(${data[idx]},${data[idx+1]},${data[idx+2]},${data[idx+3]/255})`
+                                });
+                            }
+                        }
+                    }
+                    this.textWidth = this.w; this.textHeight = this.h;
+                } else {
+                    const str = this.getDisplayString();
+                    this.pixels = []; 
+                    if (this.font === 'custom') {
+                        let xOff = 0;
+                        for (let char of str) {
+                            const code = char.charCodeAt(0) - 32;
+                            if (code >= 0 && code < MONO5X7_HEX.length/5) {
+                                for (let col = 0; col < 5; col++) {
+                                    const byte = MONO5X7_HEX[code * 5 + col];
+                                    for (let row = 0; row < 7; row++) { 
+                                        if ((byte >> row) & 1) this.pixels.push({ x: col + xOff, y: row });
+                                    }
+                                }
+                            }
+                            xOff += 6; 
+                        }
+                        this.textWidth = Math.max(0, xOff - 1);
+                        this.textHeight = 7;
+                    } else {
+                        const fontSize = 8;
+                        offCanvas.width = Math.max(1, str.length * (fontSize * 0.8));
+                        offCanvas.height = fontSize + 4;
+                        offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);
+                        offCtx.fillStyle = "black"; offCtx.font = `bold ${fontSize}px ${this.font}`; offCtx.textBaseline = "top";
+                        offCtx.fillText(str, 0, 0);
+                        
+                        const data = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height);
+                        let maxW = 0;
+                        for (let y = 0; y < offCanvas.height; y++) {
+                            for (let x = 0; x < offCanvas.width; x++) {
+                                if (data.data[(y * offCanvas.width + x) * 4 + 3] > 128) {
+                                    this.pixels.push({ x: x, y: y });
+                                    if (x > maxW) maxW = x;
                                 }
                             }
                         }
-                        xOff += 6; 
+                        this.textWidth = maxW + 1;
+                        this.textHeight = fontSize;
                     }
-                    this.textWidth = Math.max(0, xOff - 1);
-                    this.textHeight = 7;
-                } else {
-                    // Logic System Font (Off-Canvas)
-                    const fontSize = 8;
-                    offCanvas.width = Math.max(1, str.length * (fontSize * 0.8));
-                    offCanvas.height = fontSize + 4;
-                    offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);
-                    offCtx.fillStyle = "black";
-                    offCtx.font = `bold ${fontSize}px ${this.font}`;
-                    offCtx.textBaseline = "top";
-                    offCtx.fillText(str, 0, 0);
-                    
-                    const data = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height);
-                    let maxW = 0;
-                    for (let y = 0; y < offCanvas.height; y++) {
-                        for (let x = 0; x < offCanvas.width; x++) {
-                            if (data.data[(y * offCanvas.width + x) * 4 + 3] > 128) {
-                                this.pixels.push({ x: x, y: y });
-                                if (x > maxW) maxW = x;
-                            }
-                        }
-                    }
-                    this.textWidth = maxW + 1;
-                    this.textHeight = fontSize;
                 }
 
                 if (this.particles.length !== this.pixels.length) {
@@ -342,21 +400,30 @@
                 }
             }
 
+            calcAlign() {
+                if (this.type === 'drawing' || this.type === 'image') return { aX: 0, aY: 0 }; 
+                let aX = 0; if(this.alignH === 'center') aX = Math.floor((this.w - this.textWidth) / 2); if(this.alignH === 'right') aX = this.w - this.textWidth;
+                let aY = 0; if(this.alignV === 'middle') aY = Math.floor((this.h - this.textHeight) / 2); if(this.alignV === 'bottom') aY = this.h - this.textHeight;
+                return { aX, aY };
+            }
+
             draw() {
                 this.updateContent();
                 ctx.save();
                 
-                const dW = this.w * GRID_SIZE, dH = this.h * GRID_SIZE;
+                const renderX = this.x * GRID_SIZE;
+                const renderY = this.y * GRID_SIZE;
+                const dW = this.w * GRID_SIZE;
+                const dH = this.h * GRID_SIZE;
                 
-                let aX = 0; if(this.alignH === 'center') aX = Math.floor((this.w - this.textWidth) / 2); if(this.alignH === 'right') aX = this.w - this.textWidth;
-                let aY = 0; if(this.alignV === 'middle') aY = Math.floor((this.h - this.textHeight) / 2); if(this.alignV === 'bottom') aY = this.h - this.textHeight;
+                let align = this.calcAlign();
+                let aX = align.aX, aY = align.aY;
 
                 if (this.anim === 'scroll') { this.scrollOffset += 0.1 * this.speed; if (this.scrollOffset > this.textWidth) this.scrollOffset = -this.w; }
                 else if (this.anim === 'fade') { this.opacity += 0.02 * this.fadeDir * this.speed; if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1; }
                 else if (this.anim === 'explode') { this.particles.forEach(p => { p.x += p.vx * 0.1 * this.speed; p.y += p.vy * 0.1 * this.speed; }); }
 
                 ctx.globalAlpha = Math.max(0, Math.min(1, this.opacity));
-                ctx.fillStyle = this.color;
 
                 this.pixels.forEach((p, i) => {
                     let dx = p.x + aX; let dy = p.y + aY;
@@ -364,220 +431,314 @@
                     if (this.anim === 'explode') { dx = this.particles[i].x + aX; dy = this.particles[i].y + aY; }
                     if (this.anim === 'pixel-fade' && Math.random() > 0.3 * this.speed) return;
 
-                    const fx = this.x + (dx * GRID_SIZE);
-                    const fy = this.y + (dy * GRID_SIZE);
-
-                    if (fx >= this.x && fx < this.x + dW && fy >= this.y && fy < this.y + dH) {
+                    const fx = renderX + (dx * GRID_SIZE);
+                    const fy = renderY + (dy * GRID_SIZE);
+                    
+                    if (fx >= renderX && fx < renderX + dW && fy >= renderY && fy < renderY + dH) {
+                        ctx.fillStyle = p.c ? p.c : this.color; 
                         ctx.fillRect(fx, fy, GRID_SIZE - 1, GRID_SIZE - 1);
                     }
                 });
 
-                if (selectedObj === this && mode === 'select') {
-                    ctx.globalAlpha = 1; ctx.strokeStyle = this.fColor; ctx.lineWidth = 2; ctx.strokeRect(this.x, this.y, dW, dH);
-                    ctx.fillStyle = "#e74c3c"; ctx.fillRect(this.x + dW - 10, this.y + dH - 10, 10, 10);
+                if (selectedObj === this) {
+                    ctx.globalAlpha = 1; ctx.strokeStyle = this.fColor; ctx.lineWidth = 2; ctx.strokeRect(renderX, renderY, dW, dH);
+                    
+                    if (mode === 'select') {
+                        const hs = 10;
+                        ctx.fillStyle = "#e74c3c";
+                        ctx.fillRect(renderX + dW/2 - hs/2, renderY - hs/2, hs, hs); 
+                        ctx.fillRect(renderX + dW/2 - hs/2, renderY + dH - hs/2, hs, hs); 
+                        ctx.fillRect(renderX - hs/2, renderY + dH/2 - hs/2, hs, hs); 
+                        ctx.fillRect(renderX + dW - hs/2, renderY + dH/2 - hs/2, hs, hs); 
+                    }
                 }
                 ctx.restore();
             }
         }
 
-        function resizeCanvas() { canvas.width = document.getElementById('canvW').value * GRID_SIZE; canvas.height = document.getElementById('canvH').value * GRID_SIZE; }
+        // FUNGSI UPLOAD IMAGE
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file || !selectedObj || selectedObj.type !== 'image') return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                selectedObj.imageObj.onload = function() {
+                    selectedObj.pixels = []; // Clear current raster
+                    selectedObj.lastW = 0; // Force recalculate
+                    selectedObj.updateContent();
+                }
+                selectedObj.imageObj.src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function resizeCanvas() { 
+            canvas.width = document.getElementById('canvW').value * GRID_SIZE; 
+            canvas.height = document.getElementById('canvH').value * GRID_SIZE; 
+        }
 
         function setMode(m) { 
-            mode = m; 
-            document.querySelectorAll('.sidebar-left button').forEach(b => b.classList.remove('active'));
-            document.getElementById(m+'Btn').classList.add('active');
+            mode = m; document.querySelectorAll('.sidebar-left button').forEach(b => b.classList.remove('active')); document.getElementById(m+'Btn').classList.add('active');
             canvas.style.cursor = m === 'select' ? 'default' : 'crosshair';
         }
 
-        function setAlign(type, val) { if(selectedObj) { if(type === 'h') selectedObj.alignH = val; else selectedObj.alignV = val; } }
+        function setAlign(type, val) { if(selectedObj && selectedObj.type !== 'drawing' && selectedObj.type !== 'image') { if(type === 'h') selectedObj.alignH = val; else selectedObj.alignV = val; syncGeometryUI(); } }
 
         function changeObjType() {
-            if (!selectedObj) return;
-            selectedObj.type = document.getElementById('propType').value;
-            setupFormatDropdown();
-            updateFromProp();
+            if (!selectedObj) return; selectedObj.type = document.getElementById('propType').value; setupFormatDropdown(); updateFromProp();
         }
 
         function setupFormatDropdown() {
             const bF = document.getElementById('boxFormat'), bT = document.getElementById('boxText'), sF = document.getElementById('propFormat');
-            if (selectedObj.type === 'text') { 
-                bF.classList.add('hidden'); bT.classList.remove('hidden'); 
+            const bFont = document.getElementById('boxFont'), bAlign = document.getElementById('boxAlign'), bImg = document.getElementById('boxImage');
+            
+            // Default hide all specific boxes
+            bF.classList.add('hidden'); bT.classList.add('hidden'); bFont.classList.add('hidden'); bAlign.classList.add('hidden'); bImg.classList.add('hidden');
+
+            if (selectedObj.type === 'drawing') {
+                // Keep all hidden
+            } else if (selectedObj.type === 'image') {
+                bImg.classList.remove('hidden');
+            } else if (selectedObj.type === 'text') { 
+                bT.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden');
             } else { 
-                bF.classList.remove('hidden'); bT.classList.add('hidden'); 
+                bF.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden');
                 sF.innerHTML = ""; 
-                FORMATS[selectedObj.type].forEach(f => { 
-                    let o = document.createElement('option'); o.value = f; o.innerText = f; sF.appendChild(o); 
-                }); 
-                selectedObj.format = sF.value; // Set default format to first option
+                FORMATS[selectedObj.type].forEach(f => { let o = document.createElement('option'); o.value = f; o.innerText = f; sF.appendChild(o); }); 
+                selectedObj.format = sF.value;
             }
         }
 
-        function syncPropPanel() {
-            if (!selectedObj) { 
-                document.getElementById('propContent').classList.add('hidden'); 
-                document.getElementById('noSelectionMsg').classList.remove('hidden'); 
-                return; 
-            }
-            document.getElementById('propContent').classList.remove('hidden'); 
-            document.getElementById('noSelectionMsg').classList.add('hidden');
-            
-            document.getElementById('propName').value = selectedObj.name;
-            document.getElementById('propX').value = Math.floor(selectedObj.x/GRID_SIZE);
-            document.getElementById('propY').value = Math.floor(selectedObj.y/GRID_SIZE);
+        function syncGeometryUI() {
+            if (!selectedObj) return;
+            document.getElementById('propX').value = selectedObj.x;
+            document.getElementById('propY').value = selectedObj.y;
             document.getElementById('propW').value = selectedObj.w;
             document.getElementById('propH').value = selectedObj.h;
             
-            document.getElementById('propType').value = selectedObj.type;
-            document.getElementById('propFont').value = selectedObj.font; // FONT UI SYNC
-            document.getElementById('propText').value = selectedObj.text;
-            document.getElementById('propColor').value = selectedObj.color;
-            document.getElementById('propFColor').value = selectedObj.fColor;
-            document.getElementById('propAnim').value = selectedObj.anim;
-            document.getElementById('propSpeed').value = selectedObj.speed;
-            document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
+            let align = selectedObj.calcAlign();
+            document.getElementById('propObjX').value = selectedObj.x + align.aX;
+            document.getElementById('propObjY').value = selectedObj.y + align.aY;
+        }
+
+        function syncPropPanel() {
+            if (!selectedObj) { document.getElementById('propContent').classList.add('hidden'); document.getElementById('noSelectionMsg').classList.remove('hidden'); return; }
+            document.getElementById('propContent').classList.remove('hidden'); document.getElementById('noSelectionMsg').classList.add('hidden');
             
-            document.getElementById('fnBefore').value = selectedObj.fnBefore;
-            document.getElementById('fnAfter').value = selectedObj.fnAfter;
-            document.getElementById('fnCall').value = selectedObj.fnCall;
+            document.getElementById('propName').value = selectedObj.name;
+            syncGeometryUI(); 
             
-            setupFormatDropdown();
-            if(selectedObj.type !== 'text') document.getElementById('propFormat').value = selectedObj.format;
-            updateGlobalDropdown();
+            document.getElementById('propType').value = selectedObj.type; document.getElementById('propFont').value = selectedObj.font; 
+            document.getElementById('propText').value = selectedObj.text; document.getElementById('propColor').value = selectedObj.color;
+            document.getElementById('propFColor').value = selectedObj.fColor; document.getElementById('propAnim').value = selectedObj.anim;
+            document.getElementById('propSpeed').value = selectedObj.speed; document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
+            setupFormatDropdown(); if(selectedObj.type !== 'text' && selectedObj.type !== 'drawing' && selectedObj.type !== 'image') document.getElementById('propFormat').value = selectedObj.format; updateGlobalDropdown();
         }
 
         function updateFromProp() {
             if (selectedObj) {
-                const oldName = selectedObj.name;
-                selectedObj.name = document.getElementById('propName').value;
-                selectedObj.type = document.getElementById('propType').value;
-                selectedObj.font = document.getElementById('propFont').value; // FONT UPDATE
-                selectedObj.text = document.getElementById('propText').value;
-                selectedObj.color = document.getElementById('propColor').value;
-                selectedObj.fColor = document.getElementById('propFColor').value;
-                selectedObj.anim = document.getElementById('propAnim').value;
+                const oldName = selectedObj.name; selectedObj.name = document.getElementById('propName').value;
+                selectedObj.type = document.getElementById('propType').value; selectedObj.font = document.getElementById('propFont').value; 
+                selectedObj.text = document.getElementById('propText').value; selectedObj.color = document.getElementById('propColor').value;
+                selectedObj.fColor = document.getElementById('propFColor').value; selectedObj.anim = document.getElementById('propAnim').value;
                 selectedObj.speed = parseFloat(document.getElementById('propSpeed').value);
-                if(selectedObj.type !== 'text') selectedObj.format = document.getElementById('propFormat').value;
-                
-                selectedObj.fnBefore = document.getElementById('fnBefore').value;
-                selectedObj.fnAfter = document.getElementById('fnAfter').value;
-                selectedObj.fnCall = document.getElementById('fnCall').value;
-                
+                if(selectedObj.type !== 'text' && selectedObj.type !== 'drawing' && selectedObj.type !== 'image') selectedObj.format = document.getElementById('propFormat').value;
                 document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
-                if(oldName !== selectedObj.name) updateGlobalDropdown();
+                if(oldName !== selectedObj.name) updateGlobalDropdown(); 
+                
+                selectedObj.lastW = 0; // Force render ulang jika image
                 selectedObj.updateContent();
+                syncGeometryUI();
             }
         }
 
         function updateGlobalDropdown() {
-            const select = document.getElementById('globalObjSelect');
-            select.innerHTML = '<option value="">-- No Object Selected --</option>';
-            objects.forEach((obj, idx) => {
-                let opt = document.createElement('option'); opt.value = idx; opt.innerText = obj.name;
-                if(selectedObj === obj) opt.selected = true;
-                select.appendChild(opt);
-            });
+            const select = document.getElementById('globalObjSelect'); select.innerHTML = '<option value="">-- No Object Selected --</option>';
+            objects.forEach((obj, idx) => { let opt = document.createElement('option'); opt.value = idx; opt.innerText = obj.name; if(selectedObj === obj) opt.selected = true; select.appendChild(opt); });
         }
 
-        function jumpToSelectedObject() {
-            const idx = document.getElementById('globalObjSelect').value;
-            if(idx !== "") { selectedObj = objects[idx]; setMode('select'); syncPropPanel(); }
-        }
+        function jumpToSelectedObject() { const idx = document.getElementById('globalObjSelect').value; if(idx !== "") { selectedObj = objects[idx]; setMode('select'); syncPropPanel(); } }
 
         canvas.onmousedown = (e) => {
             const r = canvas.getBoundingClientRect(); const mx = e.clientX - r.left; const my = e.clientY - r.top;
+            
             if (mode === 'select') {
+                const hs = 10; const hc = hs/2;
+                if (selectedObj) {
+                    const renderX = selectedObj.x * GRID_SIZE, renderY = selectedObj.y * GRID_SIZE;
+                    const w = selectedObj.w * GRID_SIZE, h = selectedObj.h * GRID_SIZE;
+                    if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY-hc && my < renderY+hc) { isResizing = true; resizeDir = 'n'; saveState(); return; }
+                    if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY+h-hc && my < renderY+h+hc) { isResizing = true; resizeDir = 's'; saveState(); return; }
+                    if (mx > renderX-hc && mx < renderX+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) { isResizing = true; resizeDir = 'w'; saveState(); return; }
+                    if (mx > renderX+w-hc && mx < renderX+w+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) { isResizing = true; resizeDir = 'e'; saveState(); return; }
+                }
                 for (let i = objects.length - 1; i >= 0; i--) {
-                    let o = objects[i];
+                    let o = objects[i]; const renderX = o.x * GRID_SIZE, renderY = o.y * GRID_SIZE;
                     const w = o.w * GRID_SIZE, h = o.h * GRID_SIZE;
-                    if (mx > o.x+w-15 && mx < o.x+w && my > o.y+h-15 && my < o.y+h) { selectedObj = o; isResizing = true; saveState(); return; }
-                    if (mx > o.x && mx < o.x+w && my > o.y && my < o.y+h) { selectedObj = o; isDragging = true; offset.x = mx - o.x; offset.y = my - o.y; syncPropPanel(); saveState(); return; }
+                    if (mx > renderX && mx < renderX+w && my > renderY && my < renderY+h) { 
+                        selectedObj = o; isDragging = true; 
+                        offset.x = Math.floor(mx/GRID_SIZE) - o.x; offset.y = Math.floor(my/GRID_SIZE) - o.y; 
+                        syncPropPanel(); saveState(); return; 
+                    }
                 }
                 selectedObj = null; syncPropPanel();
-            } else { saveState(); isDrawing = true; handleDraw(mx, my); }
+            } else if (mode === 'pen' || mode === 'eraser') {
+                saveState();
+                let hitDrawing = null;
+                const gridMouseX = Math.floor(mx/GRID_SIZE); const gridMouseY = Math.floor(my/GRID_SIZE);
+                if (selectedObj && selectedObj.type === 'drawing') {
+                    if (gridMouseX >= selectedObj.x && gridMouseX < selectedObj.x+selectedObj.w && gridMouseY >= selectedObj.y && gridMouseY < selectedObj.y+selectedObj.h) { hitDrawing = selectedObj; }
+                }
+                if (!hitDrawing) {
+                    for (let i = objects.length - 1; i >= 0; i--) {
+                        let o = objects[i];
+                        if (o.type === 'drawing') {
+                            if (gridMouseX >= o.x && gridMouseX < o.x+o.w && gridMouseY >= o.y && gridMouseY < o.y+o.h) { hitDrawing = o; break; }
+                        }
+                    }
+                }
+
+                if (hitDrawing) {
+                    selectedObj = hitDrawing; syncPropPanel();
+                } else if (mode === 'pen') {
+                    let n = "Draw_" + (objects.length + 1);
+                    let o = new PixelObject(n, 'drawing', gridMouseX, gridMouseY);
+                    objects.push(o); selectedObj = o; syncPropPanel();
+                }
+                isDrawing = true; handleDraw(mx, my);
+            }
         };
 
         canvas.onmousemove = (e) => {
             const r = canvas.getBoundingClientRect(); const mx = e.clientX - r.left; const my = e.clientY - r.top;
             
-            // Hover Tooltip Logic
+            if (mode === 'select' && !isDragging && !isResizing) {
+                let currCursor = 'default'; const hs = 10; const hc = hs/2;
+                if (selectedObj) {
+                    const renderX = selectedObj.x * GRID_SIZE, renderY = selectedObj.y * GRID_SIZE;
+                    const w = selectedObj.w * GRID_SIZE, h = selectedObj.h * GRID_SIZE;
+                    if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY-hc && my < renderY+hc) currCursor = 'n-resize';
+                    else if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY+h-hc && my < renderY+h+hc) currCursor = 's-resize';
+                    else if (mx > renderX-hc && mx < renderX+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) currCursor = 'w-resize';
+                    else if (mx > renderX+w-hc && mx < renderX+w+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) currCursor = 'e-resize';
+                    else if (mx > renderX && mx < renderX+w && my > renderY && my < renderY+h) currCursor = 'move';
+                }
+                canvas.style.cursor = currCursor;
+            }
+
             let hovering = null;
-            for(let o of objects) { if(mx > o.x && mx < o.x+(o.w*GRID_SIZE) && my > o.y && my < o.y+(o.h*GRID_SIZE)) { hovering = o; break; } }
-            if(hovering) {
-                tooltip.style.display = 'block'; tooltip.style.left = (e.clientX + 15) + 'px'; tooltip.style.top = (e.clientY + 15) + 'px';
-                tooltip.innerHTML = `ID: <span style="color:#fff">${hovering.name}</span><br>POS: <span style="color:#fff">${Math.floor(hovering.x/GRID_SIZE)}, ${Math.floor(hovering.y/GRID_SIZE)}</span><br>SIZE: <span style="color:#fff">${hovering.w}x${hovering.h}</span>`;
+            for(let o of objects) { 
+                const renderX = o.x * GRID_SIZE, renderY = o.y * GRID_SIZE;
+                if(mx > renderX && mx < renderX+(o.w*GRID_SIZE) && my > renderY && my < renderY+(o.h*GRID_SIZE)) { hovering = o; break; } 
+            }
+            
+            if(hovering && !isDragging && !isResizing) {
+                tooltip.style.display = 'block'; 
+                tooltip.style.left = e.clientX + 'px'; 
+                tooltip.style.top = (e.clientY + 20) + 'px'; 
+                tooltip.innerHTML = `<span style="color:#fff">Name:</span> ${hovering.name}<br><span style="color:#fff">Type:</span> ${hovering.type.toUpperCase()}`;
             } else { tooltip.style.display = 'none'; }
 
             if (isDragging && selectedObj) {
-                selectedObj.x = Math.round((mx - offset.x) / GRID_SIZE) * GRID_SIZE;
-                selectedObj.y = Math.round((my - offset.y) / GRID_SIZE) * GRID_SIZE;
-                document.getElementById('propX').value = selectedObj.x/GRID_SIZE;
-                document.getElementById('propY').value = selectedObj.y/GRID_SIZE;
+                selectedObj.x = Math.floor(mx/GRID_SIZE) - offset.x;
+                selectedObj.y = Math.floor(my/GRID_SIZE) - offset.y;
+                syncGeometryUI();
             } else if (isResizing && selectedObj) {
-                selectedObj.w = Math.max(5, Math.round((mx - selectedObj.x) / GRID_SIZE)); 
-                selectedObj.h = Math.max(5, Math.round((my - selectedObj.y) / GRID_SIZE)); 
-                document.getElementById('propW').value = selectedObj.w;
-                document.getElementById('propH').value = selectedObj.h;
+                let gridX = Math.round(mx / GRID_SIZE);
+                let gridY = Math.round(my / GRID_SIZE);
+                
+                if (resizeDir === 'e') { selectedObj.w = Math.max(2, gridX - selectedObj.x); } 
+                else if (resizeDir === 's') { selectedObj.h = Math.max(2, gridY - selectedObj.y); } 
+                else if (resizeDir === 'w') {
+                    let oldX = selectedObj.x; let newW = selectedObj.w + (oldX - gridX);
+                    if (newW >= 2) { selectedObj.x = gridX; selectedObj.w = newW; }
+                } else if (resizeDir === 'n') {
+                    let oldY = selectedObj.y; let newH = selectedObj.h + (oldY - gridY);
+                    if (newH >= 2) { selectedObj.y = gridY; selectedObj.h = newH; }
+                }
+                selectedObj.lastW = 0; // Force Image Update jika ukuran frame diganti
+                syncGeometryUI();
             } else if (isDrawing) { handleDraw(mx, my); }
         };
 
         window.onmouseup = () => { isDrawing = isDragging = isResizing = false; };
 
         function handleDraw(mx, my) {
-            const gx = Math.floor(mx/GRID_SIZE)*GRID_SIZE; const gy = Math.floor(my/GRID_SIZE)*GRID_SIZE;
-            const key = `${gx},${gy}`;
-            const color = document.getElementById('propColor') ? document.getElementById('propColor').value : "#ffffff";
-            if (mode === 'pen' && gx >= 0 && gx < canvas.width && gy >= 0 && gy < canvas.height) { 
-                if (!manualPixels.find(p => p.key === key)) manualPixels.push({key, color}); 
-            } else if (mode === 'eraser') { manualPixels = manualPixels.filter(p => p.key !== key); }
+            if (!selectedObj || selectedObj.type !== 'drawing') return;
+            
+            let gridX = Math.floor(mx/GRID_SIZE); let gridY = Math.floor(my/GRID_SIZE);
+            let relX = gridX - selectedObj.x; let relY = gridY - selectedObj.y;
+            
+            if (relX >= 0 && relX < selectedObj.w && relY >= 0 && relY < selectedObj.h) {
+                const color = document.getElementById('propColor') ? document.getElementById('propColor').value : "#ffffff";
+                
+                if (mode === 'pen') {
+                    selectedObj.customPixels = selectedObj.customPixels.filter(p => p.x !== relX || p.y !== relY);
+                    selectedObj.customPixels.push({x: relX, y: relY, c: color});
+                } else if (mode === 'eraser') {
+                    selectedObj.customPixels = selectedObj.customPixels.filter(p => p.x !== relX || p.y !== relY);
+                }
+                selectedObj.updateContent();
+            }
         }
 
-        function saveState() { history.push({ objects: JSON.parse(JSON.stringify(objects)), manualPixels: [...manualPixels], w: canvas.width/GRID_SIZE, h: canvas.height/GRID_SIZE }); if (history.length > 30) history.shift(); }
+        function saveState() { history.push({ objects: JSON.parse(JSON.stringify(objects)), canvW: document.getElementById('canvW').value, canvH: document.getElementById('canvH').value }); if (history.length > 30) history.shift(); }
         
         function undo() { 
             if (history.length > 0) { 
-                const s = history.pop(); manualPixels = s.manualPixels; canvas.width = s.w * GRID_SIZE; canvas.height = s.h * GRID_SIZE; 
-                document.getElementById('canvW').value = s.w; document.getElementById('canvH').value = s.h;
-                objects = s.objects.map(o => { 
-                    let n = new PixelObject(o.name, o.type, 0, 0); Object.assign(n, o); n.updateContent(); return n; 
-                }); syncPropPanel(); 
+                const s = history.pop(); 
+                document.getElementById('canvW').value = s.canvW; document.getElementById('canvH').value = s.canvH; resizeCanvas();
+                objects = s.objects.map(o => { let n = new PixelObject(o.name, o.type, o.x, o.y); Object.assign(n, o); n.updateContent(); return n; }); syncPropPanel(); 
             } 
         }
 
-        function addPixelObject() { 
+        function addPixelObject(type) { 
             saveState(); 
-            let n = "Layer_" + (objects.length + 1); 
-            let startX = Math.floor((canvas.width/GRID_SIZE)/2) - 16; let startY = Math.floor((canvas.height/GRID_SIZE)/2) - 4;
-            let o = new PixelObject(n, 'text', Math.max(0, startX), Math.max(0, startY)); 
-            objects.push(o); selectedObj = o; setMode('select'); syncPropPanel(); 
+            let n = (type === 'drawing' ? "Draw_" : type === 'image' ? "Img_" : "Layer_") + (objects.length + 1); 
+            let startX = Math.floor(document.getElementById('canvW').value/2) - 8; 
+            let startY = Math.floor(document.getElementById('canvH').value/2) - 4;
+            let o = new PixelObject(n, type, Math.max(0, startX), Math.max(0, startY)); 
+            objects.push(o); selectedObj = o; 
+            setMode(type === 'drawing' ? 'pen' : 'select'); 
+            syncPropPanel(); updateGlobalDropdown();
         }
 
-        function deleteSelected() { if(selectedObj) { saveState(); objects = objects.filter(o => o !== selectedObj); selectedObj = null; syncPropPanel(); } }
-        function clearCanvas() { if(confirm("Hapus semua objek dan coretan?")) { saveState(); objects = []; manualPixels = []; selectedObj = null; syncPropPanel(); } }
+        function deleteSelected() { if(selectedObj) { saveState(); objects = objects.filter(o => o !== selectedObj); selectedObj = null; syncPropPanel(); updateGlobalDropdown(); } }
+        function clearCanvas() { if(confirm("Hapus semua objek di kanvas?")) { saveState(); objects = []; selectedObj = null; syncPropPanel(); updateGlobalDropdown(); } }
 
         function exportToJerryScript() {
             const out = {
-                canvas: { w: canvas.width/GRID_SIZE, h: canvas.height/GRID_SIZE },
-                manualPixels: manualPixels.map(p => { const [x,y] = p.key.split(',').map(Number); return { x: x/GRID_SIZE, y: y/GRID_SIZE, c: p.color }; }),
-                objects: objects.map(o => ({
-                    id: o.name, type: o.type, 
-                    x: o.x/GRID_SIZE, y: o.y/GRID_SIZE, w: o.w, h: o.h,
-                    font: o.font, color: o.color, format: o.format, anim: o.anim, speed: o.speed, 
-                    alignH: o.alignH, alignV: o.alignV, hooks: { before: o.fnBefore, after: o.fnAfter, call: o.fnCall }
-                }))
+                canvas: { w: document.getElementById('canvW').value, h: document.getElementById('canvH').value },
+                objects: objects.map(o => {
+                    let align = o.calcAlign();
+                    let objData = {
+                        id: o.name, type: o.type, 
+                        frameX: o.x, frameY: o.y, w: o.w, h: o.h,
+                        contentX: o.x + align.aX, contentY: o.y + align.aY,
+                        font: o.font, color: o.color, format: o.format, anim: o.anim, speed: o.speed, 
+                        hooks: { before: o.fnBefore, after: o.fnAfter, call: o.fnCall }
+                    };
+                    if (o.type === 'drawing' || o.type === 'image') objData.pixels = o.pixels; 
+                    return objData;
+                })
             };
-            document.getElementById('outputArea').innerText = "/* \n * JerryScript Render Logic Data \n * Auto-generated by Pixel Pro Studio v6.1 \n */\n\nvar sceneData = " + JSON.stringify(out, null, 2) + ";";
+            document.getElementById('outputArea').innerText = "/* \n * JerryScript Logic \n * Frame vs Content Coord & Image/Drawing Arrays \n */\n\nvar sceneData = " + JSON.stringify(out, null, 2) + ";";
             document.getElementById('exportModal').style.display = 'block';
         }
 
         function animate() {
             ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
             ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"; ctx.lineWidth = 1; ctx.beginPath();
             for(let i=0; i<=canvas.width; i+=GRID_SIZE) { ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); }
             for(let i=0; i<=canvas.height; i+=GRID_SIZE) { ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); }
             ctx.stroke();
-            manualPixels.forEach(p => { const [x, y] = p.key.split(',').map(Number); ctx.fillStyle = p.color; ctx.fillRect(x, y, GRID_SIZE-1, GRID_SIZE-1); });
+            
             objects.forEach(o => o.draw());
+            
             requestAnimationFrame(animate);
+            if(selectedObj && (selectedObj.anim !== 'none' || (selectedObj.type !== 'text' && selectedObj.type !== 'drawing' && selectedObj.type !== 'image'))) syncGeometryUI();
         }
 
         resizeCanvas();
