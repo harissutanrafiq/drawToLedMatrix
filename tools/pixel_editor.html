@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Pixel Pro Studio v8.2 - Editable Image Pixels</title>
+    <title>Pixel Pro Studio v8.4 - Logic Fixes & Stable Scaling</title>
     <style>
         :root { --bg: #1a1a1b; --side: #252526; --accent: #2ecc71; --text: #eee; --border: #3e3e42; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
@@ -147,7 +147,7 @@
                     <label style="color:#e67e22;">Source Image</label>
                     <input type="file" id="imageUploader" accept="image/png, image/jpeg, image/gif, image/webp" style="display:none;" onchange="handleImageUpload(event)">
                     <button onclick="document.getElementById('imageUploader').click()" style="background:#444; margin-top:4px;">📂 Import Image File...</button>
-                    <p style="font-size:9px; color:#888; margin: 4px 0 0 0;">(Importing will overwrite current pixels. Use Pen/Eraser to edit.)</p>
+                    <p style="font-size:9px; color:#888; margin: 4px 0 0 0;">(<b>TIPS:</b> Anda bisa mengedit dan me-resize gambar setelah di-import.)</p>
                 </div>
 
                 <div id="boxFont" style="margin-top:5px;">
@@ -285,7 +285,7 @@
                 this.fnBefore = ""; this.fnAfter = ""; this.fnCall = "";
                 
                 this.pixels = []; 
-                this.customPixels = []; // Image sekarang juga menggunakan ini untuk menyimpan data pixel
+                this.customPixels = []; 
                 this.particles = [];
                 this.textWidth = 0; this.textHeight = 7; 
                 
@@ -316,7 +316,6 @@
 
             updateContent() {
                 if (this.type === 'drawing' || this.type === 'image') {
-                    // Drawing dan Image sekarang berbagi logika yang sama: me-render dari customPixels
                     this.pixels = this.customPixels.map(p => ({ x: p.x, y: p.y, c: p.c }));
                     this.textWidth = this.w; this.textHeight = this.h;
                 } else {
@@ -426,21 +425,19 @@
             const file = event.target.files[0];
             if (!file || !selectedObj || selectedObj.type !== 'image') return;
             
-            saveState(); // Simpan state sebelum impor gambar
+            saveState(); 
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    // 1. Rasterize gambar ke offscreen canvas seukuran frame
                     offCanvas.width = selectedObj.w; offCanvas.height = selectedObj.h;
                     offCtx.clearRect(0, 0, selectedObj.w, selectedObj.h);
                     offCtx.drawImage(img, 0, 0, selectedObj.w, selectedObj.h);
                     
                     const data = offCtx.getImageData(0, 0, selectedObj.w, selectedObj.h).data;
-                    selectedObj.customPixels = []; // Reset pixel yang ada
+                    selectedObj.customPixels = []; 
                     
-                    // 2. Konversi ke RGB888 HEX dan simpan ke customPixels
                     for(let y=0; y<selectedObj.h; y++){
                         for(let x=0; x<selectedObj.w; x++){
                             let idx = (y * selectedObj.w + x) * 4;
@@ -461,7 +458,6 @@
                 img.src = e.target.result;
             }
             reader.readAsDataURL(file);
-            // Reset input file agar bisa upload file yang sama berulang kali
             event.target.value = '';
         }
 
@@ -488,16 +484,26 @@
             bF.classList.add('hidden'); bT.classList.add('hidden'); bFont.classList.add('hidden'); bAlign.classList.add('hidden'); bImg.classList.add('hidden');
 
             if (selectedObj.type === 'drawing') {
-                // Drawing mode: hanya butuh color picker standar
             } else if (selectedObj.type === 'image') {
                 bImg.classList.remove('hidden');
             } else if (selectedObj.type === 'text') { 
                 bT.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden');
             } else { 
                 bF.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden');
+                
+                // Mencegah Reset: Menyimpan format sebelumnya secara sementara
+                let preservedFormat = selectedObj.format;
+                
                 sF.innerHTML = ""; 
                 FORMATS[selectedObj.type].forEach(f => { let o = document.createElement('option'); o.value = f; o.innerText = f; sF.appendChild(o); }); 
-                selectedObj.format = sF.value;
+                
+                // Jika format sebelumnya tidak valid untuk tipe baru, gunakan opsi pertama
+                if (!preservedFormat || !FORMATS[selectedObj.type].includes(preservedFormat)) {
+                    selectedObj.format = sF.options[0].value; 
+                } else {
+                    selectedObj.format = preservedFormat;
+                }
+                sF.value = selectedObj.format;
             }
         }
 
@@ -534,7 +540,12 @@
                 selectedObj.text = document.getElementById('propText').value; selectedObj.color = document.getElementById('propColor').value;
                 selectedObj.fColor = document.getElementById('propFColor').value; selectedObj.anim = document.getElementById('propAnim').value;
                 selectedObj.speed = parseFloat(document.getElementById('propSpeed').value);
-                if(selectedObj.type !== 'text' && selectedObj.type !== 'drawing' && selectedObj.type !== 'image') selectedObj.format = document.getElementById('propFormat').value;
+                
+                if(selectedObj.type !== 'text' && selectedObj.type !== 'drawing' && selectedObj.type !== 'image') {
+                    // Update format jika diubah dari dropdown UI
+                    selectedObj.format = document.getElementById('propFormat').value;
+                }
+                
                 document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
                 if(oldName !== selectedObj.name) updateGlobalDropdown(); 
                 
@@ -558,10 +569,25 @@
                 if (selectedObj) {
                     const renderX = selectedObj.x * GRID_SIZE, renderY = selectedObj.y * GRID_SIZE;
                     const w = selectedObj.w * GRID_SIZE, h = selectedObj.h * GRID_SIZE;
-                    if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY-hc && my < renderY+hc) { isResizing = true; resizeDir = 'n'; saveState(); return; }
-                    if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY+h-hc && my < renderY+h+hc) { isResizing = true; resizeDir = 's'; saveState(); return; }
-                    if (mx > renderX-hc && mx < renderX+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) { isResizing = true; resizeDir = 'w'; saveState(); return; }
-                    if (mx > renderX+w-hc && mx < renderX+w+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) { isResizing = true; resizeDir = 'e'; saveState(); return; }
+                    let checkResize = '';
+                    
+                    if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY-hc && my < renderY+hc) checkResize = 'n';
+                    else if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY+h-hc && my < renderY+h+hc) checkResize = 's';
+                    else if (mx > renderX-hc && mx < renderX+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) checkResize = 'w';
+                    else if (mx > renderX+w-hc && mx < renderX+w+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) checkResize = 'e';
+                    
+                    if (checkResize !== '') {
+                        isResizing = true; 
+                        resizeDir = checkResize; 
+                        saveState(); 
+                        
+                        if (selectedObj.type === 'drawing' || selectedObj.type === 'image') {
+                            selectedObj._preResizePixels = JSON.parse(JSON.stringify(selectedObj.customPixels));
+                            selectedObj._preResizeW = selectedObj.w;
+                            selectedObj._preResizeH = selectedObj.h;
+                        }
+                        return;
+                    }
                 }
                 for (let i = objects.length - 1; i >= 0; i--) {
                     let o = objects[i]; const renderX = o.x * GRID_SIZE, renderY = o.y * GRID_SIZE;
@@ -578,11 +604,9 @@
                 let hitDrawing = null;
                 const gridMouseX = Math.floor(mx/GRID_SIZE); const gridMouseY = Math.floor(my/GRID_SIZE);
                 
-                // Cek apakah mengenai objek Drawing ATAU Image yang sedang diseleksi
                 if (selectedObj && (selectedObj.type === 'drawing' || selectedObj.type === 'image')) {
                     if (gridMouseX >= selectedObj.x && gridMouseX < selectedObj.x+selectedObj.w && gridMouseY >= selectedObj.y && gridMouseY < selectedObj.y+selectedObj.h) { hitDrawing = selectedObj; }
                 }
-                // Fallback ke objek drawing/image lain jika tidak ada yang diseleksi
                 if (!hitDrawing) {
                     for (let i = objects.length - 1; i >= 0; i--) {
                         let o = objects[i];
@@ -595,7 +619,6 @@
                 if (hitDrawing) {
                     selectedObj = hitDrawing; syncPropPanel();
                 } else if (mode === 'pen') {
-                    // Auto-create drawing object jika klik di area kosong
                     let n = "Draw_" + (objects.length + 1);
                     let o = new PixelObject(n, 'drawing', gridMouseX, gridMouseY);
                     objects.push(o); selectedObj = o; syncPropPanel();
@@ -651,14 +674,41 @@
                     let oldY = selectedObj.y; let newH = selectedObj.h + (oldY - gridY);
                     if (newH >= 2) { selectedObj.y = gridY; selectedObj.h = newH; }
                 }
+                
+                if ((selectedObj.type === 'drawing' || selectedObj.type === 'image') && selectedObj._preResizePixels) {
+                    let scaleX = selectedObj.w / selectedObj._preResizeW;
+                    let scaleY = selectedObj.h / selectedObj._preResizeH;
+                    
+                    let oldMap = {};
+                    for(let p of selectedObj._preResizePixels) { oldMap[p.x + ',' + p.y] = p.c; }
+                    
+                    let scaledPixels = [];
+                    for(let ny = 0; ny < selectedObj.h; ny++) {
+                        for(let nx = 0; nx < selectedObj.w; nx++) {
+                            let ox = Math.floor(nx / scaleX);
+                            let oy = Math.floor(ny / scaleY);
+                            let color = oldMap[ox + ',' + oy];
+                            if (color) scaledPixels.push({x: nx, y: ny, c: color});
+                        }
+                    }
+                    selectedObj.customPixels = scaledPixels;
+                    selectedObj.updateContent();
+                }
+                
                 syncGeometryUI();
             } else if (isDrawing) { handleDraw(mx, my); }
         };
 
-        window.onmouseup = () => { isDrawing = isDragging = isResizing = false; };
+        window.onmouseup = () => { 
+            isDrawing = isDragging = isResizing = false; 
+            if (selectedObj) {
+                delete selectedObj._preResizePixels; 
+                delete selectedObj._preResizeW; 
+                delete selectedObj._preResizeH;
+            }
+        };
 
         function handleDraw(mx, my) {
-            // HandleDraw sekarang mendukung 'drawing' DAN 'image'
             if (!selectedObj || (selectedObj.type !== 'drawing' && selectedObj.type !== 'image')) return;
             
             let gridX = Math.floor(mx/GRID_SIZE); let gridY = Math.floor(my/GRID_SIZE);
@@ -668,11 +718,9 @@
                 const color = document.getElementById('propColor') ? document.getElementById('propColor').value : "#ffffff";
                 
                 if (mode === 'pen') {
-                    // Hapus pixel lama di posisi ini, timpa dengan warna baru dari color picker
                     selectedObj.customPixels = selectedObj.customPixels.filter(p => p.x !== relX || p.y !== relY);
                     selectedObj.customPixels.push({x: relX, y: relY, c: color});
                 } else if (mode === 'eraser') {
-                    // Hapus pixel di posisi ini
                     selectedObj.customPixels = selectedObj.customPixels.filter(p => p.x !== relX || p.y !== relY);
                 }
                 selectedObj.updateContent();
@@ -685,7 +733,16 @@
             if (history.length > 0) { 
                 const s = history.pop(); 
                 document.getElementById('canvW').value = s.canvW; document.getElementById('canvH').value = s.canvH; resizeCanvas();
-                objects = s.objects.map(o => { let n = new PixelObject(o.name, o.type, o.x, o.y); Object.assign(n, o); n.updateContent(); return n; }); syncPropPanel(); 
+                let oldSelectedId = selectedObj ? selectedObj.name : null;
+                objects = s.objects.map(o => { 
+                    let n = new PixelObject(o.name, o.type, o.x, o.y); 
+                    Object.assign(n, o); 
+                    n.updateContent(); 
+                    return n; 
+                }); 
+                selectedObj = objects.find(o => o.name === oldSelectedId) || null;
+                syncPropPanel(); 
+                updateGlobalDropdown();
             } 
         }
 
@@ -696,7 +753,7 @@
             let startY = Math.floor(document.getElementById('canvH').value/2) - 4;
             let o = new PixelObject(n, type, Math.max(0, startX), Math.max(0, startY)); 
             objects.push(o); selectedObj = o; 
-            setMode(type === 'drawing' ? 'pen' : 'select'); 
+            setMode(type === 'drawing' || type === 'image' ? 'pen' : 'select'); 
             syncPropPanel(); updateGlobalDropdown();
         }
 
