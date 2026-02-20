@@ -2,392 +2,586 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Ultimate Pixel Pro Editor - JerryScript Ready</title>
+    <title>Pixel Pro Studio v6.1 - Font & Calendar Engine</title>
     <style>
-        body { background: #1a1a1b; color: #eee; font-family: sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        :root { --bg: #1a1a1b; --side: #252526; --accent: #2ecc71; --text: #eee; --border: #3e3e42; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar */
-        .sidebar { width: 280px; background: #2d2d2d; padding: 20px 15px; display: flex; flex-direction: column; gap: 12px; box-shadow: 2px 0 10px rgba(0,0,0,0.5); overflow-y: auto; border-right: 1px solid #444; }
-        .main-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #1e1e1e; position: relative; }
-        
-        .group { display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #444; padding-bottom: 15px; }
-        h3 { margin: 0; font-size: 11px; color: #2ecc71; text-transform: uppercase; letter-spacing: 1px; }
-        
-        input, button, select { padding: 10px; border-radius: 4px; border: none; font-size: 13px; background: #3d3d3d; color: white; width: 100%; box-sizing: border-box; outline: none; }
-        button { cursor: pointer; transition: 0.2s; text-align: center; }
-        button:hover { background: #4d4d4d; }
-        button.active { background: #2ecc71; color: #1a1a1b; font-weight: bold; }
-        
-        label { font-size: 11px; color: #aaa; display: flex; justify-content: space-between; margin-bottom: -3px; }
-        .slider { -webkit-appearance: none; width: 100%; height: 6px; background: #555; border-radius: 5px; cursor: pointer; margin: 8px 0; }
-        .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #2ecc71; border-radius: 50%; }
+        .sidebar-left { width: 240px; background: var(--side); padding: 15px; border-right: 1px solid var(--border); overflow-y: auto; z-index: 10; display: flex; flex-direction: column; gap: 15px; }
+        .main-workspace { flex-grow: 1; display: flex; flex-direction: column; background: #000; position: relative; }
+        .sidebar-right { width: 320px; background: var(--side); padding: 15px; border-left: 1px solid var(--border); overflow-y: auto; z-index: 10; display: flex; flex-direction: column; gap: 12px; }
 
-        canvas { background: #fff; border: 2px solid #555; image-rendering: pixelated; box-shadow: 0 0 40px rgba(0,0,0,0.6); }
-        
-        .align-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
-        .play-btn { background: #3498db; }
-        .pause-btn { background: #e67e22; }
-        .export-btn { background: #27ae60; font-weight: bold; margin-top: 10px; }
-        
-        /* Modal Export */
-        #exportModal { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:70%; height:70%; background:#2d2d2d; padding:20px; border:2px solid #2ecc71; z-index:1000; box-shadow: 0 0 100px #000; }
-        #outputArea { background:#000; color:#0f0; padding:15px; font-family:monospace; height:80%; overflow:auto; white-space: pre-wrap; border:1px solid #444; }
+        .top-bar { height: 50px; background: #1e1e1e; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 15px; z-index: 5; }
+        .canvas-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; overflow: auto; background: #111; padding: 20px; }
 
-        .mode-pen { cursor: crosshair; }
-        .mode-eraser { cursor: cell; }
-        .mode-select { cursor: default; }
+        canvas { background: #0a0a0a; border: 2px solid #555; image-rendering: pixelated; box-shadow: 0 0 30px rgba(0,0,0,0.8); cursor: crosshair; }
+
+        .group { display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        .group:last-child { border-bottom: none; }
+        h3 { margin: 0; font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
+        label { font-size: 10px; color: #aaa; text-transform: uppercase; font-weight: bold; }
+        
+        input, button, select, textarea { padding: 8px; border-radius: 4px; border: none; font-size: 12px; background: #333; color: white; width: 100%; box-sizing: border-box; outline: none; }
+        textarea { height: 50px; font-family: 'Consolas', monospace; font-size: 11px; resize: vertical; }
+        input[readonly] { background: #1e1e1e; color: #666; cursor: not-allowed; text-align: center; }
+        input[type="color"] { padding: 2px 4px; height: 30px; cursor: pointer; }
+        
+        button { cursor: pointer; transition: 0.2s; border: 1px solid transparent; font-weight: 500; }
+        button:hover { background: #444; }
+        button.active { background: var(--accent); color: #000; font-weight: bold; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+        .hidden { display: none !important; }
+
+        #hoverTooltip { position: absolute; background: rgba(0,0,0,0.9); color: var(--accent); padding: 10px; border-radius: 6px; font-size: 11px; font-family: monospace; pointer-events: none; z-index: 100; border: 1px solid var(--accent); display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+
+        .btn-blue { background: #3498db; }
+        .btn-green { background: #27ae60; font-weight: bold; }
+        .btn-red { background: #e74c3c; font-weight: bold; }
+        .btn-orange { background: #f39c12; color: #000; font-weight: bold; }
+
+        #exportModal { display:none; position:fixed; top:5%; left:5%; width:90%; height:90%; background:var(--side); padding:20px; border:2px solid var(--accent); z-index:2000; box-shadow: 0 0 50px rgba(0,0,0,0.8); }
+        #outputArea { background:#0a0a0a; color:#2ecc71; padding:15px; font-family:'Consolas', monospace; font-size: 13px; height: calc(100% - 100px); overflow:auto; white-space: pre-wrap; border: 1px solid #444; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <h2 style="font-size: 18px; margin: 0; color: #2ecc71;">Pixel Pro v1.0</h2>
-
+    <div class="sidebar-left">
+        <h2 style="font-size: 22px; color: var(--accent); margin: 0; text-align: center; letter-spacing: 2px;">PIXEL PRO</h2>
+        
         <div class="group">
-            <h3>Canvas Resolution</h3>
-            <div style="display: flex; gap: 5px; align-items: center;">
-                <input type="number" id="canvW" value="40"> x <input type="number" id="canvH" value="30">
+            <h3>Grid Config</h3>
+            <div class="grid-2">
+                <div><label>Width</label><input type="number" id="canvW" value="64"></div>
+                <div><label>Height</label><input type="number" id="canvH" value="32"></div>
             </div>
-            <button onclick="resizeCanvas()" style="background: #9b59b6;">Set Canvas</button>
+            <button onclick="resizeCanvas()">Apply Resolution</button>
         </div>
 
         <div class="group">
-            <h3>Tools</h3>
-            <div style="display:flex; gap:5px;">
-                <button id="selectBtn" onclick="setMode('select')">Select</button>
-                <button id="penBtn" class="active" onclick="setMode('pen')">Pen</button>
-                <button id="eraserBtn" onclick="setMode('eraser')">Eraser</button>
-            </div>
+            <h3>Draw Tools</h3>
+            <button id="selectBtn" onclick="setMode('select')">🖱️ Select Object</button>
+            <button id="penBtn" class="active" onclick="setMode('pen')">✏️ Pen Draw</button>
+            <button id="eraserBtn" onclick="setMode('eraser')">🧽 Eraser</button>
         </div>
 
-        <div class="group">
-            <h3>Object Styling</h3>
-            <input type="text" id="textInput" placeholder="Ketik teks..." oninput="updateSelectedStyle()">
-            
-            <label>Horizontal Align</label>
-            <div class="align-group">
-                <button onclick="setAlign('h', 'left')">L</button>
-                <button onclick="setAlign('h', 'center')">C</button>
-                <button onclick="setAlign('h', 'right')">R</button>
-            </div>
-
-            <label>Vertical Align</label>
-            <div class="align-group">
-                <button onclick="setAlign('v', 'top')">T</button>
-                <button onclick="setAlign('v', 'middle')">M</button>
-                <button onclick="setAlign('v', 'bottom')">B</button>
-            </div>
-
-            <label>Animation & Speed <span id="speedVal">1.0x</span></label>
-            <select id="animType" onchange="updateSelectedStyle()">
-                <option value="none">Static</option>
-                <option value="scroll">Scroll</option>
-                <option value="fade">Fade</option>
-                <option value="explode">Explode</option>
-                <option value="pixel-fade">Pixel Fade</option>
-            </select>
-            <input type="range" id="animSpeed" min="0.1" max="5" step="0.1" value="1" class="slider" oninput="updateSelectedStyle()">
-            
-            <button id="playPauseBtn" class="pause-btn" onclick="togglePlay()" style="display:none">⏸ Pause</button>
-
-            <label>Colors</label>
-            <div style="display: flex; gap: 5px;">
-                <input type="color" id="textColor" value="#2c3e50" oninput="updateSelectedStyle()" title="Pencil/Text Color">
-                <input type="color" id="frameColor" value="#3498db" oninput="updateSelectedStyle()" title="Selection Frame Color">
-            </div>
-        </div>
-
-        <div class="group" style="border:none;">
-            <button onclick="addPixelText()" style="background: #2ecc71; color:#000; font-weight:bold;">+ Insert Animated Text</button>
-            <button onclick="undo()" style="background: #f39c12; margin-top:5px;">⬅ Undo</button>
-            <button onclick="clearCanvas()" style="background:#e74c3c; margin-top:5px;">Reset All</button>
-            <button class="export-btn" onclick="exportToJerryScript()">💾 Export JerryScript</button>
+        <div class="group" style="flex-grow: 1;">
+            <h3>Project Actions</h3>
+            <button onclick="addPixelObject()" class="btn-blue" style="margin-bottom: 6px;">+ Add New Object</button>
+            <button onclick="undo()" class="btn-orange" style="margin-bottom: 6px;">⬅ Undo Draw/Move</button>
+            <button onclick="exportToJerryScript()" class="btn-green" style="margin-bottom: 6px;">💾 Export Logic (JS)</button>
+            <button onclick="clearCanvas()" class="btn-red">🗑️ Reset Canvas</button>
         </div>
     </div>
 
-    <div class="main-content">
-        <canvas id="editorCanvas" class="mode-pen"></canvas>
-        <div style="color: #555; font-size: 11px; margin-top: 10px;">Drag to Move | Drag Red Handle to Resize | Backspace to Delete</div>
+    <div class="main-workspace">
+        <div class="top-bar">
+            <label style="width: 130px; margin:0;">Object Navigator :</label>
+            <select id="globalObjSelect" onchange="jumpToSelectedObject()" style="max-width: 300px;">
+                <option value="">-- No Object Selected --</option>
+            </select>
+        </div>
+        <div class="canvas-container" id="canvasWrapper">
+            <div id="hoverTooltip"></div>
+            <canvas id="editorCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="sidebar-right" id="propPanel">
+        <div id="noSelectionMsg" style="text-align:center; color:#666; margin-top:80px; padding:20px;">
+            <div style="font-size: 40px; margin-bottom: 10px;">🖱️</div>
+            <p>Klik objek pada kanvas untuk mengaktifkan <b>Properties Manager</b></p>
+        </div>
+        
+        <div id="propContent" class="hidden">
+            <h3 style="color:var(--accent); font-size: 14px; margin-bottom:10px;">Properties Manager</h3>
+            
+            <div class="group">
+                <label>Object Name (ID)</label>
+                <input type="text" id="propName" oninput="updateFromProp()">
+            </div>
+
+            <div class="group">
+                <label>Geometry (Grid Units)</label>
+                <div class="grid-2">
+                    <div><label>Pos X</label><input type="text" id="propX" readonly></div>
+                    <div><label>Pos Y</label><input type="text" id="propY" readonly></div>
+                    <div><label>Size W</label><input type="text" id="propW" readonly></div>
+                    <div><label>Size H</label><input type="text" id="propH" readonly></div>
+                </div>
+            </div>
+
+            <div class="group">
+                <label>Data Provider</label>
+                <select id="propType" onchange="changeObjType()">
+                    <option value="text">Standard Text</option>
+                    <option value="clock">Clock (Real-time)</option>
+                    <option value="cal_masehi">Masehi Calendar</option>
+                    <option value="cal_hijri">Hijriah Calendar</option>
+                </select>
+
+                <div style="margin-top:5px;">
+                    <label>Font Style</label>
+                    <select id="propFont" onchange="updateFromProp()">
+                        <option value="custom">Retro Mono5x7 (HEX)</option>
+                        <option value="monospace">System Monospace</option>
+                        <option value="sans-serif">System Sans-Serif</option>
+                        <option value="serif">System Serif</option>
+                    </select>
+                </div>
+
+                <div id="boxText" style="margin-top:5px;">
+                    <label>Content</label>
+                    <input type="text" id="propText" oninput="updateFromProp()">
+                </div>
+                <div id="boxFormat" class="hidden" style="margin-top:5px;">
+                    <label>Display Format</label>
+                    <select id="propFormat" onchange="updateFromProp()"></select>
+                </div>
+            </div>
+
+            <div class="group">
+                <label>Colors</label>
+                <div class="grid-2">
+                    <div><label>Object</label><input type="color" id="propColor" oninput="updateFromProp()"></div>
+                    <div><label>Frame</label><input type="color" id="propFColor" oninput="updateFromProp()"></div>
+                </div>
+                
+                <label style="margin-top:8px;">Horizontal Align</label>
+                <div class="grid-3">
+                    <button onclick="setAlign('h','left')">Left</button>
+                    <button onclick="setAlign('h','center')">Center</button>
+                    <button onclick="setAlign('h','right')">Right</button>
+                </div>
+                
+                <label style="margin-top:8px;">Vertical Align</label>
+                <div class="grid-3">
+                    <button onclick="setAlign('v','top')">Top</button>
+                    <button onclick="setAlign('v','middle')">Mid</button>
+                    <button onclick="setAlign('v','bottom')">Bot</button>
+                </div>
+            </div>
+
+            <div class="group">
+                <label>Animation Engine</label>
+                <div class="grid-2">
+                    <select id="propAnim" onchange="updateFromProp()">
+                        <option value="none">Static</option>
+                        <option value="scroll">Scroll</option>
+                        <option value="fade">Fade</option>
+                        <option value="explode">Explode</option>
+                        <option value="pixel-fade">Pixel Fade</option>
+                    </select>
+                    <div>
+                        <label>Speed <span id="speedVal">1.0x</span></label>
+                        <input type="range" id="propSpeed" min="0.1" max="5" step="0.1" value="1" oninput="updateFromProp()">
+                    </div>
+                </div>
+            </div>
+
+            <div class="group">
+                <label>JerryScript Logic Hooks</label>
+                <textarea id="fnBefore" oninput="updateFromProp()" placeholder="Hook: Before Anim..."></textarea>
+                <textarea id="fnAfter" oninput="updateFromProp()" placeholder="Hook: After Anim..."></textarea>
+                <textarea id="fnCall" oninput="updateFromProp()" placeholder="Hook: On Called..."></textarea>
+            </div>
+
+            <button onclick="deleteSelected()" class="btn-red" style="margin-top: 5px; padding: 10px;">🗑️ Delete This Object</button>
+        </div>
     </div>
 
     <div id="exportModal">
-        <h3 style="color:#2ecc71; margin-top:0;">JerryScript Data Output</h3>
+        <h2 style="color:var(--accent); margin-top:0;">JERRYSCRIPT PRODUCTION CODE</h2>
         <pre id="outputArea"></pre>
-        <button onclick="document.getElementById('exportModal').style.display='none'" style="background:#444; margin-top:10px;">Close</button>
+        <button onclick="document.getElementById('exportModal').style.display='none'" class="btn-red" style="padding:10px 20px; font-size:14px; margin-top:15px; width: 150px;">CLOSE WINDOW</button>
     </div>
 
     <script>
-        // DATA FONT HEX MONO5X7 (96 Characters starting from ASCII 32)
         const MONO5X7_HEX = [
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x07, 0x00, 0x07, 0x00, 0x14, 0x7F, 0x14, 0x7F, 0x14, 
-            0x24, 0x2A, 0x7F, 0x2A, 0x12, 0x23, 0x13, 0x08, 0x64, 0x62, 0x36, 0x49, 0x55, 0x22, 0x50, 0x00, 0x05, 0x03, 0x00, 0x00, 
-            0x00, 0x1C, 0x22, 0x41, 0x00, 0x00, 0x41, 0x22, 0x1C, 0x00, 0x14, 0x08, 0x3E, 0x08, 0x14, 0x08, 0x08, 0x3E, 0x08, 0x08, 
-            0x00, 0x50, 0x30, 0x00, 0x00, 0x08, 0x08, 0x08, 0x08, 0x08, 0x00, 0x60, 0x60, 0x00, 0x00, 0x20, 0x10, 0x08, 0x04, 0x02, 
-            0x3E, 0x51, 0x49, 0x45, 0x3E, 0x00, 0x42, 0x7F, 0x40, 0x00, 0x42, 0x61, 0x51, 0x49, 0x46, 0x21, 0x41, 0x45, 0x4B, 0x31, 
-            0x18, 0x14, 0x12, 0x7F, 0x10, 0x27, 0x45, 0x45, 0x45, 0x39, 0x3C, 0x4A, 0x49, 0x49, 0x30, 0x01, 0x71, 0x09, 0x05, 0x03, 
-            0x36, 0x49, 0x49, 0x49, 0x36, 0x06, 0x49, 0x49, 0x29, 0x1E, 0x00, 0x36, 0x36, 0x00, 0x00, 0x00, 0x56, 0x36, 0x00, 0x00, 
-            0x08, 0x14, 0x22, 0x41, 0x00, 0x14, 0x14, 0x14, 0x14, 0x14, 0x00, 0x41, 0x22, 0x14, 0x08, 0x02, 0x01, 0x51, 0x09, 0x06, 
-            0x32, 0x49, 0x79, 0x41, 0x3E, 0x7E, 0x11, 0x11, 0x11, 0x7E, 0x7F, 0x49, 0x49, 0x49, 0x36, 0x3E, 0x41, 0x41, 0x41, 0x22, 
-            0x7F, 0x41, 0x41, 0x22, 0x1C, 0x7F, 0x49, 0x49, 0x49, 0x41, 0x7F, 0x09, 0x09, 0x09, 0x01, 0x3E, 0x41, 0x49, 0x49, 0x78, 
-            0x7F, 0x08, 0x08, 0x08, 0x7F, 0x00, 0x41, 0x7F, 0x41, 0x00, 0x20, 0x40, 0x41, 0x3F, 0x01, 0x7F, 0x08, 0x14, 0x22, 0x41, 
-            0x7F, 0x40, 0x40, 0x40, 0x40, 0x7F, 0x02, 0x0C, 0x02, 0x7F, 0x7F, 0x04, 0x08, 0x10, 0x7F, 0x3E, 0x41, 0x41, 0x41, 0x3E, 
-            0x7F, 0x09, 0x09, 0x09, 0x06, 0x3E, 0x41, 0x51, 0x21, 0x5E, 0x7F, 0x09, 0x19, 0x29, 0x46, 0x46, 0x49, 0x49, 0x49, 0x31, 
-            0x01, 0x01, 0x7F, 0x01, 0x01, 0x3F, 0x40, 0x40, 0x40, 0x3F, 0x1F, 0x20, 0x40, 0x20, 0x1C, 0x3F, 0x40, 0x38, 0x40, 0x3F, 
-            0x63, 0x14, 0x08, 0x14, 0x63, 0x07, 0x08, 0x70, 0x08, 0x07, 0x61, 0x51, 0x49, 0x45, 0x43
+            0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x5F,0x00,0x00, 0x00,0x07,0x00,0x07,0x00, 0x14,0x7F,0x14,0x7F,0x14, 
+            0x24,0x2A,0x7F,0x2A,0x12, 0x23,0x13,0x08,0x64,0x62, 0x36,0x49,0x55,0x22,0x50, 0x00,0x05,0x03,0x00,0x00, 
+            0x00,0x1C,0x22,0x41,0x00, 0x00,0x41,0x22,0x1C,0x00, 0x14,0x08,0x3E,0x08,0x14, 0x08,0x08,0x3E,0x08,0x08, 
+            0x00,0x50,0x30,0x00,0x00, 0x08,0x08,0x08,0x08,0x08, 0x00,0x60,0x60,0x00,0x00, 0x20,0x10,0x08,0x04,0x02, 
+            0x3E,0x51,0x49,0x45,0x3E, 0x00,0x42,0x7F,0x40,0x00, 0x42,0x61,0x51,0x49,0x46, 0x21,0x41,0x45,0x4B,0x31, 
+            0x18,0x14,0x12,0x7F,0x10, 0x27,0x45,0x45,0x45,0x39, 0x3C,0x4A,0x49,0x49,0x30, 0x01,0x71,0x09,0x05,0x03, 
+            0x36,0x49,0x49,0x49,0x36, 0x06,0x49,0x49,0x29,0x1E, 0x00,0x36,0x36,0x00,0x00, 0x00,0x56,0x36,0x00,0x00, 
+            0x08,0x14,0x22,0x41,0x00, 0x14,0x14,0x14,0x14,0x14, 0x00,0x41,0x22,0x14,0x08, 0x02,0x01,0x51,0x09,0x06, 
+            0x32,0x49,0x79,0x41,0x3E, 0x7E,0x11,0x11,0x11,0x7E, 0x7F,0x49,0x49,0x49,0x36, 0x3E,0x41,0x41,0x41,0x22, 
+            0x7F,0x41,0x41,0x22,0x1C, 0x7F,0x49,0x49,0x49,0x41, 0x7F,0x09,0x09,0x09,0x01, 0x3E,0x41,0x49,0x49,0x78, 
+            0x7F,0x08,0x08,0x08,0x7F, 0x00,0x41,0x7F,0x41,0x00, 0x20,0x40,0x41,0x3F,0x01, 0x7F,0x08,0x14,0x22,0x41, 
+            0x7F,0x40,0x40,0x40,0x40, 0x7F,0x02,0x0C,0x02,0x7F, 0x7F,0x04,0x08,0x10,0x7F, 0x3E,0x41,0x41,0x41,0x3E, 
+            0x7F,0x09,0x09,0x09,0x06, 0x3E,0x41,0x51,0x21,0x5E, 0x7F,0x09,0x19,0x29,0x46, 0x46,0x49,0x49,0x49,0x31, 
+            0x01,0x01,0x7F,0x01,0x01, 0x3F,0x40,0x40,0x40,0x3F, 0x1F,0x20,0x40,0x20,0x1F, 0x3F,0x40,0x38,0x40,0x3F, 
+            0x63,0x14,0x08,0x14,0x63, 0x07,0x08,0x70,0x08,0x07, 0x61,0x51,0x49,0x45,0x43
         ];
 
         const canvas = document.getElementById('editorCanvas');
         const ctx = canvas.getContext('2d');
-        const GRID_SIZE = 15; 
-        let objects = [];
-        let manualPixels = [];
-        let history = [];
-        let selectedObj = null;
-        let mode = 'pen', isDrawing = false, isDragging = false, isResizing = false;
-        let offset = { x: 0, y: 0 };
+        const tooltip = document.getElementById('hoverTooltip');
+        
+        // OffCanvas untuk render font sistem
+        const offCanvas = document.createElement('canvas');
+        const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
 
-        function init() {
-            resizeCanvas();
-            animate();
-        }
+        const GRID_SIZE = 12; 
+        let objects = [], selectedObj = null, manualPixels = [], history = [];
+        let mode = 'pen', isDrawing = false, isDragging = false, isResizing = false;
+        let offset = {x:0, y:0};
+
+        // FORMAT LOGIC: Added (H) logic for Hijriah
+        const FORMATS = {
+            clock: ['HH:mm:ss', 'HH:mm', 'hh:mm A'],
+            cal_masehi: ['DD/MM/YYYY', 'DD-MM-YYYY', 'DD MMM YYYY'],
+            cal_hijri: ['DD MMMM YYYY (H)', 'DD/MM/YYYY (H)']
+        };
 
         class PixelObject {
-            constructor(text, x, y, color, fColor) {
-                this.text = text.toUpperCase();
-                this.x = x; this.y = y;
-                this.w = 15; this.h = 6;
-                this.color = color;
-                this.frameColor = fColor;
-                this.alignH = 'left';
-                this.alignV = 'top';
-                this.anim = 'none';
-                this.speed = 1.0;
-                this.isPlaying = true;
+            constructor(name, type, gridX, gridY) {
+                this.name = name; 
+                this.type = type; 
+                this.x = gridX * GRID_SIZE; 
+                this.y = gridY * GRID_SIZE;
+                this.w = 32; this.h = 9;  
+                
+                this.text = "PIXEL"; 
+                this.format = "";
+                this.font = "custom"; // FONT FEATURE KEMBALI
+                this.color = "#ffffff"; 
+                this.fColor = "#3498db";
+                this.alignH = 'center'; 
+                this.alignV = 'middle';
+                this.anim = 'none'; 
+                this.speed = 1.0; 
+                this.scrollOffset = 0;
+                this.opacity = 1; 
+                this.fadeDir = 1;
+                
+                this.fnBefore = ""; this.fnAfter = ""; this.fnCall = "";
+                
                 this.pixels = [];
                 this.particles = [];
-                this.scrollOffset = 0;
-                this.opacity = 1;
-                this.fadeDir = 1;
-                this.updatePixels();
+                this.textWidth = 0;
+                this.textHeight = 7; 
+                this.updateContent();
             }
 
-            updatePixels() {
-                this.pixels = [];
-                let xOff = 0;
-                for (let char of this.text) {
-                    const code = char.charCodeAt(0);
-                    const start = (code - 32) * 5;
-                    if (start >= 0 && start < MONO5X7_HEX.length) {
-                        for (let col = 0; col < 5; col++) {
-                            const byte = MONO5X7_HEX[start + col];
-                            for (let row = 0; row < 7; row++) {
-                                if ((byte >> row) & 1) this.pixels.push({ x: col + xOff, y: row });
+            getDisplayString() {
+                const now = new Date();
+                if (this.type === 'clock') {
+                    const h = String(now.getHours()).padStart(2,'0'), m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0');
+                    if(this.format === 'HH:mm') return `${h}:${m}`;
+                    if(this.format === 'hh:mm A') return now.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+                    return `${h}:${m}:${s}`;
+                }
+                if (this.type === 'cal_masehi') {
+                    const d = String(now.getDate()).padStart(2,'0');
+                    const m = String(now.getMonth()+1).padStart(2,'0');
+                    const y = now.getFullYear();
+                    if(this.format === 'DD-MM-YYYY') return `${d}-${m}-${y}`;
+                    if(this.format === 'DD MMM YYYY') return now.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase();
+                    return `${d}/${m}/${y}`; // Default DD/MM/YYYY
+                }
+                if (this.type === 'cal_hijri') {
+                    if (this.format === 'DD/MM/YYYY (H)') {
+                        return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'2-digit',month:'2-digit',year:'numeric'}).format(now);
+                    }
+                    return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'numeric',month:'long',year:'numeric'}).format(now).toUpperCase();
+                }
+                return this.text.toUpperCase();
+            }
+
+            updateContent() {
+                const str = this.getDisplayString();
+                this.pixels = []; 
+                
+                if (this.font === 'custom') {
+                    // Logic Mono5x7 Hex
+                    let xOff = 0;
+                    for (let char of str) {
+                        const code = char.charCodeAt(0) - 32;
+                        if (code >= 0 && code < MONO5X7_HEX.length/5) {
+                            for (let col = 0; col < 5; col++) {
+                                const byte = MONO5X7_HEX[code * 5 + col];
+                                for (let row = 0; row < 7; row++) { 
+                                    if ((byte >> row) & 1) this.pixels.push({ x: col + xOff, y: row });
+                                }
+                            }
+                        }
+                        xOff += 6; 
+                    }
+                    this.textWidth = Math.max(0, xOff - 1);
+                    this.textHeight = 7;
+                } else {
+                    // Logic System Font (Off-Canvas)
+                    const fontSize = 8;
+                    offCanvas.width = Math.max(1, str.length * (fontSize * 0.8));
+                    offCanvas.height = fontSize + 4;
+                    offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);
+                    offCtx.fillStyle = "black";
+                    offCtx.font = `bold ${fontSize}px ${this.font}`;
+                    offCtx.textBaseline = "top";
+                    offCtx.fillText(str, 0, 0);
+                    
+                    const data = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height);
+                    let maxW = 0;
+                    for (let y = 0; y < offCanvas.height; y++) {
+                        for (let x = 0; x < offCanvas.width; x++) {
+                            if (data.data[(y * offCanvas.width + x) * 4 + 3] > 128) {
+                                this.pixels.push({ x: x, y: y });
+                                if (x > maxW) maxW = x;
                             }
                         }
                     }
-                    xOff += 6;
+                    this.textWidth = maxW + 1;
+                    this.textHeight = fontSize;
                 }
-                this.textWidth = xOff - 1;
-                this.textHeight = 7;
-                this.resetAnim();
-            }
 
-            resetAnim() {
-                this.scrollOffset = 0;
-                this.opacity = (this.anim === 'fade') ? 0 : 1;
-                this.particles = this.pixels.map(p => ({
-                    x: p.x, y: p.y,
-                    vx: (Math.random() - 0.5) * 2 * this.speed,
-                    vy: (Math.random() - 0.5) * 2 * this.speed
-                }));
+                if (this.particles.length !== this.pixels.length) {
+                    this.particles = this.pixels.map(p => ({ x: p.x, y: p.y, vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3 }));
+                }
             }
 
             draw() {
+                this.updateContent();
                 ctx.save();
+                
                 const dW = this.w * GRID_SIZE, dH = this.h * GRID_SIZE;
-                const gridW = this.w * 2, gridH = this.h * 2; 
+                
+                let aX = 0; if(this.alignH === 'center') aX = Math.floor((this.w - this.textWidth) / 2); if(this.alignH === 'right') aX = this.w - this.textWidth;
+                let aY = 0; if(this.alignV === 'middle') aY = Math.floor((this.h - this.textHeight) / 2); if(this.alignV === 'bottom') aY = this.h - this.textHeight;
 
-                let alignX = 0;
-                if(this.alignH === 'center') alignX = Math.floor((gridW - this.textWidth) / 2);
-                if(this.alignH === 'right') alignX = gridW - this.textWidth;
-
-                let alignY = 0;
-                if(this.alignV === 'middle') alignY = Math.floor((gridH - this.textHeight) / 2);
-                if(this.alignV === 'bottom') alignY = gridH - this.textHeight;
-
-                if (this.isPlaying) {
-                    if (this.anim === 'scroll') {
-                        this.scrollOffset += 0.1 * this.speed;
-                        if (this.scrollOffset > this.textWidth) this.scrollOffset = -gridW;
-                    } else if (this.anim === 'fade') {
-                        this.opacity += 0.02 * this.fadeDir * this.speed;
-                        if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1;
-                    } else if (this.anim === 'explode') {
-                        this.particles.forEach(p => { p.x += p.vx * 0.1; p.y += p.vy * 0.1; });
-                    }
-                }
+                if (this.anim === 'scroll') { this.scrollOffset += 0.1 * this.speed; if (this.scrollOffset > this.textWidth) this.scrollOffset = -this.w; }
+                else if (this.anim === 'fade') { this.opacity += 0.02 * this.fadeDir * this.speed; if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1; }
+                else if (this.anim === 'explode') { this.particles.forEach(p => { p.x += p.vx * 0.1 * this.speed; p.y += p.vy * 0.1 * this.speed; }); }
 
                 ctx.globalAlpha = Math.max(0, Math.min(1, this.opacity));
                 ctx.fillStyle = this.color;
 
                 this.pixels.forEach((p, i) => {
-                    let dx = p.x + alignX;
-                    let dy = p.y + alignY;
+                    let dx = p.x + aX; let dy = p.y + aY;
                     if (this.anim === 'scroll') dx -= this.scrollOffset;
-                    if (this.anim === 'explode') { dx = this.particles[i].x + alignX; dy = this.particles[i].y + alignY; }
-                    if (this.anim === 'pixel-fade' && this.isPlaying && Math.random() > 0.4 * this.speed) return;
+                    if (this.anim === 'explode') { dx = this.particles[i].x + aX; dy = this.particles[i].y + aY; }
+                    if (this.anim === 'pixel-fade' && Math.random() > 0.3 * this.speed) return;
 
-                    const fx = this.x + (dx * (GRID_SIZE / 2));
-                    const fy = this.y + (dy * (GRID_SIZE / 2));
+                    const fx = this.x + (dx * GRID_SIZE);
+                    const fy = this.y + (dy * GRID_SIZE);
 
                     if (fx >= this.x && fx < this.x + dW && fy >= this.y && fy < this.y + dH) {
-                        ctx.fillRect(fx, fy, (GRID_SIZE / 2) - 1, (GRID_SIZE / 2) - 1);
+                        ctx.fillRect(fx, fy, GRID_SIZE - 1, GRID_SIZE - 1);
                     }
                 });
 
                 if (selectedObj === this && mode === 'select') {
-                    ctx.globalAlpha = 1; ctx.strokeStyle = this.frameColor; ctx.lineWidth = 2;
-                    ctx.strokeRect(this.x, this.y, dW, dH);
+                    ctx.globalAlpha = 1; ctx.strokeStyle = this.fColor; ctx.lineWidth = 2; ctx.strokeRect(this.x, this.y, dW, dH);
                     ctx.fillStyle = "#e74c3c"; ctx.fillRect(this.x + dW - 10, this.y + dH - 10, 10, 10);
                 }
                 ctx.restore();
             }
         }
 
-        // --- Core Functions ---
-        function setAlign(type, val) { if (selectedObj) { if(type === 'h') selectedObj.alignH = val; if(type === 'v') selectedObj.alignV = val; } }
-        
-        function resizeCanvas() {
-            saveState();
-            canvas.width = document.getElementById('canvW').value * GRID_SIZE;
-            canvas.height = document.getElementById('canvH').value * GRID_SIZE;
+        function resizeCanvas() { canvas.width = document.getElementById('canvW').value * GRID_SIZE; canvas.height = document.getElementById('canvH').value * GRID_SIZE; }
+
+        function setMode(m) { 
+            mode = m; 
+            document.querySelectorAll('.sidebar-left button').forEach(b => b.classList.remove('active'));
+            document.getElementById(m+'Btn').classList.add('active');
+            canvas.style.cursor = m === 'select' ? 'default' : 'crosshair';
         }
 
-        function togglePlay() {
-            if (selectedObj) {
-                selectedObj.isPlaying = !selectedObj.isPlaying;
-                document.getElementById('playPauseBtn').innerText = selectedObj.isPlaying ? "⏸ Pause" : "▶ Play";
-                document.getElementById('playPauseBtn').className = selectedObj.isPlaying ? "pause-btn" : "play-btn";
+        function setAlign(type, val) { if(selectedObj) { if(type === 'h') selectedObj.alignH = val; else selectedObj.alignV = val; } }
+
+        function changeObjType() {
+            if (!selectedObj) return;
+            selectedObj.type = document.getElementById('propType').value;
+            setupFormatDropdown();
+            updateFromProp();
+        }
+
+        function setupFormatDropdown() {
+            const bF = document.getElementById('boxFormat'), bT = document.getElementById('boxText'), sF = document.getElementById('propFormat');
+            if (selectedObj.type === 'text') { 
+                bF.classList.add('hidden'); bT.classList.remove('hidden'); 
+            } else { 
+                bF.classList.remove('hidden'); bT.classList.add('hidden'); 
+                sF.innerHTML = ""; 
+                FORMATS[selectedObj.type].forEach(f => { 
+                    let o = document.createElement('option'); o.value = f; o.innerText = f; sF.appendChild(o); 
+                }); 
+                selectedObj.format = sF.value; // Set default format to first option
             }
         }
 
-        function exportToJerryScript() {
-            const data = {
-                res: {w: canvas.width/GRID_SIZE, h: canvas.height/GRID_SIZE},
-                drawings: manualPixels.map(p => ({ k: p.key, c: p.color })),
-                objects: objects.map(o => ({ t: o.text, x: o.x/GRID_SIZE, y: o.y/GRID_SIZE, w: o.w, h: o.h, c: o.color, a: o.anim, s: o.speed, ah: o.alignH, av: o.alignV }))
-            };
-            document.getElementById('outputArea').innerText = "var pixelData = " + JSON.stringify(data, null, 2) + ";\n\nfunction render() {\n  // Implement logic here\n}";
-            document.getElementById('exportModal').style.display = 'block';
+        function syncPropPanel() {
+            if (!selectedObj) { 
+                document.getElementById('propContent').classList.add('hidden'); 
+                document.getElementById('noSelectionMsg').classList.remove('hidden'); 
+                return; 
+            }
+            document.getElementById('propContent').classList.remove('hidden'); 
+            document.getElementById('noSelectionMsg').classList.add('hidden');
+            
+            document.getElementById('propName').value = selectedObj.name;
+            document.getElementById('propX').value = Math.floor(selectedObj.x/GRID_SIZE);
+            document.getElementById('propY').value = Math.floor(selectedObj.y/GRID_SIZE);
+            document.getElementById('propW').value = selectedObj.w;
+            document.getElementById('propH').value = selectedObj.h;
+            
+            document.getElementById('propType').value = selectedObj.type;
+            document.getElementById('propFont').value = selectedObj.font; // FONT UI SYNC
+            document.getElementById('propText').value = selectedObj.text;
+            document.getElementById('propColor').value = selectedObj.color;
+            document.getElementById('propFColor').value = selectedObj.fColor;
+            document.getElementById('propAnim').value = selectedObj.anim;
+            document.getElementById('propSpeed').value = selectedObj.speed;
+            document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
+            
+            document.getElementById('fnBefore').value = selectedObj.fnBefore;
+            document.getElementById('fnAfter').value = selectedObj.fnAfter;
+            document.getElementById('fnCall').value = selectedObj.fnCall;
+            
+            setupFormatDropdown();
+            if(selectedObj.type !== 'text') document.getElementById('propFormat').value = selectedObj.format;
+            updateGlobalDropdown();
+        }
+
+        function updateFromProp() {
+            if (selectedObj) {
+                const oldName = selectedObj.name;
+                selectedObj.name = document.getElementById('propName').value;
+                selectedObj.type = document.getElementById('propType').value;
+                selectedObj.font = document.getElementById('propFont').value; // FONT UPDATE
+                selectedObj.text = document.getElementById('propText').value;
+                selectedObj.color = document.getElementById('propColor').value;
+                selectedObj.fColor = document.getElementById('propFColor').value;
+                selectedObj.anim = document.getElementById('propAnim').value;
+                selectedObj.speed = parseFloat(document.getElementById('propSpeed').value);
+                if(selectedObj.type !== 'text') selectedObj.format = document.getElementById('propFormat').value;
+                
+                selectedObj.fnBefore = document.getElementById('fnBefore').value;
+                selectedObj.fnAfter = document.getElementById('fnAfter').value;
+                selectedObj.fnCall = document.getElementById('fnCall').value;
+                
+                document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
+                if(oldName !== selectedObj.name) updateGlobalDropdown();
+                selectedObj.updateContent();
+            }
+        }
+
+        function updateGlobalDropdown() {
+            const select = document.getElementById('globalObjSelect');
+            select.innerHTML = '<option value="">-- No Object Selected --</option>';
+            objects.forEach((obj, idx) => {
+                let opt = document.createElement('option'); opt.value = idx; opt.innerText = obj.name;
+                if(selectedObj === obj) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        function jumpToSelectedObject() {
+            const idx = document.getElementById('globalObjSelect').value;
+            if(idx !== "") { selectedObj = objects[idx]; setMode('select'); syncPropPanel(); }
         }
 
         canvas.onmousedown = (e) => {
-            const r = canvas.getBoundingClientRect();
-            const mx = e.clientX - r.left, my = e.clientY - r.top;
+            const r = canvas.getBoundingClientRect(); const mx = e.clientX - r.left; const my = e.clientY - r.top;
             if (mode === 'select') {
-                for (let obj of objects) {
-                    const w = obj.w*GRID_SIZE, h = obj.h*GRID_SIZE;
-                    if (mx > obj.x+w-15 && my > obj.y+h-15) { selectedObj = obj; isResizing = true; saveState(); return; }
-                    if (mx > obj.x && mx < obj.x+w && my > obj.y && my < obj.y+h) {
-                        selectedObj = obj; isDragging = true; offset.x = mx-obj.x; offset.y = my-obj.y; syncUI(); return;
-                    }
+                for (let i = objects.length - 1; i >= 0; i--) {
+                    let o = objects[i];
+                    const w = o.w * GRID_SIZE, h = o.h * GRID_SIZE;
+                    if (mx > o.x+w-15 && mx < o.x+w && my > o.y+h-15 && my < o.y+h) { selectedObj = o; isResizing = true; saveState(); return; }
+                    if (mx > o.x && mx < o.x+w && my > o.y && my < o.y+h) { selectedObj = o; isDragging = true; offset.x = mx - o.x; offset.y = my - o.y; syncPropPanel(); saveState(); return; }
                 }
-                selectedObj = null; hideUI();
+                selectedObj = null; syncPropPanel();
             } else { saveState(); isDrawing = true; handleDraw(mx, my); }
         };
 
         canvas.onmousemove = (e) => {
-            const r = canvas.getBoundingClientRect();
-            const mx = e.clientX - r.left, my = e.clientY - r.top;
-            if (isResizing && selectedObj) {
-                selectedObj.w = Math.max(2, Math.floor((mx - selectedObj.x) / GRID_SIZE));
-                selectedObj.h = Math.max(2, Math.floor((my - selectedObj.y) / GRID_SIZE));
-            } else if (isDragging && selectedObj) {
+            const r = canvas.getBoundingClientRect(); const mx = e.clientX - r.left; const my = e.clientY - r.top;
+            
+            // Hover Tooltip Logic
+            let hovering = null;
+            for(let o of objects) { if(mx > o.x && mx < o.x+(o.w*GRID_SIZE) && my > o.y && my < o.y+(o.h*GRID_SIZE)) { hovering = o; break; } }
+            if(hovering) {
+                tooltip.style.display = 'block'; tooltip.style.left = (e.clientX + 15) + 'px'; tooltip.style.top = (e.clientY + 15) + 'px';
+                tooltip.innerHTML = `ID: <span style="color:#fff">${hovering.name}</span><br>POS: <span style="color:#fff">${Math.floor(hovering.x/GRID_SIZE)}, ${Math.floor(hovering.y/GRID_SIZE)}</span><br>SIZE: <span style="color:#fff">${hovering.w}x${hovering.h}</span>`;
+            } else { tooltip.style.display = 'none'; }
+
+            if (isDragging && selectedObj) {
                 selectedObj.x = Math.round((mx - offset.x) / GRID_SIZE) * GRID_SIZE;
                 selectedObj.y = Math.round((my - offset.y) / GRID_SIZE) * GRID_SIZE;
-            } else if (isDrawing) handleDraw(mx, my);
+                document.getElementById('propX').value = selectedObj.x/GRID_SIZE;
+                document.getElementById('propY').value = selectedObj.y/GRID_SIZE;
+            } else if (isResizing && selectedObj) {
+                selectedObj.w = Math.max(5, Math.round((mx - selectedObj.x) / GRID_SIZE)); 
+                selectedObj.h = Math.max(5, Math.round((my - selectedObj.y) / GRID_SIZE)); 
+                document.getElementById('propW').value = selectedObj.w;
+                document.getElementById('propH').value = selectedObj.h;
+            } else if (isDrawing) { handleDraw(mx, my); }
         };
 
-        function handleDraw(mx, my) {
-            const gx = Math.floor(mx/GRID_SIZE)*GRID_SIZE, gy = Math.floor(my/GRID_SIZE)*GRID_SIZE;
-            const key = `${gx},${gy}`, color = document.getElementById('textColor').value;
-            if (mode === 'pen' && gx < canvas.width && gy < canvas.height) { if (!manualPixels.find(p => p.key === key)) manualPixels.push({key, color}); }
-            else if (mode === 'eraser') manualPixels = manualPixels.filter(p => p.key !== key);
-        }
-
-        function updateSelectedStyle() {
-            if (selectedObj) {
-                selectedObj.text = document.getElementById('textInput').value.toUpperCase();
-                selectedObj.color = document.getElementById('textColor').value;
-                selectedObj.frameColor = document.getElementById('frameColor').value;
-                selectedObj.speed = parseFloat(document.getElementById('animSpeed').value);
-                document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
-                const nA = document.getElementById('animType').value;
-                if (selectedObj.anim !== nA) { selectedObj.anim = nA; selectedObj.resetAnim(); }
-                selectedObj.updatePixels();
-            }
-        }
-
-        function syncUI() {
-            document.getElementById('textInput').value = selectedObj.text;
-            document.getElementById('textColor').value = selectedObj.color;
-            document.getElementById('frameColor').value = selectedObj.frameColor;
-            document.getElementById('animType').value = selectedObj.anim;
-            document.getElementById('animSpeed').value = selectedObj.speed;
-            document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
-            document.getElementById('playPauseBtn').style.display = 'block';
-            document.getElementById('delBtn').style.display = 'block';
-        }
-
-        function hideUI() { document.getElementById('playPauseBtn').style.display = 'none'; document.getElementById('delBtn').style.display = 'none'; }
         window.onmouseup = () => { isDrawing = isDragging = isResizing = false; };
-        window.onkeydown = (e) => { if ((e.key==='Delete' || e.key==='Backspace') && selectedObj) deleteSelected(); };
 
-        function addPixelText() {
-            saveState();
-            const obj = new PixelObject("HELLO", 30, 30, document.getElementById('textColor').value, document.getElementById('frameColor').value);
-            objects.push(obj); setMode('select'); selectedObj = obj; syncUI();
+        function handleDraw(mx, my) {
+            const gx = Math.floor(mx/GRID_SIZE)*GRID_SIZE; const gy = Math.floor(my/GRID_SIZE)*GRID_SIZE;
+            const key = `${gx},${gy}`;
+            const color = document.getElementById('propColor') ? document.getElementById('propColor').value : "#ffffff";
+            if (mode === 'pen' && gx >= 0 && gx < canvas.width && gy >= 0 && gy < canvas.height) { 
+                if (!manualPixels.find(p => p.key === key)) manualPixels.push({key, color}); 
+            } else if (mode === 'eraser') { manualPixels = manualPixels.filter(p => p.key !== key); }
         }
 
-        function setMode(m) {
-            mode = m; document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
-            if(document.getElementById(m+'Btn')) document.getElementById(m+'Btn').classList.add('active');
-            canvas.className = 'mode-' + m;
-        }
-
-        function saveState() {
-            history.push({ objects: JSON.parse(JSON.stringify(objects)), manualPixels: [...manualPixels], w: canvas.width/GRID_SIZE, h: canvas.height/GRID_SIZE });
-            if (history.length > 30) history.shift();
-        }
-
-        function undo() {
-            if (history.length > 0) {
-                const s = history.pop(); manualPixels = s.manualPixels;
-                canvas.width = s.w*GRID_SIZE; canvas.height = s.h*GRID_SIZE;
+        function saveState() { history.push({ objects: JSON.parse(JSON.stringify(objects)), manualPixels: [...manualPixels], w: canvas.width/GRID_SIZE, h: canvas.height/GRID_SIZE }); if (history.length > 30) history.shift(); }
+        
+        function undo() { 
+            if (history.length > 0) { 
+                const s = history.pop(); manualPixels = s.manualPixels; canvas.width = s.w * GRID_SIZE; canvas.height = s.h * GRID_SIZE; 
                 document.getElementById('canvW').value = s.w; document.getElementById('canvH').value = s.h;
-                objects = s.objects.map(o => {
-                    let n = new PixelObject(o.t || o.text, o.x, o.y, o.color || o.c, o.frameColor || o.fc);
-                    Object.assign(n, o); n.updatePixels(); return n;
-                });
-            }
+                objects = s.objects.map(o => { 
+                    let n = new PixelObject(o.name, o.type, 0, 0); Object.assign(n, o); n.updateContent(); return n; 
+                }); syncPropPanel(); 
+            } 
         }
 
-        function deleteSelected() { if(selectedObj) { objects = objects.filter(o => o !== selectedObj); selectedObj = null; hideUI(); } }
-        function clearCanvas() { saveState(); objects = []; manualPixels = []; }
+        function addPixelObject() { 
+            saveState(); 
+            let n = "Layer_" + (objects.length + 1); 
+            let startX = Math.floor((canvas.width/GRID_SIZE)/2) - 16; let startY = Math.floor((canvas.height/GRID_SIZE)/2) - 4;
+            let o = new PixelObject(n, 'text', Math.max(0, startX), Math.max(0, startY)); 
+            objects.push(o); selectedObj = o; setMode('select'); syncPropPanel(); 
+        }
+
+        function deleteSelected() { if(selectedObj) { saveState(); objects = objects.filter(o => o !== selectedObj); selectedObj = null; syncPropPanel(); } }
+        function clearCanvas() { if(confirm("Hapus semua objek dan coretan?")) { saveState(); objects = []; manualPixels = []; selectedObj = null; syncPropPanel(); } }
+
+        function exportToJerryScript() {
+            const out = {
+                canvas: { w: canvas.width/GRID_SIZE, h: canvas.height/GRID_SIZE },
+                manualPixels: manualPixels.map(p => { const [x,y] = p.key.split(',').map(Number); return { x: x/GRID_SIZE, y: y/GRID_SIZE, c: p.color }; }),
+                objects: objects.map(o => ({
+                    id: o.name, type: o.type, 
+                    x: o.x/GRID_SIZE, y: o.y/GRID_SIZE, w: o.w, h: o.h,
+                    font: o.font, color: o.color, format: o.format, anim: o.anim, speed: o.speed, 
+                    alignH: o.alignH, alignV: o.alignV, hooks: { before: o.fnBefore, after: o.fnAfter, call: o.fnCall }
+                }))
+            };
+            document.getElementById('outputArea').innerText = "/* \n * JerryScript Render Logic Data \n * Auto-generated by Pixel Pro Studio v6.1 \n */\n\nvar sceneData = " + JSON.stringify(out, null, 2) + ";";
+            document.getElementById('exportModal').style.display = 'block';
+        }
+
         function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = "#eee"; ctx.lineWidth = 0.5;
-            for(let i=0; i<=canvas.width; i+=GRID_SIZE) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
-            for(let i=0; i<=canvas.height; i+=GRID_SIZE) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
-            manualPixels.forEach(p => {
-                const [x, y] = p.key.split(',').map(Number);
-                if(x < canvas.width && y < canvas.height) { ctx.fillStyle = p.color; ctx.fillRect(x, y, GRID_SIZE-1, GRID_SIZE-1); }
-            });
-            objects.forEach(obj => obj.draw());
+            ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"; ctx.lineWidth = 1; ctx.beginPath();
+            for(let i=0; i<=canvas.width; i+=GRID_SIZE) { ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); }
+            for(let i=0; i<=canvas.height; i+=GRID_SIZE) { ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); }
+            ctx.stroke();
+            manualPixels.forEach(p => { const [x, y] = p.key.split(',').map(Number); ctx.fillStyle = p.color; ctx.fillRect(x, y, GRID_SIZE-1, GRID_SIZE-1); });
+            objects.forEach(o => o.draw());
             requestAnimationFrame(animate);
         }
 
-        init();
+        resizeCanvas();
+        animate();
     </script>
 </body>
 </html>
