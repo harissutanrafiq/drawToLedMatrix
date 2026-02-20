@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Pixel Pro Studio v17.0 - Strict Frame Clipping</title>
+    <title>Pixel Pro Studio v18.0 - Global Canvas Resolution</title>
     <style>
         :root { --bg: #1a1a1b; --side: #252526; --accent: #2ecc71; --text: #eee; --border: #3e3e42; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
@@ -120,6 +120,14 @@
 
     <div class="main-workspace">
         <div class="top-bar">
+            <div style="display: flex; align-items: center; gap: 8px; background: #252526; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); margin-right: auto;">
+                <span style="font-size: 11px; color: var(--accent); font-weight: bold; letter-spacing: 1px;">CANVAS SIZE:</span>
+                <label style="margin:0; color:#aaa;">W</label>
+                <input type="number" id="globalW" value="64" onchange="updateProjectRes()" style="width: 50px; padding: 2px 4px; height: 24px; text-align: center;">
+                <label style="margin:0; color:#aaa;">H</label>
+                <input type="number" id="globalH" value="32" onchange="updateProjectRes()" style="width: 50px; padding: 2px 4px; height: 24px; text-align: center;">
+            </div>
+
             <div style="display: flex; align-items: center; gap: 6px; background: #333; padding: 4px 8px; border-radius: 6px; border: 1px solid #444;">
                 <button onclick="changeZoom(-2)" class="zoom-btn" title="Zoom Out">➖</button>
                 <span id="zoomLabel" style="font-size: 12px; font-family: monospace; width: 45px; text-align: center; color: var(--accent); font-weight: bold;">100%</span>
@@ -155,14 +163,6 @@
                 <p id="mainScreenTag" style="color:#2ecc71; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🏠 DEDICATED MAIN SCREEN</p>
                 <p id="iqomahScreenTag" style="color:#e74c3c; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🚨 DEDICATED IQOMAH SCREEN</p>
                 <p id="adzanScreenTag" style="color:#9b59b6; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🕌 DEDICATED ADZAN SCREEN</p>
-            </div>
-
-            <div class="group">
-                <label>Canvas Resolution</label>
-                <div class="grid-2">
-                    <div><label>Width</label><input type="number" id="propScreenW" value="64" onchange="updateScreenProp()"></div>
-                    <div><label>Height</label><input type="number" id="propScreenH" value="32" onchange="updateScreenProp()"></div>
-                </div>
             </div>
 
             <div class="group">
@@ -358,6 +358,9 @@
         const offCanvas = document.createElement('canvas');
         const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
 
+        // GLOBAL PROJECT PROPERTIES
+        let PROJECT_W = 64;
+        let PROJECT_H = 32;
         const BASE_GRID_SIZE = 12;
         let GRID_SIZE = 12; 
         
@@ -376,6 +379,13 @@
             cal_hijri: ['DD MMMM YYYY (H)', 'DD/MM/YYYY (H)'],
             iqomah: ['MM:SS', 'SS'] 
         };
+
+        function updateProjectRes() {
+            PROJECT_W = parseInt(document.getElementById('globalW').value) || 64;
+            PROJECT_H = parseInt(document.getElementById('globalH').value) || 32;
+            resizeCanvas();
+            renderTree();
+        }
 
         function isNameUnique(name) {
             let found = false;
@@ -453,14 +463,13 @@
                 const renderX = this.x * GRID_SIZE; const renderY = this.y * GRID_SIZE; const dW = this.w * GRID_SIZE; const dH = this.h * GRID_SIZE;
                 const rPx = this.radius * Math.min(GRID_SIZE/2, 4);
 
-                ctx.save(); // Save Context
+                ctx.save(); // Save Context utuh
                 
                 // === STRICT CLIPPING MASK ===
-                // Mencegah semua konten tumpah keluar frame objek ini
                 ctx.beginPath();
                 if(ctx.roundRect) ctx.roundRect(renderX, renderY, dW, dH, rPx); 
                 else ctx.rect(renderX, renderY, dW, dH);
-                ctx.clip(); 
+                ctx.clip(); // Potong semua hal yang digambar setelah baris ini!
                 // ============================
 
                 if (this.type === 'group') {
@@ -545,9 +554,9 @@
                     });
                 }
                 
-                ctx.restore(); // Lepas Clipping Mask
+                ctx.restore(); // Lepas Clipping Mask agar stroke/garis luarnya bisa digambar utuh
 
-                // --- GAMBAR BORDER SELEKSI (DILUAR CLIPPING AGAR UTUH) ---
+                // --- BORDER SELECTION (Digambar setelah area clip dilepas) ---
                 if (selectedObjs.includes(this)) {
                     ctx.save();
                     ctx.globalAlpha = 1; 
@@ -632,7 +641,8 @@
             saveState(); 
             let newId = type === 'splash' ? "Screen_Splash" : type === 'main' ? "Screen_Main" : type === 'iqomah' ? "Screen_Iqomah" : type === 'adzan' ? "Screen_Adzan" : "Screen_" + (screens.length + 1);
             let durFixed = type === 'splash' ? '00:00:03' : '00:00:10';
-            screens.push({ id: newId, type: type, objects: [], w: 64, h: 32, durationMode: 'fixed', durationFixed: durFixed, durationAnimObj: '' });
+            // Perhatikan tidak ada lagi 'w' dan 'h' karena bersifat global
+            screens.push({ id: newId, type: type, objects: [], durationMode: 'fixed', durationFixed: durFixed, durationAnimObj: '' });
             switchScreen(screens.length - 1);
         }
 
@@ -697,7 +707,9 @@
             }; reader.readAsDataURL(file); event.target.value = '';
         }
 
-        function resizeCanvas() { let scr = screens[activeScreenIdx]; canvas.width = scr.w * GRID_SIZE; canvas.height = scr.h * GRID_SIZE; }
+        // Resolusi sekarang menggunakan variabel global
+        function resizeCanvas() { canvas.width = PROJECT_W * GRID_SIZE; canvas.height = PROJECT_H * GRID_SIZE; }
+        
         function setMode(m) { mode = m; document.querySelectorAll('.sidebar-left button').forEach(b => b.classList.remove('active')); document.getElementById(m+'Btn').classList.add('active'); canvas.style.cursor = m === 'select' ? 'default' : 'crosshair'; }
         function setAlign(type, val) { if(selectedObj && !['drawing','image','sholat','group'].includes(selectedObj.type)) { if(type === 'h') selectedObj.alignH = val; else selectedObj.alignV = val; syncGeometryUI(); } }
         
@@ -752,9 +764,8 @@
         function updateScreenProp() {
             let scr = screens[activeScreenIdx];
             scr.id = document.getElementById('propScreenName').value || `Screen_${activeScreenIdx+1}`;
-            scr.w = parseInt(document.getElementById('propScreenW').value) || 64; scr.h = parseInt(document.getElementById('propScreenH').value) || 32;
             scr.durationMode = document.getElementById('propScreenDurMode').value; scr.durationFixed = document.getElementById('propScreenDurFixed').value; scr.durationAnimObj = document.getElementById('propScreenDurAnim').value;
-            resizeCanvas(); renderTree();
+            renderTree();
         }
 
         function syncPropPanel() {
@@ -775,7 +786,7 @@
             } else {
                 selectedObj = null; panelScreen.classList.remove('hidden');
                 let scr = screens[activeScreenIdx];
-                document.getElementById('propScreenName').value = scr.id; document.getElementById('propScreenW').value = scr.w; document.getElementById('propScreenH').value = scr.h;
+                document.getElementById('propScreenName').value = scr.id;
                 document.getElementById('propScreenDurMode').value = scr.durationMode || 'fixed'; document.getElementById('propScreenDurFixed').value = scr.durationFixed || '00:00:10';
                 
                 document.getElementById('splashScreenTag').style.display = scr.type === 'splash' ? 'block' : 'none';
@@ -890,7 +901,8 @@
             
             saveState(); 
             let base = type === 'drawing' ? "Draw" : type === 'image' ? "Img" : type === 'sholat' ? "Jadwal" : type === 'iqomah' ? "Count" : "Layer";
-            let o = new PixelObject(getUniqueName(base), type, Math.max(0, Math.floor(screens[activeScreenIdx].w/2) - 8), Math.max(0, Math.floor(screens[activeScreenIdx].h/2) - 4)); 
+            // Objek baru sekarang terpusat pada resolusi Global (PROJECT_W, PROJECT_H)
+            let o = new PixelObject(getUniqueName(base), type, Math.max(0, Math.floor(PROJECT_W/2) - 8), Math.max(0, Math.floor(PROJECT_H/2) - 4)); 
             
             objects.push(o); selectedObjs = [o]; setMode(type === 'drawing' || type === 'image' ? 'pen' : 'select'); syncPropPanel(); renderTree();
         }
@@ -915,8 +927,9 @@
         function exportToJerryScript() {
             const out = { 
                 project: "Pixel Pro Screens",
+                resolution: { w: PROJECT_W, h: PROJECT_H },
                 screens: screens.map(scr => ({ 
-                    id: scr.id, type: scr.type, resolution: { w: scr.w, h: scr.h }, 
+                    id: scr.id, type: scr.type, 
                     duration: scr.durationMode === 'fixed' ? scr.durationFixed : { waitForAnim: scr.durationAnimObj },
                     objects: scr.objects.filter(o=>o.visible).map(serializeObj) 
                 }))
@@ -936,8 +949,8 @@
         }
 
         // INIT PROJECT DEFAULTS (SPLASH -> MAIN)
-        screens.push({ id: "Screen_Splash", type: "splash", objects: [], w: 64, h: 32, durationMode: 'fixed', durationFixed: '00:00:03', durationAnimObj: '' });
-        screens.push({ id: "Screen_Main", type: "main", objects: [], w: 64, h: 32, durationMode: 'fixed', durationFixed: '00:00:10', durationAnimObj: '' });
+        screens.push({ id: "Screen_Splash", type: "splash", objects: [], durationMode: 'fixed', durationFixed: '00:00:03', durationAnimObj: '' });
+        screens.push({ id: "Screen_Main", type: "main", objects: [], durationMode: 'fixed', durationFixed: '00:00:10', durationAnimObj: '' });
         switchScreen(0);
         updateSidebarButtons();
         animate();
