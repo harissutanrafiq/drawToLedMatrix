@@ -2,16 +2,16 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Pixel Pro Studio v9.0 - Multi-Select & Grouping Engine</title>
+    <title>Pixel Pro Studio v12.0 - Iqomah Sequence Engine</title>
     <style>
         :root { --bg: #1a1a1b; --side: #252526; --accent: #2ecc71; --text: #eee; --border: #3e3e42; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        .sidebar-left { width: 240px; flex-shrink: 0; background: var(--side); padding: 15px; border-right: 1px solid var(--border); overflow-y: auto; z-index: 10; display: flex; flex-direction: column; gap: 15px; }
+        .sidebar-left { width: 260px; flex-shrink: 0; background: var(--side); padding: 15px; border-right: 1px solid var(--border); overflow-y: auto; z-index: 10; display: flex; flex-direction: column; gap: 15px; }
         .sidebar-right { width: 320px; flex-shrink: 0; background: var(--side); padding: 15px; border-left: 1px solid var(--border); overflow-y: auto; z-index: 10; display: flex; flex-direction: column; gap: 12px; }
         
         .main-workspace { flex-grow: 1; flex-shrink: 1; min-width: 0; display: flex; flex-direction: column; background: #000; position: relative; }
-        .top-bar { height: 50px; flex-shrink: 0; background: #1e1e1e; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 15px; z-index: 5; }
+        .top-bar { height: 50px; flex-shrink: 0; background: #1e1e1e; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; padding: 0 20px; gap: 15px; z-index: 5; }
         
         .canvas-container { flex-grow: 1; overflow: auto; padding: 30px; display: grid; place-items: center; background: #111; }
         canvas { background: #0a0a0a; border: 2px solid #555; image-rendering: pixelated; box-shadow: 0 0 30px rgba(0,0,0,0.8); cursor: crosshair; margin: auto; }
@@ -50,10 +50,25 @@
         #exportModal { display:none; position:fixed; top:5%; left:5%; width:90%; height:90%; background:var(--side); padding:20px; border:2px solid var(--accent); z-index:2000; box-shadow: 0 0 50px rgba(0,0,0,0.8); border-radius: 8px; }
         #outputArea { background:#0a0a0a; color:#2ecc71; padding:15px; font-family:'Consolas', monospace; font-size: 13px; height: calc(100% - 100px); overflow:auto; white-space: pre-wrap; border: 1px solid #444; border-radius: 4px; }
 
-        /* Context Menu Styles */
         #ctxMenu { position:fixed; display:none; background:#252526; border:1px solid #3e3e42; box-shadow: 0 4px 15px rgba(0,0,0,0.8); z-index:9999; border-radius: 6px; padding: 5px 0; min-width: 150px; flex-direction: column; }
         .ctx-item { padding: 10px 16px; cursor: pointer; color: #eee; font-size: 12px; font-weight: 500; transition: 0.1s; }
         .ctx-item:hover { background: var(--accent); color: #000; font-weight: bold; }
+
+        #treeBrowser { background: #1e1e1e; border: 1px solid var(--border); border-radius: 4px; padding: 6px; max-height: 250px; overflow-y: auto; user-select: none; }
+        .tree-item { padding: 5px 8px; font-size: 11px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; color: #ccc; display: flex; justify-content: space-between; align-items: center; transition: background 0.1s; }
+        .tree-item:hover { background: #333; }
+        .screen-item { font-weight: bold; color: var(--accent); background: #2a2a2b; margin-top: 5px; border-left: 2px solid transparent; }
+        .screen-item.active-screen { background: #3a3a3c; border-left: 2px solid var(--accent); }
+        
+        /* Pewarnaan Khusus Screen Iqomah di Tree Browser */
+        .screen-iqomah { color: #e74c3c !important; }
+        .screen-iqomah.active-screen { border-left: 2px solid #e74c3c !important; }
+
+        .obj-item { margin-left: 10px; }
+        .obj-item.selected { background: var(--accent); color: #000; font-weight: bold; }
+        .child-item { margin-left: 25px; border-left: 1px dashed #555; border-radius: 0; }
+        .hidden-obj span { opacity: 0.4; text-decoration: line-through; }
+        .tree-icon { font-size: 12px; margin-right: 5px; }
     </style>
 </head>
 <body>
@@ -62,42 +77,41 @@
         <h2 style="font-size: 22px; color: var(--accent); margin: 0; text-align: center; letter-spacing: 2px;">PIXEL PRO</h2>
         
         <div class="group">
-            <h3>Grid Config</h3>
-            <div class="grid-2">
-                <div><label>Width</label><input type="number" id="canvW" value="64"></div>
-                <div><label>Height</label><input type="number" id="canvH" value="32"></div>
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <h3>Object Browser</h3>
+                <div>
+                    <button onclick="addScreen('generic')" style="width: auto; padding: 2px 6px; font-size: 10px; background: #3498db;">+ Screen</button>
+                    <button onclick="addScreen('iqomah')" style="width: auto; padding: 2px 6px; font-size: 10px; background: #e74c3c;">+ Iqomah</button>
+                </div>
             </div>
-            <button onclick="resizeCanvas()">Apply Resolution</button>
+            <div id="treeBrowser"></div>
         </div>
 
         <div class="group">
             <h3>Draw Tools</h3>
-            <button id="selectBtn" onclick="setMode('select')">🖱️ Select Object</button>
-            <button id="penBtn" class="active" onclick="setMode('pen')">✏️ Pen Draw</button>
-            <button id="eraserBtn" onclick="setMode('eraser')">🧽 Eraser</button>
+            <button id="selectBtn" onclick="setMode('select')">🖱️ Select / Move</button>
+            <div class="grid-2">
+                <button id="penBtn" class="active" onclick="setMode('pen')">✏️ Pen</button>
+                <button id="eraserBtn" onclick="setMode('eraser')">🧽 Eraser</button>
+            </div>
         </div>
 
         <div class="group" style="flex-grow: 1;">
             <h3>Project Actions</h3>
-            <button onclick="addPixelObject('text')" class="btn-blue" style="margin-bottom: 6px;">+ Add Text Object</button>
-            <button onclick="addPixelObject('drawing')" class="btn-blue" style="margin-bottom: 6px; background:#9b59b6;">+ Add Drawing Object</button>
-            <button onclick="addPixelObject('image')" class="btn-blue" style="margin-bottom: 6px; background:#e67e22;">+ Add Image Object</button>
-            <button onclick="addPixelObject('sholat')" class="btn-blue" style="margin-bottom: 6px; background:#16a085;">+ Add Waktu Sholat</button>
+            <button onclick="addPixelObject('text')" class="btn-blue" style="margin-bottom: 6px;">+ Text Object</button>
+            <button onclick="addPixelObject('drawing')" class="btn-blue" style="margin-bottom: 6px; background:#9b59b6;">+ Draw Object</button>
+            <button onclick="addPixelObject('image')" class="btn-blue" style="margin-bottom: 6px; background:#e67e22;">+ Image Object</button>
+            <button onclick="addPixelObject('sholat')" class="btn-blue" style="margin-bottom: 6px; background:#16a085;">+ Waktu Sholat</button>
             
-            <button onclick="undo()" class="btn-orange" style="margin-bottom: 6px; margin-top: 10px;">⬅ Undo Action</button>
-            <button onclick="exportToJerryScript()" class="btn-green" style="margin-bottom: 6px;">💾 Export Logic (JS)</button>
-            <button onclick="clearCanvas()" class="btn-red">🗑️ Reset Canvas</button>
+            <button onclick="addPixelObject('iqomah')" class="btn-blue" style="margin-bottom: 6px; background:#e74c3c;">+ Counter Iqomah</button>
+            
+            <button onclick="exportToJerryScript()" class="btn-green" style="margin-bottom: 6px; margin-top: 10px;">💾 Export Logic (JS)</button>
         </div>
     </div>
 
     <div class="main-workspace">
         <div class="top-bar">
-            <label style="width: 130px; margin:0;">Object Navigator :</label>
-            <select id="globalObjSelect" onchange="jumpToSelectedObject()" style="max-width: 250px;">
-                <option value="">-- No Object Selected --</option>
-            </select>
-
-            <div style="margin-left:20px; display: flex; align-items: center; gap: 6px; background: #333; padding: 4px 8px; border-radius: 6px; border: 1px solid #444;">
+            <div style="display: flex; align-items: center; gap: 6px; background: #333; padding: 4px 8px; border-radius: 6px; border: 1px solid #444;">
                 <button onclick="changeZoom(-2)" class="zoom-btn" title="Zoom Out">➖</button>
                 <span id="zoomLabel" style="font-size: 12px; font-family: monospace; width: 45px; text-align: center; color: var(--accent); font-weight: bold;">100%</span>
                 <button onclick="changeZoom(2)" class="zoom-btn" title="Zoom In">➕</button>
@@ -115,9 +129,52 @@
     </div>
 
     <div class="sidebar-right" id="propPanel">
-        <div id="noSelectionMsg" style="text-align:center; color:#666; margin-top:80px; padding:20px;">
-            <div style="font-size: 40px; margin-bottom: 10px;">🖱️</div>
-            <p id="noSelectionDesc">Klik objek pada kanvas untuk mengaktifkan <b>Properties Manager</b>.<br><br><span style="font-size:10px; color:#aaa;">Tips: Tahan <b>SHIFT + Klik</b> untuk memilih lebih dari satu objek.</span></p>
+        
+        <div id="noSelectionMsg" style="text-align:center; color:#666; margin-top:80px; padding:20px; display:none;">
+            <div style="font-size: 40px; margin-bottom: 10px;">📦</div>
+            <p><b>Multiple Objects Selected</b><br>Klik kanan di kanvas untuk opsi Grouping.</p>
+        </div>
+
+        <div id="screenPropContent" class="hidden">
+            <h3 style="color:#f39c12; font-size: 14px; margin-bottom:10px;">📺 Screen Properties</h3>
+            
+            <div class="group">
+                <label>Screen Name (ID)</label>
+                <input type="text" id="propScreenName" oninput="updateScreenProp()" placeholder="Screen_1">
+                <p id="iqomahScreenTag" style="color:#e74c3c; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🚨 DEDICATED IQOMAH SCREEN</p>
+            </div>
+
+            <div class="group">
+                <label>Canvas Resolution</label>
+                <div class="grid-2">
+                    <div><label>Width</label><input type="number" id="propScreenW" value="64" onchange="updateScreenProp()"></div>
+                    <div><label>Height</label><input type="number" id="propScreenH" value="32" onchange="updateScreenProp()"></div>
+                </div>
+            </div>
+
+            <div class="group">
+                <label>Screen Duration Logic</label>
+                <select id="propScreenDurMode" onchange="updateScreenPropUI()" style="margin-bottom: 6px;">
+                    <option value="fixed">Fixed Time (HH:MM:SS)</option>
+                    <option value="anim">Wait For Object Anim</option>
+                </select>
+
+                <div id="boxDurFixed">
+                    <input type="text" id="propScreenDurFixed" placeholder="00:00:10" oninput="updateScreenProp()">
+                    <p style="font-size:9px; color:#888; margin: 4px 0 0 0;">Format: Jam:Menit:Detik</p>
+                </div>
+
+                <div id="boxDurAnim" class="hidden">
+                    <label style="color:#e67e22; margin-top:5px; display:block;">Select Trigger Object</label>
+                    <select id="propScreenDurAnim" onchange="updateScreenProp()">
+                    </select>
+                    <p style="font-size:9px; color:#888; margin: 4px 0 0 0;">Screen berpindah setelah animasi objek ini selesai.</p>
+                </div>
+            </div>
+            
+            <div style="margin-top:20px; padding-top:15px; border-top:1px solid #444;">
+                <p style="font-size:10px; color:#aaa; line-height:1.5;"><b>Keyboard Shortcuts:</b><br>• <b>Del</b> : Hapus objek terpilih<br>• <b>Ctrl+Z</b> : Undo aksi terakhir<br>• <b>Shift+Klik</b> : Pilih banyak objek</p>
+            </div>
         </div>
         
         <div id="propContent" class="hidden">
@@ -125,7 +182,11 @@
             
             <div class="group">
                 <label>Object Name (ID Unik)</label>
-                <input type="text" id="propName" onblur="updateFromProp()" placeholder="Layer_1">
+                <input type="text" id="propName" oninput="updateName()" placeholder="Layer_1">
+                <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
+                    <input type="checkbox" id="propVisible" onchange="updateFromProp()">
+                    <label style="margin:0; text-transform:none; font-weight:bold; font-size:11px; cursor:pointer;" for="propVisible">👁️ Visible on Canvas</label>
+                </div>
             </div>
 
             <div class="group">
@@ -154,6 +215,7 @@
                     <option value="drawing">Custom Drawing</option>
                     <option value="image">Image (Pixel Art)</option>
                     <option value="sholat">Waktu Sholat (JWS)</option>
+                    <option value="iqomah" id="optIqomahType" style="color:#e74c3c;">Counter Iqomah</option>
                 </select>
 
                 <div id="boxSholat" class="hidden" style="margin-top:10px;">
@@ -245,7 +307,7 @@
                 <textarea id="fnCall" oninput="updateFromProp()" placeholder="Hook: On Called..."></textarea>
             </div>
 
-            <button onclick="deleteSelected()" class="btn-red" style="margin-top: 5px; padding: 10px;">🗑️ Delete Selected Object</button>
+            <button onclick="deleteSelected()" class="btn-red" style="margin-top: 5px; padding: 10px;">🗑️ Delete Selected</button>
         </div>
     </div>
 
@@ -283,224 +345,116 @@
         const BASE_GRID_SIZE = 12;
         let GRID_SIZE = 12; 
         
-        function changeZoom(delta) {
-            let newSize = GRID_SIZE + delta;
-            if (newSize >= 4 && newSize <= 50) {
-                GRID_SIZE = newSize;
-                let percent = Math.round((GRID_SIZE / BASE_GRID_SIZE) * 100);
-                document.getElementById('zoomLabel').innerText = percent + "%";
-                resizeCanvas(); 
-            }
-        }
-
-        let objects = [], selectedObjs = [], history = [];
-        let selectedObj = null; // Menunjuk ke selectedObjs[0] untuk properties panel
+        // --- SCREEN ARCHITECTURE ---
+        let screens = [];
+        let activeScreenIdx = 0;
+        let objects = []; 
+        
+        let selectedObjs = [], history = [];
+        let selectedObj = null; 
         let mode = 'pen', isDrawing = false, isDragging = false, isResizing = false;
-        let resizeDir = ''; 
-        let dragOffsets = [];
+        let resizeDir = ''; let dragOffsets = [];
 
-        const FORMATS = {
-            clock: ['HH:mm:ss', 'HH:mm', 'hh:mm A'],
-            cal_masehi: ['DD/MM/YYYY', 'DD-MM-YYYY', 'DD MMM YYYY'],
-            cal_hijri: ['DD MMMM YYYY (H)', 'DD/MM/YYYY (H)']
+        // DITAMBAH FORMAT IQOMAH
+        const FORMATS = { 
+            clock: ['HH:mm:ss', 'HH:mm', 'hh:mm A'], 
+            cal_masehi: ['DD/MM/YYYY', 'DD-MM-YYYY', 'DD MMM YYYY'], 
+            cal_hijri: ['DD MMMM YYYY (H)', 'DD/MM/YYYY (H)'],
+            iqomah: ['MM:SS', 'SS'] 
         };
 
-        // FUNGSI CEK NAMA UNIK (Mengecek di Parent & Semua Group Children)
         function isNameUnique(name) {
             let found = false;
-            function checkList(list) {
-                for(let o of list) {
-                    if(o.name === name) found = true;
-                    if(o.type === 'group' && o.children) checkList(o.children);
-                }
-            }
-            checkList(objects);
-            return !found;
+            function checkList(list) { for(let o of list) { if(o.name === name) found = true; if(o.type === 'group' && o.children) checkList(o.children); } }
+            screens.forEach(s => checkList(s.objects)); return !found;
         }
 
-        function getUniqueName(base) {
-            let count = 1;
-            let n = `${base}_${count}`;
-            while (!isNameUnique(n)) {
-                count++;
-                n = `${base}_${count}`;
-            }
-            return n;
+        function getUniqueName(base) { let count = 1; let n = `${base}_${count}`; while (!isNameUnique(n)) { count++; n = `${base}_${count}`; } return n; }
+
+        function getAllObjectNames(objList) {
+            let names = [];
+            objList.forEach(o => {
+                names.push(o.name);
+                if (o.type === 'group' && o.children) { names = names.concat(getAllObjectNames(o.children)); }
+            });
+            return names;
         }
 
         class PixelObject {
             constructor(name, type, gridX, gridY) {
-                this.name = name; this.type = type; 
-                this.x = gridX; this.y = gridY; 
-                
-                this.w = (type === 'drawing' || type === 'image' || type === 'sholat') ? 25 : 32; 
-                this.h = (type === 'drawing' || type === 'image' || type === 'sholat') ? 10 : 10;  
-                
-                this.text = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'group') ? "" : "PIXEL"; 
-                this.format = ""; this.font = "custom";
-                this.color = "#ffffff"; 
-                this.fColor = "#00ff00"; // DEFAULT FRAME GREEN TERANG
-                this.transparentBG = true; // DEFAULT BG TRANSPARAN
-                this.alignH = 'center'; this.alignV = 'middle';
-                this.anim = 'none'; this.speed = 1.0; this.scrollOffset = 0;
-                this.opacity = 1; this.fadeDir = 1;
-                this.fnBefore = ""; this.fnAfter = ""; this.fnCall = "";
-                
+                this.name = name; this.type = type; this.x = gridX; this.y = gridY; this.visible = true;
+                this.w = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah') ? 25 : 32; 
+                this.h = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah') ? 10 : 10;  
+                this.text = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah' || type === 'group') ? "" : "PIXEL"; 
+                this.format = ""; this.font = "custom"; this.color = "#ffffff"; this.fColor = "#00ff00"; this.transparentBG = true; 
+                this.alignH = 'center'; this.alignV = 'middle'; this.anim = 'none'; this.speed = 1.0; this.scrollOffset = 0;
+                this.opacity = 1; this.fadeDir = 1; this.fnBefore = ""; this.fnAfter = ""; this.fnCall = "";
                 this.sholatType = 'Subuh';
-                
-                this.pixels = []; 
-                this.customPixels = []; 
-                this.children = []; // KHUSUS UNTUK TIPE GROUP
-                this.particles = [];
-                this.textWidth = 0; this.textHeight = 7; 
-                
+                this.pixels = []; this.customPixels = []; this.children = []; this.particles = []; this.textWidth = 0; this.textHeight = 7; 
                 if (type !== 'group') this.updateContent();
             }
 
             getDisplayString() {
                 if (this.type === 'drawing' || this.type === 'image' || this.type === 'group') return "";
-                if (this.type === 'sholat') {
-                    const sholatTimes = { 'Imsak': '04:15', 'Subuh': '04:25', 'Terbit': '05:40', 'Dzuhur': '11:50', 'Ashar': '15:00', 'Maghrib': '17:55', 'Isya': '19:05' };
-                    return sholatTimes[this.sholatType] || '00:00';
-                }
+                if (this.type === 'sholat') { const st = { 'Imsak': '04:15', 'Subuh': '04:25', 'Terbit': '05:40', 'Dzuhur': '11:50', 'Ashar': '15:00', 'Maghrib': '17:55', 'Isya': '19:05' }; return st[this.sholatType] || '00:00'; }
+                if (this.type === 'iqomah') { return this.format === 'SS' ? "300" : "05:00"; }
+                
                 const now = new Date();
-                if (this.type === 'clock') {
-                    const h = String(now.getHours()).padStart(2,'0'), m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0');
-                    if(this.format === 'HH:mm') return `${h}:${m}`;
-                    if(this.format === 'hh:mm A') return now.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
-                    return `${h}:${m}:${s}`;
-                }
-                if (this.type === 'cal_masehi') {
-                    const d = String(now.getDate()).padStart(2,'0'), m = String(now.getMonth()+1).padStart(2,'0'), y = now.getFullYear();
-                    if(this.format === 'DD-MM-YYYY') return `${d}-${m}-${y}`;
-                    if(this.format === 'DD MMM YYYY') return now.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase();
-                    return `${d}/${m}/${y}`;
-                }
-                if (this.type === 'cal_hijri') {
-                    if (this.format === 'DD/MM/YYYY (H)') return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'2-digit',month:'2-digit',year:'numeric'}).format(now);
-                    return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'numeric',month:'long',year:'numeric'}).format(now).toUpperCase();
-                }
+                if (this.type === 'clock') { const h = String(now.getHours()).padStart(2,'0'), m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0'); if(this.format === 'HH:mm') return `${h}:${m}`; if(this.format === 'hh:mm A') return now.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}); return `${h}:${m}:${s}`; }
+                if (this.type === 'cal_masehi') { const d = String(now.getDate()).padStart(2,'0'), m = String(now.getMonth()+1).padStart(2,'0'), y = now.getFullYear(); if(this.format === 'DD-MM-YYYY') return `${d}-${m}-${y}`; if(this.format === 'DD MMM YYYY') return now.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase(); return `${d}/${m}/${y}`; }
+                if (this.type === 'cal_hijri') { if (this.format === 'DD/MM/YYYY (H)') return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'2-digit',month:'2-digit',year:'numeric'}).format(now); return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'numeric',month:'long',year:'numeric'}).format(now).toUpperCase(); }
                 return this.text.toUpperCase();
             }
 
             updateContent() {
-                if (this.type === 'group') return; // Group mengurus konten secara dinamis saat render
-                
-                if (this.type === 'drawing' || this.type === 'image') {
-                    this.pixels = this.customPixels.map(p => ({ x: p.x, y: p.y, c: p.c }));
-                    this.textWidth = this.w; this.textHeight = this.h;
+                if (this.type === 'group') return; 
+                if (this.type === 'drawing' || this.type === 'image') { this.pixels = this.customPixels.map(p => ({ x: p.x, y: p.y, c: p.c })); this.textWidth = this.w; this.textHeight = this.h;
                 } else {
-                    const str = this.getDisplayString();
-                    this.pixels = []; 
+                    const str = this.getDisplayString(); this.pixels = []; 
                     if (this.font === 'custom') {
                         let xOff = 0;
                         for (let char of str) {
                             const code = char.charCodeAt(0) - 32;
                             if (code >= 0 && code < MONO5X7_HEX.length/5) {
-                                for (let col = 0; col < 5; col++) {
-                                    const byte = MONO5X7_HEX[code * 5 + col];
-                                    for (let row = 0; row < 7; row++) { 
-                                        if ((byte >> row) & 1) this.pixels.push({ x: col + xOff, y: row });
-                                    }
-                                }
-                            }
-                            xOff += 6; 
-                        }
-                        this.textWidth = Math.max(0, xOff - 1);
-                        this.textHeight = 7;
+                                for (let col = 0; col < 5; col++) { const byte = MONO5X7_HEX[code * 5 + col]; for (let row = 0; row < 7; row++) { if ((byte >> row) & 1) this.pixels.push({ x: col + xOff, y: row }); } }
+                            } xOff += 6; 
+                        } this.textWidth = Math.max(0, xOff - 1); this.textHeight = 7;
                     } else {
-                        const fontSize = 8;
-                        offCanvas.width = Math.max(1, str.length * (fontSize * 0.8));
-                        offCanvas.height = fontSize + 4;
-                        offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);
-                        offCtx.fillStyle = "black"; offCtx.font = `bold ${fontSize}px ${this.font}`; offCtx.textBaseline = "top";
-                        offCtx.fillText(str, 0, 0);
-                        
-                        const data = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height);
-                        let maxW = 0;
-                        for (let y = 0; y < offCanvas.height; y++) {
-                            for (let x = 0; x < offCanvas.width; x++) {
-                                if (data.data[(y * offCanvas.width + x) * 4 + 3] > 128) {
-                                    this.pixels.push({ x: x, y: y });
-                                    if (x > maxW) maxW = x;
-                                }
-                            }
-                        }
-                        this.textWidth = maxW + 1;
-                        this.textHeight = fontSize;
+                        const fontSize = 8; offCanvas.width = Math.max(1, str.length * (fontSize * 0.8)); offCanvas.height = fontSize + 4;
+                        offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height); offCtx.fillStyle = "black"; offCtx.font = `bold ${fontSize}px ${this.font}`; offCtx.textBaseline = "top"; offCtx.fillText(str, 0, 0);
+                        const data = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height); let maxW = 0;
+                        for (let y = 0; y < offCanvas.height; y++) { for (let x = 0; x < offCanvas.width; x++) { if (data.data[(y * offCanvas.width + x) * 4 + 3] > 128) { this.pixels.push({ x: x, y: y }); if (x > maxW) maxW = x; } } }
+                        this.textWidth = maxW + 1; this.textHeight = fontSize;
                     }
                 }
-
-                if (this.particles.length !== this.pixels.length) {
-                    this.particles = this.pixels.map(p => ({ x: p.x, y: p.y, vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3 }));
-                }
+                if (this.particles.length !== this.pixels.length) this.particles = this.pixels.map(p => ({ x: p.x, y: p.y, vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3 }));
             }
 
             calcAlign() {
                 if (this.type === 'drawing' || this.type === 'image' || this.type === 'group') return { aX: 0, aY: 0 }; 
                 let aX = 0; if(this.alignH === 'center') aX = Math.floor((this.w - this.textWidth) / 2); if(this.alignH === 'right') aX = this.w - this.textWidth;
-                let aY = 0; if(this.alignV === 'middle') aY = Math.floor((this.h - this.textHeight) / 2); if(this.alignV === 'bottom') aY = this.h - this.textHeight;
-                return { aX, aY };
+                let aY = 0; if(this.alignV === 'middle') aY = Math.floor((this.h - this.textHeight) / 2); if(this.alignV === 'bottom') aY = this.h - this.textHeight; return { aX, aY };
             }
 
             draw() {
-                const renderX = this.x * GRID_SIZE;
-                const renderY = this.y * GRID_SIZE;
-                const dW = this.w * GRID_SIZE;
-                const dH = this.h * GRID_SIZE;
+                if (!this.visible) return;
+                const renderX = this.x * GRID_SIZE; const renderY = this.y * GRID_SIZE; const dW = this.w * GRID_SIZE; const dH = this.h * GRID_SIZE;
 
-                // --- LOGIKA GROUP ---
                 if (this.type === 'group') {
-                    ctx.save();
-                    let scrollPixelOffset = 0;
-                    if (this.anim === 'scroll') {
-                        this.scrollOffset += 0.1 * this.speed;
-                        if (this.scrollOffset > this.w) this.scrollOffset = -this.w;
-                        scrollPixelOffset = this.scrollOffset * GRID_SIZE;
-                        ctx.translate(-scrollPixelOffset, 0);
-                    } else if (this.anim === 'fade') {
-                        this.opacity += 0.02 * this.fadeDir * this.speed;
-                        if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1;
-                    }
+                    ctx.save(); let scrollPixelOffset = 0;
+                    if (this.anim === 'scroll') { this.scrollOffset += 0.1 * this.speed; if (this.scrollOffset > this.w) this.scrollOffset = -this.w; scrollPixelOffset = this.scrollOffset * GRID_SIZE; ctx.translate(-scrollPixelOffset, 0); } 
+                    else if (this.anim === 'fade') { this.opacity += 0.02 * this.fadeDir * this.speed; if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1; }
                     ctx.globalAlpha = Math.max(0, Math.min(1, this.opacity));
-
-                    // Gambar background transparan logic untuk group bounds (jika diperlukan)
-                    if (!this.transparentBG) {
-                        ctx.fillStyle = this.fColor;
-                        ctx.fillRect(renderX + scrollPixelOffset, renderY, dW, dH);
-                    }
-
-                    // Render Sub-Objek
-                    this.children.forEach(c => {
-                        let origX = c.x, origY = c.y;
-                        c.x = this.x + c.x; // Set pos ke absolute sementara
-                        c.y = this.y + c.y;
-                        c.draw(); 
-                        c.x = origX; // Kembalikan ke relative
-                        c.y = origY;
-                    });
+                    if (!this.transparentBG) { ctx.fillStyle = this.fColor; ctx.fillRect(renderX + scrollPixelOffset, renderY, dW, dH); }
+                    this.children.forEach(c => { let origX = c.x, origY = c.y; c.x = this.x + c.x; c.y = this.y + c.y; c.draw(); c.x = origX; c.y = origY; });
                     ctx.restore();
-
-                    // Render Garis Seleksi Group
-                    if (selectedObjs.includes(this)) {
-                        ctx.globalAlpha = 1; ctx.strokeStyle = this.fColor; ctx.lineWidth = 2; ctx.strokeRect(renderX, renderY, dW, dH);
-                    }
-                    return;
+                    if (selectedObjs.includes(this)) { ctx.globalAlpha = 1; ctx.strokeStyle = this.fColor; ctx.lineWidth = 2; ctx.strokeRect(renderX, renderY, dW, dH); } return;
                 }
                 
-                // --- LOGIKA STANDAR (TEKS, JAM, DRAWING) ---
-                this.updateContent();
-                ctx.save();
-                
-                let align = this.calcAlign();
-                let aX = align.aX, aY = align.aY;
+                this.updateContent(); ctx.save();
+                let align = this.calcAlign(); let aX = align.aX, aY = align.aY;
 
-                // Render Background jika tidak transparan (BERLAKU JUGA UNTUK WAKTU SHOLAT)
-                if (!this.transparentBG) {
-                    ctx.fillStyle = this.fColor;
-                    ctx.fillRect(renderX, renderY, dW, dH);
-                }
-
+                if (!this.transparentBG) { ctx.fillStyle = this.fColor; ctx.fillRect(renderX, renderY, dW, dH); }
                 if (this.anim === 'scroll') { this.scrollOffset += 0.1 * this.speed; if (this.scrollOffset > this.textWidth) this.scrollOffset = -this.w; }
                 else if (this.anim === 'fade') { this.opacity += 0.02 * this.fadeDir * this.speed; if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1; }
                 else if (this.anim === 'explode') { this.particles.forEach(p => { p.x += p.vx * 0.1 * this.speed; p.y += p.vy * 0.1 * this.speed; }); }
@@ -512,487 +466,380 @@
                     if (this.anim === 'scroll') dx -= this.scrollOffset;
                     if (this.anim === 'explode') { dx = this.particles[i].x + aX; dy = this.particles[i].y + aY; }
                     if (this.anim === 'pixel-fade' && Math.random() > 0.3 * this.speed) return;
-
-                    const fx = renderX + (dx * GRID_SIZE);
-                    const fy = renderY + (dy * GRID_SIZE);
-                    
-                    if (fx >= renderX && fx < renderX + dW && fy >= renderY && fy < renderY + dH) {
-                        ctx.fillStyle = p.c ? p.c : this.color; 
-                        ctx.fillRect(fx, fy, GRID_SIZE - 1, GRID_SIZE - 1);
-                    }
+                    const fx = renderX + (dx * GRID_SIZE); const fy = renderY + (dy * GRID_SIZE);
+                    if (fx >= renderX && fx < renderX + dW && fy >= renderY && fy < renderY + dH) { ctx.fillStyle = p.c ? p.c : this.color; ctx.fillRect(fx, fy, GRID_SIZE - 1, GRID_SIZE - 1); }
                 });
 
-                // Render Garis Seleksi
                 if (selectedObjs.includes(this)) {
-                    ctx.globalAlpha = 1; 
-                    ctx.strokeStyle = this.transparentBG ? this.fColor : "#2ecc71"; // Pakai hijau jika fColor terpakai sebagai BG solid
-                    ctx.lineWidth = 2; ctx.strokeRect(renderX, renderY, dW, dH);
-                    
-                    if (mode === 'select' && selectedObjs.length === 1) { // Node resize hanya muncul jika pilih 1 objek
+                    ctx.globalAlpha = 1; ctx.strokeStyle = this.transparentBG ? this.fColor : "#2ecc71"; ctx.lineWidth = 2; ctx.strokeRect(renderX, renderY, dW, dH);
+                    if (mode === 'select' && selectedObjs.length === 1) { 
                         const hs = 10; ctx.fillStyle = "#e74c3c";
-                        ctx.fillRect(renderX + dW/2 - hs/2, renderY - hs/2, hs, hs); 
-                        ctx.fillRect(renderX + dW/2 - hs/2, renderY + dH - hs/2, hs, hs); 
-                        ctx.fillRect(renderX - hs/2, renderY + dH/2 - hs/2, hs, hs); 
-                        ctx.fillRect(renderX + dW - hs/2, renderY + dH/2 - hs/2, hs, hs); 
+                        ctx.fillRect(renderX + dW/2 - hs/2, renderY - hs/2, hs, hs); ctx.fillRect(renderX + dW/2 - hs/2, renderY + dH - hs/2, hs, hs); 
+                        ctx.fillRect(renderX - hs/2, renderY + dH/2 - hs/2, hs, hs); ctx.fillRect(renderX + dW - hs/2, renderY + dH/2 - hs/2, hs, hs); 
                     }
                 }
                 ctx.restore();
             }
         }
 
-        // --- GROUPING LOGIC ---
-        function groupObjects() {
-            document.getElementById('ctxMenu').style.display = 'none';
-            if (selectedObjs.length < 2) return;
-            saveState();
+        // --- TREE BROWSER ENGINE ---
+        function renderTree() {
+            const container = document.getElementById('treeBrowser'); container.innerHTML = '';
+            screens.forEach((scr, sIdx) => {
+                let sDiv = document.createElement('div'); 
+                
+                // Pewarnaan Tag Iqomah
+                let iqomahClass = scr.type === 'iqomah' ? ' screen-iqomah' : '';
+                sDiv.className = 'tree-item screen-item' + iqomahClass + (sIdx === activeScreenIdx ? ' active-screen' : '');
+                
+                let scrIcon = scr.type === 'iqomah' ? '🚨' : '📺';
+                sDiv.innerHTML = `<span>${scrIcon} ${scr.id}</span>`; 
+                sDiv.onclick = () => switchScreen(sIdx); container.appendChild(sDiv);
 
-            let minX = Math.min(...selectedObjs.map(o => o.x));
-            let minY = Math.min(...selectedObjs.map(o => o.y));
-            let maxW = Math.max(...selectedObjs.map(o => o.x + o.w)) - minX;
-            let maxH = Math.max(...selectedObjs.map(o => o.y + o.h)) - minY;
-
-            let group = new PixelObject(getUniqueName("Group"), "group", minX, minY);
-            group.w = maxW; group.h = maxH;
-            
-            group.children = selectedObjs.map(o => {
-                o.x -= minX; o.y -= minY; // Convert to Relative bounds
-                return o;
+                if (sIdx === activeScreenIdx) {
+                    const buildNodes = (list, parentIsGroup = false) => {
+                        list.forEach(o => {
+                            let oDiv = document.createElement('div'); oDiv.className = 'tree-item obj-item ' + (selectedObjs.includes(o) ? ' selected ' : '') + (!o.visible ? ' hidden-obj ' : '') + (parentIsGroup ? ' child-item' : '');
+                            let icon = o.type === 'group' ? '📁' : o.type === 'sholat' ? '🕌' : o.type === 'iqomah' ? '⏱️' : o.type === 'image' ? '🖼️' : o.type === 'drawing' ? '🎨' : '📄';
+                            oDiv.innerHTML = `<span><span class="tree-icon">${icon}</span> ${o.name}</span><span style="font-size:10px; cursor:pointer;" onclick="event.stopPropagation(); toggleVisibility('${o.name}')">${o.visible ? '👁️' : '🕶️'}</span>`;
+                            oDiv.onclick = (e) => { 
+                                e.stopPropagation(); 
+                                if (e.shiftKey) { if(selectedObjs.includes(o)) selectedObjs = selectedObjs.filter(x=>x!==o); else selectedObjs.push(o); } else { selectedObjs = [o]; }
+                                setMode('select'); syncPropPanel(); renderTree(); 
+                            };
+                            container.appendChild(oDiv);
+                            if (o.type === 'group' && o.children) { buildNodes(o.children, true); }
+                        });
+                    }; buildNodes(scr.objects);
+                }
             });
+        }
 
-            objects = objects.filter(o => !selectedObjs.includes(o)); // Hapus dari Canvas Global
-            objects.push(group);
-            
-            selectedObjs = [group]; selectedObj = group;
-            syncPropPanel(); updateGlobalDropdown();
+        function toggleVisibility(objName) {
+            function findAndToggle(list) {
+                for(let o of list) { if(o.name === objName) { o.visible = !o.visible; return true; } if(o.type === 'group' && o.children) { if(findAndToggle(o.children)) return true; } } return false;
+            } findAndToggle(objects); syncPropPanel(); renderTree();
+        }
+
+        // FUNGSI TAMBAH SCREEN DIMODIFIKASI UNTUK IQOMAH
+        function addScreen(type = 'generic') {
+            if (type === 'iqomah' && screens.some(s => s.type === 'iqomah')) {
+                alert("Maksimal hanya boleh ada 1 Screen khusus Iqomah!"); return;
+            }
+            saveState(); 
+            let newId = type === 'iqomah' ? "Screen_Iqomah" : "Screen_" + (screens.length + 1);
+            screens.push({ id: newId, type: type, objects: [], w: 64, h: 32, durationMode: 'fixed', durationFixed: '00:00:10', durationAnimObj: '' });
+            switchScreen(screens.length - 1);
+        }
+
+        function switchScreen(idx) {
+            saveState(); activeScreenIdx = idx; objects = screens[idx].objects; selectedObjs = [];
+            resizeCanvas(); syncPropPanel(); renderTree();
+        }
+
+        function changeZoom(delta) { let newSize = GRID_SIZE + delta; if (newSize >= 4 && newSize <= 50) { GRID_SIZE = newSize; document.getElementById('zoomLabel').innerText = Math.round((GRID_SIZE / BASE_GRID_SIZE) * 100) + "%"; resizeCanvas(); } }
+
+        function groupObjects() {
+            document.getElementById('ctxMenu').style.display = 'none'; if (selectedObjs.length < 2) return; saveState();
+            let minX = Math.min(...selectedObjs.map(o => o.x)); let minY = Math.min(...selectedObjs.map(o => o.y));
+            let maxW = Math.max(...selectedObjs.map(o => o.x + o.w)) - minX; let maxH = Math.max(...selectedObjs.map(o => o.y + o.h)) - minY;
+            let group = new PixelObject(getUniqueName("Group"), "group", minX, minY); group.w = maxW; group.h = maxH;
+            group.children = selectedObjs.map(o => { o.x -= minX; o.y -= minY; return o; });
+            objects = objects.filter(o => !selectedObjs.includes(o)); screens[activeScreenIdx].objects = objects; objects.push(group); selectedObjs = [group]; syncPropPanel(); renderTree();
         }
 
         function ungroupObjects() {
-            document.getElementById('ctxMenu').style.display = 'none';
-            if (selectedObjs.length !== 1 || selectedObjs[0].type !== 'group') return;
-            saveState();
-
-            let group = selectedObjs[0];
-            group.children.forEach(c => {
-                c.x += group.x; c.y += group.y; // Convert back to Absolute
-                objects.push(c); // Lempar kembali ke Canvas Global
-            });
-
-            objects = objects.filter(o => o !== group);
-            selectedObjs = [...group.children]; 
-            selectedObj = selectedObjs[0];
-            syncPropPanel(); updateGlobalDropdown();
+            document.getElementById('ctxMenu').style.display = 'none'; if (selectedObjs.length !== 1 || selectedObjs[0].type !== 'group') return; saveState();
+            let group = selectedObjs[0]; group.children.forEach(c => { c.x += group.x; c.y += group.y; objects.push(c); });
+            objects = objects.filter(o => o !== group); screens[activeScreenIdx].objects = objects; selectedObjs = [...group.children]; syncPropPanel(); renderTree();
         }
 
-        // CONTEXT MENU TRIGGERS
+        // --- KEYBOARD SHORTCUTS ---
+        window.addEventListener('keydown', (e) => {
+            const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
+            
+            // DELETE KEY
+            if (e.key === 'Delete' && !isInput) {
+                if (selectedObjs.length > 0) {
+                    if (confirm(`Hapus ${selectedObjs.length} objek terpilih dari Screen ini?`)) { deleteSelected(true); }
+                }
+            }
+            
+            // CTRL + Z (UNDO)
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !isInput) {
+                e.preventDefault(); undo();
+            }
+        });
+
         window.addEventListener('contextmenu', (e) => {
             if (e.target.id === 'editorCanvas') {
-                e.preventDefault();
-                const canGroup = selectedObjs.length > 1 && selectedObjs.every(o => o.anim === 'none');
-                const canUngroup = selectedObjs.length === 1 && selectedObjs[0].type === 'group';
-
+                e.preventDefault(); const canGroup = selectedObjs.length > 1 && selectedObjs.every(o => o.anim === 'none'); const canUngroup = selectedObjs.length === 1 && selectedObjs[0].type === 'group';
                 if (canGroup || canUngroup) {
-                    const ctxMenu = document.getElementById('ctxMenu');
-                    ctxMenu.style.display = 'flex';
-                    ctxMenu.style.left = e.clientX + 'px';
-                    ctxMenu.style.top = e.clientY + 'px';
-                    
-                    document.getElementById('btnGroup').style.display = canGroup ? 'block' : 'none';
-                    document.getElementById('btnUngroup').style.display = canUngroup ? 'block' : 'none';
+                    const ctxMenu = document.getElementById('ctxMenu'); ctxMenu.style.display = 'flex'; ctxMenu.style.left = e.clientX + 'px'; ctxMenu.style.top = e.clientY + 'px';
+                    document.getElementById('btnGroup').style.display = canGroup ? 'block' : 'none'; document.getElementById('btnUngroup').style.display = canUngroup ? 'block' : 'none';
                 }
             }
         });
         window.addEventListener('click', (e) => { if(!e.target.closest('#ctxMenu')) document.getElementById('ctxMenu').style.display = 'none'; });
 
-
         function handleImageUpload(event) {
-            const file = event.target.files[0];
-            if (!file || !selectedObj || selectedObj.type !== 'image') return;
-            saveState(); 
+            const file = event.target.files[0]; if (!file || !selectedObj || selectedObj.type !== 'image') return; saveState(); const reader = new FileReader();
+            reader.onload = function(e) { const img = new Image(); img.onload = function() {
+                    offCanvas.width = selectedObj.w; offCanvas.height = selectedObj.h; offCtx.clearRect(0, 0, selectedObj.w, selectedObj.h); offCtx.drawImage(img, 0, 0, selectedObj.w, selectedObj.h);
+                    const data = offCtx.getImageData(0, 0, selectedObj.w, selectedObj.h).data; selectedObj.customPixels = []; 
+                    for(let y=0; y<selectedObj.h; y++){ for(let x=0; x<selectedObj.w; x++){ let idx = (y * selectedObj.w + x) * 4; let alpha = data[idx+3];
+                            if(alpha > 5) { let aRatio = alpha / 255; let r = Math.round(data[idx] * aRatio); let g = Math.round(data[idx+1] * aRatio); let b = Math.round(data[idx+2] * aRatio); let hexColor = "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase(); selectedObj.customPixels.push({ x: x, y: y, c: hexColor }); }
+                        } } selectedObj.updateContent();
+                }; img.src = e.target.result;
+            }; reader.readAsDataURL(file); event.target.value = '';
+        }
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    offCanvas.width = selectedObj.w; offCanvas.height = selectedObj.h;
-                    offCtx.clearRect(0, 0, selectedObj.w, selectedObj.h);
-                    offCtx.drawImage(img, 0, 0, selectedObj.w, selectedObj.h);
-                    
-                    const data = offCtx.getImageData(0, 0, selectedObj.w, selectedObj.h).data;
-                    selectedObj.customPixels = []; 
-                    
-                    for(let y=0; y<selectedObj.h; y++){
-                        for(let x=0; x<selectedObj.w; x++){
-                            let idx = (y * selectedObj.w + x) * 4; let alpha = data[idx+3];
-                            if(alpha > 5) { 
-                                let aRatio = alpha / 255;
-                                let r = Math.round(data[idx] * aRatio); let g = Math.round(data[idx+1] * aRatio); let b = Math.round(data[idx+2] * aRatio);
-                                let hexColor = "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase();
-                                selectedObj.customPixels.push({ x: x, y: y, c: hexColor });
-                            }
-                        }
-                    }
-                    selectedObj.updateContent();
-                }
-                img.src = e.target.result;
+        function resizeCanvas() { 
+            let scr = screens[activeScreenIdx];
+            canvas.width = scr.w * GRID_SIZE; canvas.height = scr.h * GRID_SIZE; 
+        }
+
+        function setMode(m) { mode = m; document.querySelectorAll('.sidebar-left button').forEach(b => b.classList.remove('active')); document.getElementById(m+'Btn').classList.add('active'); canvas.style.cursor = m === 'select' ? 'default' : 'crosshair'; }
+        function setAlign(type, val) { if(selectedObj && !['drawing','image','sholat','group'].includes(selectedObj.type)) { if(type === 'h') selectedObj.alignH = val; else selectedObj.alignV = val; syncGeometryUI(); } }
+        
+        function changeObjType() { 
+            if (!selectedObj) return; 
+            let newType = document.getElementById('propType').value;
+            
+            // VALIDASI PINDAH TIPE KE IQOMAH DARI PROPERTY PANEL
+            if (newType === 'iqomah' && screens[activeScreenIdx].type !== 'iqomah') {
+                alert("Object Counter Iqomah HANYA bisa digunakan di Screen khusus Iqomah!");
+                document.getElementById('propType').value = selectedObj.type; // revert
+                return;
             }
-            reader.readAsDataURL(file); event.target.value = '';
-        }
-
-        function resizeCanvas() { canvas.width = document.getElementById('canvW').value * GRID_SIZE; canvas.height = document.getElementById('canvH').value * GRID_SIZE; }
-
-        function setMode(m) { 
-            mode = m; document.querySelectorAll('.sidebar-left button').forEach(b => b.classList.remove('active')); document.getElementById(m+'Btn').classList.add('active');
-            canvas.style.cursor = m === 'select' ? 'default' : 'crosshair';
-        }
-
-        function setAlign(type, val) { if(selectedObj && selectedObj.type !== 'drawing' && selectedObj.type !== 'image' && selectedObj.type !== 'sholat' && selectedObj.type !== 'group') { if(type === 'h') selectedObj.alignH = val; else selectedObj.alignV = val; syncGeometryUI(); } }
-
-        function changeObjType() {
-            if (!selectedObj) return; selectedObj.type = document.getElementById('propType').value; setupFormatDropdown(); updateFromProp();
+            
+            selectedObj.type = newType; 
+            setupFormatDropdown(); updateFromProp(); 
         }
 
         function setupFormatDropdown() {
             if (!selectedObj) return;
-            const bF = document.getElementById('boxFormat'), bT = document.getElementById('boxText');
-            const bFont = document.getElementById('boxFont'), bAlign = document.getElementById('boxAlign'), bImg = document.getElementById('boxImage');
-            const bSholat = document.getElementById('boxSholat'), bAnim = document.getElementById('boxAnim');
-            const bDataPro = document.getElementById('propType'), bColors = document.getElementById('boxColors');
-            const bCoords = document.getElementById('boxObjCoords');
+            const bF = document.getElementById('boxFormat'), bT = document.getElementById('boxText'), bFont = document.getElementById('boxFont'), bAlign = document.getElementById('boxAlign'), bImg = document.getElementById('boxImage');
+            const bSholat = document.getElementById('boxSholat'), bAnim = document.getElementById('boxAnim'), bColors = document.getElementById('boxColors'), bCoords = document.getElementById('boxObjCoords');
             
-            bF.classList.add('hidden'); bT.classList.add('hidden'); bFont.classList.add('hidden'); 
-            bAlign.classList.add('hidden'); bImg.classList.add('hidden'); bSholat.classList.add('hidden');
+            bF.classList.add('hidden'); bT.classList.add('hidden'); bFont.classList.add('hidden'); bAlign.classList.add('hidden'); bImg.classList.add('hidden'); bSholat.classList.add('hidden');
             bAnim.classList.remove('hidden'); bColors.classList.remove('hidden'); bCoords.classList.remove('hidden');
 
-            if (selectedObj.type === 'group') {
-                bColors.classList.add('hidden'); bCoords.classList.add('hidden'); // Group uses children colors/content coords
-            } else if (selectedObj.type === 'drawing') {
-            } else if (selectedObj.type === 'image') {
-                bImg.classList.remove('hidden');
-            } else if (selectedObj.type === 'sholat') {
-                bSholat.classList.remove('hidden'); bFont.classList.remove('hidden');
-                bAnim.classList.add('hidden'); 
-                document.getElementById('propSholatType').value = selectedObj.sholatType;
-            } else if (selectedObj.type === 'text') { 
-                bT.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden');
-            } else { 
+            if (selectedObj.type === 'group') { bColors.classList.add('hidden'); bCoords.classList.add('hidden'); 
+            } else if (selectedObj.type === 'image') { bImg.classList.remove('hidden');
+            } else if (selectedObj.type === 'sholat') { bSholat.classList.remove('hidden'); bFont.classList.remove('hidden'); bAnim.classList.add('hidden'); document.getElementById('propSholatType').value = selectedObj.sholatType;
+            } else if (selectedObj.type === 'iqomah') { 
+                // KHUSUS IQOMAH: SEMBUNYIKAN ANIMASI, TAMPILKAN FORMAT
+                bF.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden'); bAnim.classList.add('hidden');
+                selectedObj.anim = 'none'; // Force lock animation to none
+                let sF = document.getElementById('propFormat'); sF.innerHTML = ""; FORMATS[selectedObj.type].forEach(f => { let o = document.createElement('option'); o.value = f; o.innerText = f; sF.appendChild(o); }); 
+                if (!selectedObj.format || !FORMATS[selectedObj.type].includes(selectedObj.format)) { selectedObj.format = sF.options[0].value; } sF.value = selectedObj.format;
+            } else if (selectedObj.type === 'text') { bT.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden');
+            } else if (selectedObj.type !== 'drawing') { 
                 bF.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden');
-                let preservedFormat = selectedObj.format;
-                let sF = document.getElementById('propFormat'); sF.innerHTML = ""; 
-                FORMATS[selectedObj.type].forEach(f => { let o = document.createElement('option'); o.value = f; o.innerText = f; sF.appendChild(o); }); 
-                
-                if (!preservedFormat || !FORMATS[selectedObj.type].includes(preservedFormat)) { selectedObj.format = sF.options[0].value; } 
-                else { selectedObj.format = preservedFormat; }
-                sF.value = selectedObj.format;
+                let sF = document.getElementById('propFormat'); sF.innerHTML = ""; FORMATS[selectedObj.type].forEach(f => { let o = document.createElement('option'); o.value = f; o.innerText = f; sF.appendChild(o); }); 
+                if (!selectedObj.format || !FORMATS[selectedObj.type].includes(selectedObj.format)) { selectedObj.format = sF.options[0].value; } sF.value = selectedObj.format;
             }
         }
 
         function syncGeometryUI() {
             if (!selectedObj) return;
-            document.getElementById('propX').value = selectedObj.x;
-            document.getElementById('propY').value = selectedObj.y;
-            document.getElementById('propW').value = selectedObj.w;
-            document.getElementById('propH').value = selectedObj.h;
-            
-            let align = selectedObj.calcAlign();
-            document.getElementById('propObjX').value = selectedObj.x + align.aX;
-            document.getElementById('propObjY').value = selectedObj.y + align.aY;
+            document.getElementById('propX').value = selectedObj.x; document.getElementById('propY').value = selectedObj.y;
+            document.getElementById('propW').value = selectedObj.w; document.getElementById('propH').value = selectedObj.h;
+            let align = selectedObj.calcAlign(); document.getElementById('propObjX').value = selectedObj.x + align.aX; document.getElementById('propObjY').value = selectedObj.y + align.aY;
+        }
+
+        function updateScreenPropUI() {
+            let mode = document.getElementById('propScreenDurMode').value;
+            if (mode === 'fixed') { document.getElementById('boxDurFixed').classList.remove('hidden'); document.getElementById('boxDurAnim').classList.add('hidden'); } 
+            else { document.getElementById('boxDurFixed').classList.add('hidden'); document.getElementById('boxDurAnim').classList.remove('hidden'); }
+        }
+
+        function updateScreenProp() {
+            let scr = screens[activeScreenIdx];
+            scr.id = document.getElementById('propScreenName').value || `Screen_${activeScreenIdx+1}`;
+            scr.w = parseInt(document.getElementById('propScreenW').value) || 64; scr.h = parseInt(document.getElementById('propScreenH').value) || 32;
+            scr.durationMode = document.getElementById('propScreenDurMode').value; scr.durationFixed = document.getElementById('propScreenDurFixed').value; scr.durationAnimObj = document.getElementById('propScreenDurAnim').value;
+            resizeCanvas(); renderTree();
         }
 
         function syncPropPanel() {
+            const panelScreen = document.getElementById('screenPropContent'); const panelObject = document.getElementById('propContent'); const panelMsg = document.getElementById('noSelectionMsg');
+            panelScreen.classList.add('hidden'); panelObject.classList.add('hidden'); panelMsg.style.display = 'none';
+
             if (selectedObjs.length > 1) {
-                document.getElementById('propContent').classList.add('hidden'); 
-                document.getElementById('noSelectionDesc').innerHTML = `<div style="font-size: 40px; margin-bottom: 10px;">📦</div><p><b>${selectedObjs.length} Objects Selected</b><br>Klik kanan untuk opsi Grouping.</p>`;
-                document.getElementById('noSelectionMsg').classList.remove('hidden'); 
-                return;
+                panelMsg.style.display = 'block';
             } else if (selectedObjs.length === 1) {
-                selectedObj = selectedObjs[0];
-                document.getElementById('propContent').classList.remove('hidden'); document.getElementById('noSelectionMsg').classList.add('hidden');
-                document.getElementById('propName').value = selectedObj.name;
-                document.getElementById('propName').style.border = "none";
-                syncGeometryUI(); 
-                
+                selectedObj = selectedObjs[0]; panelObject.classList.remove('hidden');
+                document.getElementById('propName').value = selectedObj.name; document.getElementById('propVisible').checked = selectedObj.visible; syncGeometryUI(); 
                 document.getElementById('propType').value = selectedObj.type; document.getElementById('propFont').value = selectedObj.font; 
-                document.getElementById('propText').value = selectedObj.text; document.getElementById('propColor').value = selectedObj.color;
-                document.getElementById('propFColor').value = selectedObj.fColor; document.getElementById('propAnim').value = selectedObj.anim;
-                document.getElementById('propTransparent').checked = selectedObj.transparentBG;
-                document.getElementById('propSpeed').value = selectedObj.speed; document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
+                document.getElementById('propText').value = selectedObj.text; document.getElementById('propColor').value = selectedObj.color; document.getElementById('propFColor').value = selectedObj.fColor; document.getElementById('propAnim').value = selectedObj.anim;
+                document.getElementById('propTransparent').checked = selectedObj.transparentBG; document.getElementById('propSpeed').value = selectedObj.speed; document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
                 
-                setupFormatDropdown(); 
-                if(!['text', 'drawing', 'image', 'sholat', 'group'].includes(selectedObj.type)) document.getElementById('propFormat').value = selectedObj.format; 
-                updateGlobalDropdown();
+                setupFormatDropdown(); if(!['text', 'drawing', 'image', 'sholat', 'iqomah', 'group'].includes(selectedObj.type)) document.getElementById('propFormat').value = selectedObj.format; 
             } else {
-                selectedObj = null;
-                document.getElementById('propContent').classList.add('hidden'); 
-                document.getElementById('noSelectionDesc').innerHTML = `Klik objek pada kanvas untuk mengaktifkan <b>Properties Manager</b>.<br><br><span style="font-size:10px; color:#aaa;">Tips: Tahan <b>SHIFT + Klik</b> untuk memilih lebih dari satu objek.</span>`;
-                document.getElementById('noSelectionMsg').classList.remove('hidden'); 
+                selectedObj = null; panelScreen.classList.remove('hidden');
+                let scr = screens[activeScreenIdx];
+                document.getElementById('propScreenName').value = scr.id; document.getElementById('propScreenW').value = scr.w; document.getElementById('propScreenH').value = scr.h;
+                document.getElementById('propScreenDurMode').value = scr.durationMode || 'fixed'; document.getElementById('propScreenDurFixed').value = scr.durationFixed || '00:00:10';
+                
+                if (scr.type === 'iqomah') { document.getElementById('iqomahScreenTag').style.display = 'block'; } else { document.getElementById('iqomahScreenTag').style.display = 'none'; }
+
+                let animSelect = document.getElementById('propScreenDurAnim'); animSelect.innerHTML = '<option value="">-- Pilih Objek --</option>'; let allObjNames = getAllObjectNames(scr.objects);
+                allObjNames.forEach(n => { let opt = document.createElement('option'); opt.value = n; opt.innerText = n; if(scr.durationAnimObj === n) opt.selected = true; animSelect.appendChild(opt); });
+                updateScreenPropUI();
             }
+        }
+
+        function updateName() {
+            if(!selectedObj) return; let newName = document.getElementById('propName').value.trim(); if(newName === selectedObj.name || newName === "") return;
+            if(isNameUnique(newName)) { selectedObj.name = newName; } else { selectedObj.name = getUniqueName(newName); document.getElementById('propName').value = selectedObj.name; } renderTree();
         }
 
         function updateFromProp() {
             if (selectedObj) {
-                const newName = document.getElementById('propName').value.trim();
-                
-                // VALIDASI NAMA UNIK
-                if(newName !== selectedObj.name) {
-                    selectedObj.name = "TEMP_VALIDATION_STRING_XYZ"; // temporary change to evade self-check
-                    if(!isNameUnique(newName) || newName === "") {
-                        alert("Gagal menyimpan! Nama object tidak valid atau sudah digunakan.");
-                        document.getElementById('propName').value = history.length > 0 ? history[history.length-1].objects.find(o=>o.x==selectedObj.x).name : "Layer_Rev";
-                        selectedObj.name = document.getElementById('propName').value; // revert back
-                        return;
-                    } else {
-                        selectedObj.name = newName;
-                    }
-                }
-
                 if(selectedObj.type !== 'group') selectedObj.type = document.getElementById('propType').value; 
-                selectedObj.font = document.getElementById('propFont').value; 
-                selectedObj.text = document.getElementById('propText').value; 
-                selectedObj.color = document.getElementById('propColor').value;
-                selectedObj.fColor = document.getElementById('propFColor').value; 
-                selectedObj.anim = document.getElementById('propAnim').value;
-                selectedObj.transparentBG = document.getElementById('propTransparent').checked;
-                selectedObj.speed = parseFloat(document.getElementById('propSpeed').value);
+                selectedObj.visible = document.getElementById('propVisible').checked; selectedObj.font = document.getElementById('propFont').value; selectedObj.text = document.getElementById('propText').value; 
+                selectedObj.color = document.getElementById('propColor').value; selectedObj.fColor = document.getElementById('propFColor').value; selectedObj.anim = document.getElementById('propAnim').value; selectedObj.transparentBG = document.getElementById('propTransparent').checked; selectedObj.speed = parseFloat(document.getElementById('propSpeed').value);
                 
-                if (selectedObj.type === 'sholat') selectedObj.sholatType = document.getElementById('propSholatType').value;
+                if (selectedObj.type === 'sholat') selectedObj.sholatType = document.getElementById('propSholatType').value; 
+                else if (selectedObj.type === 'iqomah') { selectedObj.format = document.getElementById('propFormat').value; selectedObj.anim = 'none'; } // Kunci animasi Iqomah
                 else if (!['text', 'drawing', 'image', 'group'].includes(selectedObj.type)) selectedObj.format = document.getElementById('propFormat').value;
                 
-                document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
-                updateGlobalDropdown(); 
-                selectedObj.updateContent(); syncGeometryUI();
+                document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x'; selectedObj.updateContent(); syncGeometryUI(); renderTree();
             }
         }
 
-        function updateGlobalDropdown() {
-            const select = document.getElementById('globalObjSelect'); select.innerHTML = '<option value="">-- No Object Selected --</option>';
-            objects.forEach((obj, idx) => { let opt = document.createElement('option'); opt.value = idx; opt.innerText = obj.name; if(selectedObjs.includes(obj)) opt.selected = true; select.appendChild(opt); });
-        }
-
-        function jumpToSelectedObject() { const idx = document.getElementById('globalObjSelect').value; if(idx !== "") { selectedObjs = [objects[idx]]; setMode('select'); syncPropPanel(); } }
-
         canvas.onmousedown = (e) => {
-            if (e.button === 2) return; // Prevent interference from Context Menu right click
-            const r = canvas.getBoundingClientRect(); const mx = e.clientX - r.left; const my = e.clientY - r.top;
-            
+            if (e.button === 2) return; const r = canvas.getBoundingClientRect(); const mx = e.clientX - r.left; const my = e.clientY - r.top;
             if (mode === 'select') {
                 const hs = 10; const hc = hs/2;
                 if (selectedObjs.length === 1) {
-                    let s = selectedObjs[0];
-                    const renderX = s.x * GRID_SIZE, renderY = s.y * GRID_SIZE, w = s.w * GRID_SIZE, h = s.h * GRID_SIZE;
-                    let checkResize = '';
-                    if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY-hc && my < renderY+hc) checkResize = 'n';
-                    else if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY+h-hc && my < renderY+h+hc) checkResize = 's';
-                    else if (mx > renderX-hc && mx < renderX+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) checkResize = 'w';
-                    else if (mx > renderX+w-hc && mx < renderX+w+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) checkResize = 'e';
-                    
-                    if (checkResize !== '') {
-                        isResizing = true; resizeDir = checkResize; saveState(); 
-                        if (s.type === 'drawing' || s.type === 'image') { s._preResizePixels = JSON.parse(JSON.stringify(s.customPixels)); s._preResizeW = s.w; s._preResizeH = s.h; }
-                        return;
-                    }
+                    let s = selectedObjs[0]; if(!s.visible) return;
+                    const renderX = s.x * GRID_SIZE, renderY = s.y * GRID_SIZE, w = s.w * GRID_SIZE, h = s.h * GRID_SIZE; let checkResize = '';
+                    if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY-hc && my < renderY+hc) checkResize = 'n'; else if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY+h-hc && my < renderY+h+hc) checkResize = 's'; else if (mx > renderX-hc && mx < renderX+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) checkResize = 'w'; else if (mx > renderX+w-hc && mx < renderX+w+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) checkResize = 'e';
+                    if (checkResize !== '') { isResizing = true; resizeDir = checkResize; saveState(); if (s.type === 'drawing' || s.type === 'image') { s._preResizePixels = JSON.parse(JSON.stringify(s.customPixels)); s._preResizeW = s.w; s._preResizeH = s.h; } return; }
                 }
-
-                // Check Object Hits
                 let hitFound = false;
                 for (let i = objects.length - 1; i >= 0; i--) {
-                    let o = objects[i]; const renderX = o.x * GRID_SIZE, renderY = o.y * GRID_SIZE, w = o.w * GRID_SIZE, h = o.h * GRID_SIZE;
+                    let o = objects[i]; if(!o.visible) continue; const renderX = o.x * GRID_SIZE, renderY = o.y * GRID_SIZE, w = o.w * GRID_SIZE, h = o.h * GRID_SIZE;
                     if (mx > renderX && mx < renderX+w && my > renderY && my < renderY+h) { 
-                        hitFound = true;
-                        if (e.shiftKey) {
-                            if (selectedObjs.includes(o)) selectedObjs = selectedObjs.filter(x => x !== o);
-                            else selectedObjs.push(o);
-                        } else {
-                            if (!selectedObjs.includes(o)) selectedObjs = [o];
-                            
-                            isDragging = true; 
-                            dragOffsets = selectedObjs.map(s => ({ obj: s, dx: Math.floor(mx/GRID_SIZE) - s.x, dy: Math.floor(my/GRID_SIZE) - s.y }));
-                            saveState();
-                        }
-                        syncPropPanel(); return; 
+                        hitFound = true; if (e.shiftKey) { if (selectedObjs.includes(o)) selectedObjs = selectedObjs.filter(x => x !== o); else selectedObjs.push(o); } else { if (!selectedObjs.includes(o)) selectedObjs = [o]; isDragging = true; dragOffsets = selectedObjs.map(s => ({ obj: s, dx: Math.floor(mx/GRID_SIZE) - s.x, dy: Math.floor(my/GRID_SIZE) - s.y })); saveState(); }
+                        syncPropPanel(); renderTree(); return; 
                     }
                 }
-                if (!hitFound) { selectedObjs = []; syncPropPanel(); }
+                if (!hitFound) { selectedObjs = []; syncPropPanel(); renderTree(); }
             } else if (mode === 'pen' || mode === 'eraser') {
                 saveState(); let hitDrawing = null; const gridMouseX = Math.floor(mx/GRID_SIZE); const gridMouseY = Math.floor(my/GRID_SIZE);
-                if (selectedObj && (selectedObj.type === 'drawing' || selectedObj.type === 'image')) {
-                    if (gridMouseX >= selectedObj.x && gridMouseX < selectedObj.x+selectedObj.w && gridMouseY >= selectedObj.y && gridMouseY < selectedObj.y+selectedObj.h) { hitDrawing = selectedObj; }
-                }
-                if (!hitDrawing) {
-                    for (let i = objects.length - 1; i >= 0; i--) {
-                        let o = objects[i];
-                        if (o.type === 'drawing' || o.type === 'image') {
-                            if (gridMouseX >= o.x && gridMouseX < o.x+o.w && gridMouseY >= o.y && gridMouseY < o.y+o.h) { hitDrawing = o; break; }
-                        }
-                    }
-                }
-                if (hitDrawing) { selectedObjs = [hitDrawing]; syncPropPanel(); } 
-                else if (mode === 'pen') {
-                    let o = new PixelObject(getUniqueName("Draw"), 'drawing', gridMouseX, gridMouseY);
-                    objects.push(o); selectedObjs = [o]; syncPropPanel();
-                }
-                isDrawing = true; handleDraw(mx, my);
+                if (selectedObj && selectedObj.visible && (selectedObj.type === 'drawing' || selectedObj.type === 'image')) { if (gridMouseX >= selectedObj.x && gridMouseX < selectedObj.x+selectedObj.w && gridMouseY >= selectedObj.y && gridMouseY < selectedObj.y+selectedObj.h) { hitDrawing = selectedObj; } }
+                if (!hitDrawing) { for (let i = objects.length - 1; i >= 0; i--) { let o = objects[i]; if(!o.visible) continue; if (o.type === 'drawing' || o.type === 'image') { if (gridMouseX >= o.x && gridMouseX < o.x+o.w && gridMouseY >= o.y && gridMouseY < o.y+o.h) { hitDrawing = o; break; } } } }
+                if (hitDrawing) { selectedObjs = [hitDrawing]; syncPropPanel(); } else if (mode === 'pen') { let o = new PixelObject(getUniqueName("Draw"), 'drawing', gridMouseX, gridMouseY); objects.push(o); selectedObjs = [o]; syncPropPanel(); }
+                isDrawing = true; handleDraw(mx, my); renderTree();
             }
         };
 
         canvas.onmousemove = (e) => {
             const r = canvas.getBoundingClientRect(); const mx = e.clientX - r.left; const my = e.clientY - r.top;
-            
             if (mode === 'select' && !isDragging && !isResizing) {
                 let currCursor = 'default'; const hs = 10; const hc = hs/2;
-                if (selectedObjs.length === 1) {
-                    let s = selectedObjs[0];
-                    const renderX = s.x * GRID_SIZE, renderY = s.y * GRID_SIZE, w = s.w * GRID_SIZE, h = s.h * GRID_SIZE;
-                    if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY-hc && my < renderY+hc) currCursor = 'n-resize';
-                    else if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY+h-hc && my < renderY+h+hc) currCursor = 's-resize';
-                    else if (mx > renderX-hc && mx < renderX+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) currCursor = 'w-resize';
-                    else if (mx > renderX+w-hc && mx < renderX+w+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) currCursor = 'e-resize';
-                    else if (mx > renderX && mx < renderX+w && my > renderY && my < renderY+h) currCursor = 'move';
-                } else if(selectedObjs.length > 1) {
-                    let isHovering = selectedObjs.some(s => mx > s.x*GRID_SIZE && mx < (s.x+s.w)*GRID_SIZE && my > s.y*GRID_SIZE && my < (s.y+s.h)*GRID_SIZE);
-                    if(isHovering) currCursor = 'move';
-                }
-                canvas.style.cursor = currCursor;
+                if (selectedObjs.length === 1 && selectedObjs[0].visible) {
+                    let s = selectedObjs[0]; const renderX = s.x * GRID_SIZE, renderY = s.y * GRID_SIZE, w = s.w * GRID_SIZE, h = s.h * GRID_SIZE;
+                    if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY-hc && my < renderY+hc) currCursor = 'n-resize'; else if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY+h-hc && my < renderY+h+hc) currCursor = 's-resize'; else if (mx > renderX-hc && mx < renderX+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) currCursor = 'w-resize'; else if (mx > renderX+w-hc && mx < renderX+w+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) currCursor = 'e-resize'; else if (mx > renderX && mx < renderX+w && my > renderY && my < renderY+h) currCursor = 'move';
+                } else if(selectedObjs.length > 1) { let isHovering = selectedObjs.some(s => s.visible && mx > s.x*GRID_SIZE && mx < (s.x+s.w)*GRID_SIZE && my > s.y*GRID_SIZE && my < (s.y+s.h)*GRID_SIZE); if(isHovering) currCursor = 'move'; } canvas.style.cursor = currCursor;
             }
-
-            let hovering = null;
-            for(let o of objects) { 
-                const renderX = o.x * GRID_SIZE, renderY = o.y * GRID_SIZE;
-                if(mx > renderX && mx < renderX+(o.w*GRID_SIZE) && my > renderY && my < renderY+(o.h*GRID_SIZE)) { hovering = o; break; } 
-            }
-            if(hovering && !isDragging && !isResizing) {
-                tooltip.style.display = 'block'; tooltip.style.left = e.clientX + 'px'; tooltip.style.top = (e.clientY + 20) + 'px'; 
-                tooltip.innerHTML = `<span style="color:#fff">Name:</span> ${hovering.name}<br><span style="color:#fff">Type:</span> ${hovering.type.toUpperCase()}`;
-            } else { tooltip.style.display = 'none'; }
-
-            if (isDragging && dragOffsets.length > 0) {
-                dragOffsets.forEach(item => {
-                    item.obj.x = Math.floor(mx/GRID_SIZE) - item.dx;
-                    item.obj.y = Math.floor(my/GRID_SIZE) - item.dy;
-                });
-                syncGeometryUI();
+            let hovering = null; for(let o of objects) { if(!o.visible) continue; const renderX = o.x * GRID_SIZE, renderY = o.y * GRID_SIZE; if(mx > renderX && mx < renderX+(o.w*GRID_SIZE) && my > renderY && my < renderY+(o.h*GRID_SIZE)) { hovering = o; break; } }
+            if(hovering && !isDragging && !isResizing) { tooltip.style.display = 'block'; tooltip.style.left = e.clientX + 'px'; tooltip.style.top = (e.clientY + 20) + 'px'; tooltip.innerHTML = `<span style="color:#fff">Name:</span> ${hovering.name}<br><span style="color:#fff">Type:</span> ${hovering.type.toUpperCase()}`; } else { tooltip.style.display = 'none'; }
+            if (isDragging && dragOffsets.length > 0) { dragOffsets.forEach(item => { item.obj.x = Math.floor(mx/GRID_SIZE) - item.dx; item.obj.y = Math.floor(my/GRID_SIZE) - item.dy; }); syncGeometryUI();
             } else if (isResizing && selectedObjs.length === 1) {
-                let s = selectedObjs[0];
-                let gridX = Math.round(mx / GRID_SIZE); let gridY = Math.round(my / GRID_SIZE);
-                if (resizeDir === 'e') { s.w = Math.max(2, gridX - s.x); } 
-                else if (resizeDir === 's') { s.h = Math.max(2, gridY - s.y); } 
-                else if (resizeDir === 'w') { let oldX = s.x; let newW = s.w + (oldX - gridX); if (newW >= 2) { s.x = gridX; s.w = newW; } } 
-                else if (resizeDir === 'n') { let oldY = s.y; let newH = s.h + (oldY - gridY); if (newH >= 2) { s.y = gridY; s.h = newH; } }
-                
+                let s = selectedObjs[0]; let gridX = Math.round(mx / GRID_SIZE); let gridY = Math.round(my / GRID_SIZE);
+                if (resizeDir === 'e') { s.w = Math.max(2, gridX - s.x); } else if (resizeDir === 's') { s.h = Math.max(2, gridY - s.y); } else if (resizeDir === 'w') { let oldX = s.x; let newW = s.w + (oldX - gridX); if (newW >= 2) { s.x = gridX; s.w = newW; } } else if (resizeDir === 'n') { let oldY = s.y; let newH = s.h + (oldY - gridY); if (newH >= 2) { s.y = gridY; s.h = newH; } }
                 if ((s.type === 'drawing' || s.type === 'image') && s._preResizePixels) {
-                    let scaleX = s.w / s._preResizeW; let scaleY = s.h / s._preResizeH;
-                    let oldMap = {}; for(let p of s._preResizePixels) { oldMap[p.x + ',' + p.y] = p.c; }
-                    let scaledPixels = [];
-                    for(let ny = 0; ny < s.h; ny++) {
-                        for(let nx = 0; nx < s.w; nx++) {
-                            let ox = Math.floor(nx / scaleX); let oy = Math.floor(ny / scaleY);
-                            let color = oldMap[ox + ',' + oy]; if (color) scaledPixels.push({x: nx, y: ny, c: color});
-                        }
-                    }
+                    let scaleX = s.w / s._preResizeW; let scaleY = s.h / s._preResizeH; let oldMap = {}; for(let p of s._preResizePixels) { oldMap[p.x + ',' + p.y] = p.c; } let scaledPixels = [];
+                    for(let ny = 0; ny < s.h; ny++) { for(let nx = 0; nx < s.w; nx++) { let ox = Math.floor(nx / scaleX); let oy = Math.floor(ny / scaleY); let color = oldMap[ox + ',' + oy]; if (color) scaledPixels.push({x: nx, y: ny, c: color}); } }
                     s.customPixels = scaledPixels; s.updateContent();
-                }
-                syncGeometryUI();
+                } syncGeometryUI();
             } else if (isDrawing) { handleDraw(mx, my); }
         };
 
-        window.onmouseup = () => { 
-            isDrawing = isDragging = isResizing = false; dragOffsets = [];
-            if (selectedObjs.length === 1) {
-                delete selectedObjs[0]._preResizePixels; delete selectedObjs[0]._preResizeW; delete selectedObjs[0]._preResizeH;
-            }
-        };
+        window.onmouseup = () => { isDrawing = isDragging = isResizing = false; dragOffsets = []; if (selectedObjs.length === 1) { delete selectedObjs[0]._preResizePixels; delete selectedObjs[0]._preResizeW; delete selectedObjs[0]._preResizeH; } };
 
         function handleDraw(mx, my) {
-            if (!selectedObj || (selectedObj.type !== 'drawing' && selectedObj.type !== 'image')) return;
-            let gridX = Math.floor(mx/GRID_SIZE); let gridY = Math.floor(my/GRID_SIZE);
-            let relX = gridX - selectedObj.x; let relY = gridY - selectedObj.y;
-            
+            if (!selectedObj || !selectedObj.visible || (selectedObj.type !== 'drawing' && selectedObj.type !== 'image')) return;
+            let gridX = Math.floor(mx/GRID_SIZE); let gridY = Math.floor(my/GRID_SIZE); let relX = gridX - selectedObj.x; let relY = gridY - selectedObj.y;
             if (relX >= 0 && relX < selectedObj.w && relY >= 0 && relY < selectedObj.h) {
                 const color = document.getElementById('propColor') ? document.getElementById('propColor').value : "#ffffff";
-                if (mode === 'pen') {
-                    selectedObj.customPixels = selectedObj.customPixels.filter(p => p.x !== relX || p.y !== relY);
-                    selectedObj.customPixels.push({x: relX, y: relY, c: color});
-                } else if (mode === 'eraser') { selectedObj.customPixels = selectedObj.customPixels.filter(p => p.x !== relX || p.y !== relY); }
-                selectedObj.updateContent();
+                if (mode === 'pen') { selectedObj.customPixels = selectedObj.customPixels.filter(p => p.x !== relX || p.y !== relY); selectedObj.customPixels.push({x: relX, y: relY, c: color}); } else if (mode === 'eraser') { selectedObj.customPixels = selectedObj.customPixels.filter(p => p.x !== relX || p.y !== relY); } selectedObj.updateContent();
             }
         }
 
-        function saveState() { 
-            history.push({ 
-                objects: JSON.parse(JSON.stringify(objects)), 
-                canvW: document.getElementById('canvW').value, 
-                canvH: document.getElementById('canvH').value 
-            }); 
-            if (history.length > 30) history.shift(); 
-        }
+        function restoreObject(o) { let n = new PixelObject(o.name, o.type, o.x, o.y); Object.assign(n, o); if(n.type === 'group' && n.children) n.children = n.children.map(c => restoreObject(c)); if(n.type !== 'group') n.updateContent(); return n; }
+        function saveState() { history.push({ screens: JSON.parse(JSON.stringify(screens)), activeScreenIdx: activeScreenIdx }); if (history.length > 30) history.shift(); }
         
         function undo() { 
             if (history.length > 0) { 
-                const s = history.pop(); 
-                document.getElementById('canvW').value = s.canvW; document.getElementById('canvH').value = s.canvH; resizeCanvas();
-                
-                let oldSelectedNames = selectedObjs.map(o => o.name);
-                
-                objects = s.objects.map(o => { 
-                    let n = new PixelObject(o.name, o.type, o.x, o.y); 
-                    Object.assign(n, o); 
-                    n.updateContent(); 
-                    return n; 
-                }); 
-                
-                selectedObjs = objects.filter(o => oldSelectedNames.includes(o.name));
-                syncPropPanel(); updateGlobalDropdown();
+                const s = history.pop(); screens = s.screens.map(scr => { scr.objects = scr.objects.map(o => restoreObject(o)); return scr; });
+                activeScreenIdx = s.activeScreenIdx; objects = screens[activeScreenIdx].objects; selectedObjs = [];
+                resizeCanvas(); syncPropPanel(); renderTree();
             } 
         }
 
+        // FUNGSI TAMBAH OBJECT DIMODIFIKASI UNTUK VALIDASI IQOMAH
         function addPixelObject(type) { 
+            if (type === 'iqomah' && screens[activeScreenIdx].type !== 'iqomah') {
+                alert("Object Counter Iqomah HANYA bisa ditambahkan di dalam Screen khusus Iqomah!");
+                return;
+            }
+            
             saveState(); 
-            let base = type === 'drawing' ? "Draw" : type === 'image' ? "Img" : type === 'sholat' ? "Jadwal" : "Layer";
-            let o = new PixelObject(getUniqueName(base), type, Math.max(0, Math.floor(document.getElementById('canvW').value/2) - 8), Math.max(0, Math.floor(document.getElementById('canvH').value/2) - 4)); 
-            objects.push(o); selectedObjs = [o]; 
-            setMode(type === 'drawing' || type === 'image' ? 'pen' : 'select'); 
-            syncPropPanel(); updateGlobalDropdown();
+            let base = type === 'drawing' ? "Draw" : type === 'image' ? "Img" : type === 'sholat' ? "Jadwal" : type === 'iqomah' ? "Count" : "Layer";
+            let o = new PixelObject(getUniqueName(base), type, Math.max(0, Math.floor(screens[activeScreenIdx].w/2) - 8), Math.max(0, Math.floor(screens[activeScreenIdx].h/2) - 4)); 
+            
+            objects.push(o); selectedObjs = [o]; setMode(type === 'drawing' || type === 'image' ? 'pen' : 'select'); syncPropPanel(); renderTree();
         }
 
-        function deleteSelected() { if(selectedObjs.length > 0) { saveState(); objects = objects.filter(o => !selectedObjs.includes(o)); selectedObjs = []; syncPropPanel(); updateGlobalDropdown(); } }
-        function clearCanvas() { if(confirm("Hapus semua objek di kanvas?")) { saveState(); objects = []; selectedObjs = []; syncPropPanel(); updateGlobalDropdown(); } }
+        function deleteSelected(skipConfirm = false) { 
+            if(selectedObjs.length > 0) { 
+                if(!skipConfirm) { if(!confirm(`Hapus ${selectedObjs.length} objek terpilih dari Screen ini?`)) return; }
+                saveState(); objects = objects.filter(o => !selectedObjs.includes(o)); screens[activeScreenIdx].objects = objects; selectedObjs = []; syncPropPanel(); renderTree(); 
+            } 
+        }
 
         function serializeObj(o) {
             let align = o.calcAlign();
-            let objData = {
-                id: o.name, type: o.type, 
-                frameX: o.x, frameY: o.y, w: o.w, h: o.h,
-                contentX: o.x + align.aX, contentY: o.y + align.aY,
-                font: o.font, color: o.color, format: o.format, anim: o.anim, speed: o.speed, 
-                hooks: { before: o.fnBefore, after: o.fnAfter, call: o.fnCall }
-            };
+            let objData = { id: o.name, type: o.type, visible: o.visible, frameX: o.x, frameY: o.y, w: o.w, h: o.h, contentX: o.x + align.aX, contentY: o.y + align.aY, font: o.font, color: o.color, format: o.format, anim: o.anim, speed: o.speed, hooks: { before: o.fnBefore, after: o.fnAfter, call: o.fnCall } };
             if (o.type === 'drawing' || o.type === 'image') objData.pixels = o.pixels; 
             if (o.type === 'sholat') { objData.sholatType = o.sholatType; objData.bgColor = o.transparentBG ? "transparent" : o.fColor; }
-            if (o.type !== 'sholat' && o.type !== 'drawing' && o.type !== 'image' && o.type !== 'group') objData.bgColor = o.transparentBG ? "transparent" : o.fColor;
+            if (!['sholat','drawing','image','group'].includes(o.type)) objData.bgColor = o.transparentBG ? "transparent" : o.fColor;
             if (o.type === 'group') objData.children = o.children.map(c => serializeObj(c));
             return objData;
         }
 
         function exportToJerryScript() {
-            const out = { canvas: { w: document.getElementById('canvW').value, h: document.getElementById('canvH').value }, objects: objects.map(serializeObj) };
-            document.getElementById('outputArea').innerText = "/* \n * JerryScript Logic \n * Frame vs Content Coord & Group Hierarchy \n */\n\nvar sceneData = " + JSON.stringify(out, null, 2) + ";";
+            const out = { 
+                project: "Pixel Pro Screens",
+                screens: screens.map(scr => ({ 
+                    id: scr.id, type: scr.type, resolution: { w: scr.w, h: scr.h }, 
+                    duration: scr.durationMode === 'fixed' ? scr.durationFixed : { waitForAnim: scr.durationAnimObj },
+                    objects: scr.objects.filter(o=>o.visible).map(serializeObj) 
+                }))
+            };
+            document.getElementById('outputArea').innerText = "/* \n * JerryScript Logic \n * Multi-Screen Duration & Sequencer Export \n */\n\nvar sceneData = " + JSON.stringify(out, null, 2) + ";";
             document.getElementById('exportModal').style.display = 'block';
         }
 
         function animate() {
             ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
             ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"; ctx.lineWidth = 1; ctx.beginPath();
             for(let i=0; i<=canvas.width; i+=GRID_SIZE) { ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); }
             for(let i=0; i<=canvas.height; i+=GRID_SIZE) { ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); }
             ctx.stroke();
-            
-            objects.forEach(o => o.draw());
-            
-            requestAnimationFrame(animate);
-            if(selectedObj && selectedObjs.length === 1 && (selectedObj.anim !== 'none' || !['text','drawing','image','sholat','group'].includes(selectedObj.type))) syncGeometryUI();
+            objects.forEach(o => o.draw()); requestAnimationFrame(animate);
+            if(selectedObj && selectedObjs.length === 1 && (selectedObj.anim !== 'none' || !['text','drawing','image','sholat','iqomah','group'].includes(selectedObj.type))) syncGeometryUI();
         }
 
-        resizeCanvas();
+        // INIT
+        screens.push({ id: "Screen_1", type: "generic", objects: [], w: 64, h: 32, durationMode: 'fixed', durationFixed: '00:00:10', durationAnimObj: '' });
+        switchScreen(0);
         animate();
     </script>
 </body>
