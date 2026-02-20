@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Ultimate Pixel Pro Editor - JerryScript Ready</title>
+    <style>
+        body { background: #1a1a1b; color: #eee; font-family: sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 280px; background: #2d2d2d; padding: 20px 15px; display: flex; flex-direction: column; gap: 12px; box-shadow: 2px 0 10px rgba(0,0,0,0.5); overflow-y: auto; border-right: 1px solid #444; }
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #1e1e1e; position: relative; }
+        
+        .group { display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid #444; padding-bottom: 15px; }
+        h3 { margin: 0; font-size: 11px; color: #2ecc71; text-transform: uppercase; letter-spacing: 1px; }
+        
+        input, button, select { padding: 10px; border-radius: 4px; border: none; font-size: 13px; background: #3d3d3d; color: white; width: 100%; box-sizing: border-box; outline: none; }
+        button { cursor: pointer; transition: 0.2s; text-align: center; }
+        button:hover { background: #4d4d4d; }
+        button.active { background: #2ecc71; color: #1a1a1b; font-weight: bold; }
+        
+        label { font-size: 11px; color: #aaa; display: flex; justify-content: space-between; margin-bottom: -3px; }
+        .slider { -webkit-appearance: none; width: 100%; height: 6px; background: #555; border-radius: 5px; cursor: pointer; margin: 8px 0; }
+        .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #2ecc71; border-radius: 50%; }
+
+        canvas { background: #fff; border: 2px solid #555; image-rendering: pixelated; box-shadow: 0 0 40px rgba(0,0,0,0.6); }
+        
+        .align-group { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+        .play-btn { background: #3498db; }
+        .pause-btn { background: #e67e22; }
+        .export-btn { background: #27ae60; font-weight: bold; margin-top: 10px; }
+        
+        /* Modal Export */
+        #exportModal { display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); width:70%; height:70%; background:#2d2d2d; padding:20px; border:2px solid #2ecc71; z-index:1000; box-shadow: 0 0 100px #000; }
+        #outputArea { background:#000; color:#0f0; padding:15px; font-family:monospace; height:80%; overflow:auto; white-space: pre-wrap; border:1px solid #444; }
+
+        .mode-pen { cursor: crosshair; }
+        .mode-eraser { cursor: cell; }
+        .mode-select { cursor: default; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2 style="font-size: 18px; margin: 0; color: #2ecc71;">Pixel Pro v1.0</h2>
+
+        <div class="group">
+            <h3>Canvas Resolution</h3>
+            <div style="display: flex; gap: 5px; align-items: center;">
+                <input type="number" id="canvW" value="40"> x <input type="number" id="canvH" value="30">
+            </div>
+            <button onclick="resizeCanvas()" style="background: #9b59b6;">Set Canvas</button>
+        </div>
+
+        <div class="group">
+            <h3>Tools</h3>
+            <div style="display:flex; gap:5px;">
+                <button id="selectBtn" onclick="setMode('select')">Select</button>
+                <button id="penBtn" class="active" onclick="setMode('pen')">Pen</button>
+                <button id="eraserBtn" onclick="setMode('eraser')">Eraser</button>
+            </div>
+        </div>
+
+        <div class="group">
+            <h3>Object Styling</h3>
+            <input type="text" id="textInput" placeholder="Ketik teks..." oninput="updateSelectedStyle()">
+            
+            <label>Horizontal Align</label>
+            <div class="align-group">
+                <button onclick="setAlign('h', 'left')">L</button>
+                <button onclick="setAlign('h', 'center')">C</button>
+                <button onclick="setAlign('h', 'right')">R</button>
+            </div>
+
+            <label>Vertical Align</label>
+            <div class="align-group">
+                <button onclick="setAlign('v', 'top')">T</button>
+                <button onclick="setAlign('v', 'middle')">M</button>
+                <button onclick="setAlign('v', 'bottom')">B</button>
+            </div>
+
+            <label>Animation & Speed <span id="speedVal">1.0x</span></label>
+            <select id="animType" onchange="updateSelectedStyle()">
+                <option value="none">Static</option>
+                <option value="scroll">Scroll</option>
+                <option value="fade">Fade</option>
+                <option value="explode">Explode</option>
+                <option value="pixel-fade">Pixel Fade</option>
+            </select>
+            <input type="range" id="animSpeed" min="0.1" max="5" step="0.1" value="1" class="slider" oninput="updateSelectedStyle()">
+            
+            <button id="playPauseBtn" class="pause-btn" onclick="togglePlay()" style="display:none">⏸ Pause</button>
+
+            <label>Colors</label>
+            <div style="display: flex; gap: 5px;">
+                <input type="color" id="textColor" value="#2c3e50" oninput="updateSelectedStyle()" title="Pencil/Text Color">
+                <input type="color" id="frameColor" value="#3498db" oninput="updateSelectedStyle()" title="Selection Frame Color">
+            </div>
+        </div>
+
+        <div class="group" style="border:none;">
+            <button onclick="addPixelText()" style="background: #2ecc71; color:#000; font-weight:bold;">+ Insert Animated Text</button>
+            <button onclick="undo()" style="background: #f39c12; margin-top:5px;">⬅ Undo</button>
+            <button onclick="clearCanvas()" style="background:#e74c3c; margin-top:5px;">Reset All</button>
+            <button class="export-btn" onclick="exportToJerryScript()">💾 Export JerryScript</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <canvas id="editorCanvas" class="mode-pen"></canvas>
+        <div style="color: #555; font-size: 11px; margin-top: 10px;">Drag to Move | Drag Red Handle to Resize | Backspace to Delete</div>
+    </div>
+
+    <div id="exportModal">
+        <h3 style="color:#2ecc71; margin-top:0;">JerryScript Data Output</h3>
+        <pre id="outputArea"></pre>
+        <button onclick="document.getElementById('exportModal').style.display='none'" style="background:#444; margin-top:10px;">Close</button>
+    </div>
+
+    <script>
+        // DATA FONT HEX MONO5X7 (96 Characters starting from ASCII 32)
+        const MONO5X7_HEX = [
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x5F, 0x00, 0x00, 0x00, 0x07, 0x00, 0x07, 0x00, 0x14, 0x7F, 0x14, 0x7F, 0x14, 
+            0x24, 0x2A, 0x7F, 0x2A, 0x12, 0x23, 0x13, 0x08, 0x64, 0x62, 0x36, 0x49, 0x55, 0x22, 0x50, 0x00, 0x05, 0x03, 0x00, 0x00, 
+            0x00, 0x1C, 0x22, 0x41, 0x00, 0x00, 0x41, 0x22, 0x1C, 0x00, 0x14, 0x08, 0x3E, 0x08, 0x14, 0x08, 0x08, 0x3E, 0x08, 0x08, 
+            0x00, 0x50, 0x30, 0x00, 0x00, 0x08, 0x08, 0x08, 0x08, 0x08, 0x00, 0x60, 0x60, 0x00, 0x00, 0x20, 0x10, 0x08, 0x04, 0x02, 
+            0x3E, 0x51, 0x49, 0x45, 0x3E, 0x00, 0x42, 0x7F, 0x40, 0x00, 0x42, 0x61, 0x51, 0x49, 0x46, 0x21, 0x41, 0x45, 0x4B, 0x31, 
+            0x18, 0x14, 0x12, 0x7F, 0x10, 0x27, 0x45, 0x45, 0x45, 0x39, 0x3C, 0x4A, 0x49, 0x49, 0x30, 0x01, 0x71, 0x09, 0x05, 0x03, 
+            0x36, 0x49, 0x49, 0x49, 0x36, 0x06, 0x49, 0x49, 0x29, 0x1E, 0x00, 0x36, 0x36, 0x00, 0x00, 0x00, 0x56, 0x36, 0x00, 0x00, 
+            0x08, 0x14, 0x22, 0x41, 0x00, 0x14, 0x14, 0x14, 0x14, 0x14, 0x00, 0x41, 0x22, 0x14, 0x08, 0x02, 0x01, 0x51, 0x09, 0x06, 
+            0x32, 0x49, 0x79, 0x41, 0x3E, 0x7E, 0x11, 0x11, 0x11, 0x7E, 0x7F, 0x49, 0x49, 0x49, 0x36, 0x3E, 0x41, 0x41, 0x41, 0x22, 
+            0x7F, 0x41, 0x41, 0x22, 0x1C, 0x7F, 0x49, 0x49, 0x49, 0x41, 0x7F, 0x09, 0x09, 0x09, 0x01, 0x3E, 0x41, 0x49, 0x49, 0x78, 
+            0x7F, 0x08, 0x08, 0x08, 0x7F, 0x00, 0x41, 0x7F, 0x41, 0x00, 0x20, 0x40, 0x41, 0x3F, 0x01, 0x7F, 0x08, 0x14, 0x22, 0x41, 
+            0x7F, 0x40, 0x40, 0x40, 0x40, 0x7F, 0x02, 0x0C, 0x02, 0x7F, 0x7F, 0x04, 0x08, 0x10, 0x7F, 0x3E, 0x41, 0x41, 0x41, 0x3E, 
+            0x7F, 0x09, 0x09, 0x09, 0x06, 0x3E, 0x41, 0x51, 0x21, 0x5E, 0x7F, 0x09, 0x19, 0x29, 0x46, 0x46, 0x49, 0x49, 0x49, 0x31, 
+            0x01, 0x01, 0x7F, 0x01, 0x01, 0x3F, 0x40, 0x40, 0x40, 0x3F, 0x1F, 0x20, 0x40, 0x20, 0x1C, 0x3F, 0x40, 0x38, 0x40, 0x3F, 
+            0x63, 0x14, 0x08, 0x14, 0x63, 0x07, 0x08, 0x70, 0x08, 0x07, 0x61, 0x51, 0x49, 0x45, 0x43
+        ];
+
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+        const GRID_SIZE = 15; 
+        let objects = [];
+        let manualPixels = [];
+        let history = [];
+        let selectedObj = null;
+        let mode = 'pen', isDrawing = false, isDragging = false, isResizing = false;
+        let offset = { x: 0, y: 0 };
+
+        function init() {
+            resizeCanvas();
+            animate();
+        }
+
+        class PixelObject {
+            constructor(text, x, y, color, fColor) {
+                this.text = text.toUpperCase();
+                this.x = x; this.y = y;
+                this.w = 15; this.h = 6;
+                this.color = color;
+                this.frameColor = fColor;
+                this.alignH = 'left';
+                this.alignV = 'top';
+                this.anim = 'none';
+                this.speed = 1.0;
+                this.isPlaying = true;
+                this.pixels = [];
+                this.particles = [];
+                this.scrollOffset = 0;
+                this.opacity = 1;
+                this.fadeDir = 1;
+                this.updatePixels();
+            }
+
+            updatePixels() {
+                this.pixels = [];
+                let xOff = 0;
+                for (let char of this.text) {
+                    const code = char.charCodeAt(0);
+                    const start = (code - 32) * 5;
+                    if (start >= 0 && start < MONO5X7_HEX.length) {
+                        for (let col = 0; col < 5; col++) {
+                            const byte = MONO5X7_HEX[start + col];
+                            for (let row = 0; row < 7; row++) {
+                                if ((byte >> row) & 1) this.pixels.push({ x: col + xOff, y: row });
+                            }
+                        }
+                    }
+                    xOff += 6;
+                }
+                this.textWidth = xOff - 1;
+                this.textHeight = 7;
+                this.resetAnim();
+            }
+
+            resetAnim() {
+                this.scrollOffset = 0;
+                this.opacity = (this.anim === 'fade') ? 0 : 1;
+                this.particles = this.pixels.map(p => ({
+                    x: p.x, y: p.y,
+                    vx: (Math.random() - 0.5) * 2 * this.speed,
+                    vy: (Math.random() - 0.5) * 2 * this.speed
+                }));
+            }
+
+            draw() {
+                ctx.save();
+                const dW = this.w * GRID_SIZE, dH = this.h * GRID_SIZE;
+                const gridW = this.w * 2, gridH = this.h * 2; 
+
+                let alignX = 0;
+                if(this.alignH === 'center') alignX = Math.floor((gridW - this.textWidth) / 2);
+                if(this.alignH === 'right') alignX = gridW - this.textWidth;
+
+                let alignY = 0;
+                if(this.alignV === 'middle') alignY = Math.floor((gridH - this.textHeight) / 2);
+                if(this.alignV === 'bottom') alignY = gridH - this.textHeight;
+
+                if (this.isPlaying) {
+                    if (this.anim === 'scroll') {
+                        this.scrollOffset += 0.1 * this.speed;
+                        if (this.scrollOffset > this.textWidth) this.scrollOffset = -gridW;
+                    } else if (this.anim === 'fade') {
+                        this.opacity += 0.02 * this.fadeDir * this.speed;
+                        if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1;
+                    } else if (this.anim === 'explode') {
+                        this.particles.forEach(p => { p.x += p.vx * 0.1; p.y += p.vy * 0.1; });
+                    }
+                }
+
+                ctx.globalAlpha = Math.max(0, Math.min(1, this.opacity));
+                ctx.fillStyle = this.color;
+
+                this.pixels.forEach((p, i) => {
+                    let dx = p.x + alignX;
+                    let dy = p.y + alignY;
+                    if (this.anim === 'scroll') dx -= this.scrollOffset;
+                    if (this.anim === 'explode') { dx = this.particles[i].x + alignX; dy = this.particles[i].y + alignY; }
+                    if (this.anim === 'pixel-fade' && this.isPlaying && Math.random() > 0.4 * this.speed) return;
+
+                    const fx = this.x + (dx * (GRID_SIZE / 2));
+                    const fy = this.y + (dy * (GRID_SIZE / 2));
+
+                    if (fx >= this.x && fx < this.x + dW && fy >= this.y && fy < this.y + dH) {
+                        ctx.fillRect(fx, fy, (GRID_SIZE / 2) - 1, (GRID_SIZE / 2) - 1);
+                    }
+                });
+
+                if (selectedObj === this && mode === 'select') {
+                    ctx.globalAlpha = 1; ctx.strokeStyle = this.frameColor; ctx.lineWidth = 2;
+                    ctx.strokeRect(this.x, this.y, dW, dH);
+                    ctx.fillStyle = "#e74c3c"; ctx.fillRect(this.x + dW - 10, this.y + dH - 10, 10, 10);
+                }
+                ctx.restore();
+            }
+        }
+
+        // --- Core Functions ---
+        function setAlign(type, val) { if (selectedObj) { if(type === 'h') selectedObj.alignH = val; if(type === 'v') selectedObj.alignV = val; } }
+        
+        function resizeCanvas() {
+            saveState();
+            canvas.width = document.getElementById('canvW').value * GRID_SIZE;
+            canvas.height = document.getElementById('canvH').value * GRID_SIZE;
+        }
+
+        function togglePlay() {
+            if (selectedObj) {
+                selectedObj.isPlaying = !selectedObj.isPlaying;
+                document.getElementById('playPauseBtn').innerText = selectedObj.isPlaying ? "⏸ Pause" : "▶ Play";
+                document.getElementById('playPauseBtn').className = selectedObj.isPlaying ? "pause-btn" : "play-btn";
+            }
+        }
+
+        function exportToJerryScript() {
+            const data = {
+                res: {w: canvas.width/GRID_SIZE, h: canvas.height/GRID_SIZE},
+                drawings: manualPixels.map(p => ({ k: p.key, c: p.color })),
+                objects: objects.map(o => ({ t: o.text, x: o.x/GRID_SIZE, y: o.y/GRID_SIZE, w: o.w, h: o.h, c: o.color, a: o.anim, s: o.speed, ah: o.alignH, av: o.alignV }))
+            };
+            document.getElementById('outputArea').innerText = "var pixelData = " + JSON.stringify(data, null, 2) + ";\n\nfunction render() {\n  // Implement logic here\n}";
+            document.getElementById('exportModal').style.display = 'block';
+        }
+
+        canvas.onmousedown = (e) => {
+            const r = canvas.getBoundingClientRect();
+            const mx = e.clientX - r.left, my = e.clientY - r.top;
+            if (mode === 'select') {
+                for (let obj of objects) {
+                    const w = obj.w*GRID_SIZE, h = obj.h*GRID_SIZE;
+                    if (mx > obj.x+w-15 && my > obj.y+h-15) { selectedObj = obj; isResizing = true; saveState(); return; }
+                    if (mx > obj.x && mx < obj.x+w && my > obj.y && my < obj.y+h) {
+                        selectedObj = obj; isDragging = true; offset.x = mx-obj.x; offset.y = my-obj.y; syncUI(); return;
+                    }
+                }
+                selectedObj = null; hideUI();
+            } else { saveState(); isDrawing = true; handleDraw(mx, my); }
+        };
+
+        canvas.onmousemove = (e) => {
+            const r = canvas.getBoundingClientRect();
+            const mx = e.clientX - r.left, my = e.clientY - r.top;
+            if (isResizing && selectedObj) {
+                selectedObj.w = Math.max(2, Math.floor((mx - selectedObj.x) / GRID_SIZE));
+                selectedObj.h = Math.max(2, Math.floor((my - selectedObj.y) / GRID_SIZE));
+            } else if (isDragging && selectedObj) {
+                selectedObj.x = Math.round((mx - offset.x) / GRID_SIZE) * GRID_SIZE;
+                selectedObj.y = Math.round((my - offset.y) / GRID_SIZE) * GRID_SIZE;
+            } else if (isDrawing) handleDraw(mx, my);
+        };
+
+        function handleDraw(mx, my) {
+            const gx = Math.floor(mx/GRID_SIZE)*GRID_SIZE, gy = Math.floor(my/GRID_SIZE)*GRID_SIZE;
+            const key = `${gx},${gy}`, color = document.getElementById('textColor').value;
+            if (mode === 'pen' && gx < canvas.width && gy < canvas.height) { if (!manualPixels.find(p => p.key === key)) manualPixels.push({key, color}); }
+            else if (mode === 'eraser') manualPixels = manualPixels.filter(p => p.key !== key);
+        }
+
+        function updateSelectedStyle() {
+            if (selectedObj) {
+                selectedObj.text = document.getElementById('textInput').value.toUpperCase();
+                selectedObj.color = document.getElementById('textColor').value;
+                selectedObj.frameColor = document.getElementById('frameColor').value;
+                selectedObj.speed = parseFloat(document.getElementById('animSpeed').value);
+                document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
+                const nA = document.getElementById('animType').value;
+                if (selectedObj.anim !== nA) { selectedObj.anim = nA; selectedObj.resetAnim(); }
+                selectedObj.updatePixels();
+            }
+        }
+
+        function syncUI() {
+            document.getElementById('textInput').value = selectedObj.text;
+            document.getElementById('textColor').value = selectedObj.color;
+            document.getElementById('frameColor').value = selectedObj.frameColor;
+            document.getElementById('animType').value = selectedObj.anim;
+            document.getElementById('animSpeed').value = selectedObj.speed;
+            document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
+            document.getElementById('playPauseBtn').style.display = 'block';
+            document.getElementById('delBtn').style.display = 'block';
+        }
+
+        function hideUI() { document.getElementById('playPauseBtn').style.display = 'none'; document.getElementById('delBtn').style.display = 'none'; }
+        window.onmouseup = () => { isDrawing = isDragging = isResizing = false; };
+        window.onkeydown = (e) => { if ((e.key==='Delete' || e.key==='Backspace') && selectedObj) deleteSelected(); };
+
+        function addPixelText() {
+            saveState();
+            const obj = new PixelObject("HELLO", 30, 30, document.getElementById('textColor').value, document.getElementById('frameColor').value);
+            objects.push(obj); setMode('select'); selectedObj = obj; syncUI();
+        }
+
+        function setMode(m) {
+            mode = m; document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
+            if(document.getElementById(m+'Btn')) document.getElementById(m+'Btn').classList.add('active');
+            canvas.className = 'mode-' + m;
+        }
+
+        function saveState() {
+            history.push({ objects: JSON.parse(JSON.stringify(objects)), manualPixels: [...manualPixels], w: canvas.width/GRID_SIZE, h: canvas.height/GRID_SIZE });
+            if (history.length > 30) history.shift();
+        }
+
+        function undo() {
+            if (history.length > 0) {
+                const s = history.pop(); manualPixels = s.manualPixels;
+                canvas.width = s.w*GRID_SIZE; canvas.height = s.h*GRID_SIZE;
+                document.getElementById('canvW').value = s.w; document.getElementById('canvH').value = s.h;
+                objects = s.objects.map(o => {
+                    let n = new PixelObject(o.t || o.text, o.x, o.y, o.color || o.c, o.frameColor || o.fc);
+                    Object.assign(n, o); n.updatePixels(); return n;
+                });
+            }
+        }
+
+        function deleteSelected() { if(selectedObj) { objects = objects.filter(o => o !== selectedObj); selectedObj = null; hideUI(); } }
+        function clearCanvas() { saveState(); objects = []; manualPixels = []; }
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "#eee"; ctx.lineWidth = 0.5;
+            for(let i=0; i<=canvas.width; i+=GRID_SIZE) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
+            for(let i=0; i<=canvas.height; i+=GRID_SIZE) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
+            manualPixels.forEach(p => {
+                const [x, y] = p.key.split(',').map(Number);
+                if(x < canvas.width && y < canvas.height) { ctx.fillStyle = p.color; ctx.fillRect(x, y, GRID_SIZE-1, GRID_SIZE-1); }
+            });
+            objects.forEach(obj => obj.draw());
+            requestAnimationFrame(animate);
+        }
+
+        init();
+    </script>
+</body>
+</html>
