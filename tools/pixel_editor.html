@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Pixel Pro Studio v15.0 - Screen Management & Deletion</title>
+    <title>Pixel Pro Studio v16.0 - Multi-Directional Slide Engine</title>
     <style>
         :root { --bg: #1a1a1b; --side: #252526; --accent: #2ecc71; --text: #eee; --border: #3e3e42; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
@@ -151,7 +151,7 @@
                 <label>Screen Name (ID)</label>
                 <input type="text" id="propScreenName" oninput="updateScreenProp()" placeholder="Screen_1">
                 
-                <p id="splashScreenTag" style="color:#f1c40f; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🚀 DEDICATED SPLASH SCREEN<br><span style="font-weight:normal; color:#aaa;">Transisi otomatis ke Main Screen</span></p>
+                <p id="splashScreenTag" style="color:#f1c40f; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🚀 DEDICATED SPLASH SCREEN</p>
                 <p id="mainScreenTag" style="color:#2ecc71; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🏠 DEDICATED MAIN SCREEN</p>
                 <p id="iqomahScreenTag" style="color:#e74c3c; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🚨 DEDICATED IQOMAH SCREEN</p>
                 <p id="adzanScreenTag" style="color:#9b59b6; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🕌 DEDICATED ADZAN SCREEN</p>
@@ -181,7 +181,6 @@
                     <label style="color:#e67e22; margin-top:5px; display:block;">Select Trigger Object</label>
                     <select id="propScreenDurAnim" onchange="updateScreenProp()">
                     </select>
-                    <p style="font-size:9px; color:#888; margin: 4px 0 0 0;">Screen berpindah setelah animasi objek ini selesai.</p>
                 </div>
             </div>
             
@@ -309,7 +308,11 @@
                 <label>Animation Engine</label>
                 <select id="propAnim" onchange="updateFromProp()" style="margin-bottom: 8px;">
                     <option value="none">Static</option>
-                    <option value="scroll">Scroll</option>
+                    <option value="scroll">Scroll (Auto Left)</option>
+                    <option value="slide-left">Slide Left</option>
+                    <option value="slide-right">Slide Right</option>
+                    <option value="slide-up">Slide Up</option>
+                    <option value="slide-down">Slide Down</option>
                     <option value="fade">Fade</option>
                     <option value="explode">Explode</option>
                     <option value="pixel-fade">Pixel Fade</option>
@@ -451,15 +454,41 @@
                 const rPx = this.radius * Math.min(GRID_SIZE/2, 4);
 
                 if (this.type === 'group') {
-                    ctx.save(); let scrollPixelOffset = 0;
-                    if (this.anim === 'scroll') { this.scrollOffset += 0.1 * this.speed; if (this.scrollOffset > this.w) this.scrollOffset = -this.w; scrollPixelOffset = this.scrollOffset * GRID_SIZE; ctx.translate(-scrollPixelOffset, 0); } 
-                    else if (this.anim === 'fade') { this.opacity += 0.02 * this.fadeDir * this.speed; if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1; }
+                    ctx.save(); 
+                    let sOffX = 0, sOffY = 0;
+
+                    // NEW MULTI-DIRECTIONAL LOGIC FOR GROUPS
+                    if (this.anim.startsWith('slide') || this.anim === 'scroll') {
+                        this.scrollOffset += 0.2 * this.speed;
+                        if (this.anim === 'scroll' || this.anim === 'slide-left') {
+                            if (this.scrollOffset > this.w) this.scrollOffset = -this.w;
+                            sOffX = -this.scrollOffset * GRID_SIZE;
+                        } else if (this.anim === 'slide-right') {
+                            if (this.scrollOffset > this.w) this.scrollOffset = -this.w;
+                            sOffX = this.scrollOffset * GRID_SIZE;
+                        } else if (this.anim === 'slide-up') {
+                            if (this.scrollOffset > this.h) this.scrollOffset = -this.h;
+                            sOffY = -this.scrollOffset * GRID_SIZE;
+                        } else if (this.anim === 'slide-down') {
+                            if (this.scrollOffset > this.h) this.scrollOffset = -this.h;
+                            sOffY = this.scrollOffset * GRID_SIZE;
+                        }
+                    } else if (this.anim === 'fade') { 
+                        this.opacity += 0.02 * this.fadeDir * this.speed; 
+                        if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1; 
+                    }
+                    
                     ctx.globalAlpha = Math.max(0, Math.min(1, this.opacity));
+                    
                     if (!this.transparentBG) { 
                         ctx.fillStyle = this.fColor; ctx.beginPath(); 
-                        if(ctx.roundRect) ctx.roundRect(renderX + scrollPixelOffset, renderY, dW, dH, rPx); else ctx.rect(renderX + scrollPixelOffset, renderY, dW, dH);
+                        if(ctx.roundRect) ctx.roundRect(renderX + sOffX, renderY + sOffY, dW, dH, rPx); 
+                        else ctx.rect(renderX + sOffX, renderY + sOffY, dW, dH);
                         ctx.fill(); 
                     }
+
+                    ctx.translate(sOffX, sOffY);
+                    
                     this.children.forEach(c => { let origX = c.x, origY = c.y; c.x = this.x + c.x; c.y = this.y + c.y; c.draw(); c.x = origX; c.y = origY; });
                     ctx.restore();
                     if (selectedObjs.includes(this)) { 
@@ -479,7 +508,22 @@
                     ctx.fill(); 
                 }
 
-                if (this.anim === 'scroll') { this.scrollOffset += 0.1 * this.speed; if (this.scrollOffset > this.textWidth) this.scrollOffset = -this.w; }
+                // NEW MULTI-DIRECTIONAL LOGIC FOR NORMAL OBJECTS
+                let maxW = Math.max(this.w, this.textWidth || 0);
+                let maxH = Math.max(this.h, this.textHeight || 0);
+
+                if (this.anim.startsWith('slide') || this.anim === 'scroll') {
+                    this.scrollOffset += 0.2 * this.speed;
+                    if (this.anim === 'scroll' || this.anim === 'slide-left') {
+                        if (this.scrollOffset > maxW) this.scrollOffset = -this.w;
+                    } else if (this.anim === 'slide-right') {
+                        if (this.scrollOffset > this.w) this.scrollOffset = -maxW;
+                    } else if (this.anim === 'slide-up') {
+                        if (this.scrollOffset > maxH) this.scrollOffset = -this.h;
+                    } else if (this.anim === 'slide-down') {
+                        if (this.scrollOffset > this.h) this.scrollOffset = -maxH;
+                    }
+                }
                 else if (this.anim === 'fade') { this.opacity += 0.02 * this.fadeDir * this.speed; if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1; }
                 else if (this.anim === 'explode') { this.particles.forEach(p => { p.x += p.vx * 0.1 * this.speed; p.y += p.vy * 0.1 * this.speed; }); }
 
@@ -487,11 +531,21 @@
 
                 this.pixels.forEach((p, i) => {
                     let dx = p.x + aX; let dy = p.y + aY;
-                    if (this.anim === 'scroll') dx -= this.scrollOffset;
-                    if (this.anim === 'explode') { dx = this.particles[i].x + aX; dy = this.particles[i].y + aY; }
+                    
+                    if (this.anim === 'scroll' || this.anim === 'slide-left') dx -= this.scrollOffset;
+                    else if (this.anim === 'slide-right') dx += this.scrollOffset;
+                    else if (this.anim === 'slide-up') dy -= this.scrollOffset;
+                    else if (this.anim === 'slide-down') dy += this.scrollOffset;
+                    else if (this.anim === 'explode') { dx = this.particles[i].x + aX; dy = this.particles[i].y + aY; }
+                    
                     if (this.anim === 'pixel-fade' && Math.random() > 0.3 * this.speed) return;
+                    
                     const fx = renderX + (dx * GRID_SIZE); const fy = renderY + (dy * GRID_SIZE);
-                    if (fx >= renderX && fx < renderX + dW && fy >= renderY && fy < renderY + dH) { ctx.fillStyle = p.c ? p.c : this.color; ctx.fillRect(fx, fy, GRID_SIZE - 1, GRID_SIZE - 1); }
+                    // Hitbox clipping (Mencegah piksel tumpah keluar frame objek)
+                    if (fx >= renderX && fx < renderX + dW && fy >= renderY && fy < renderY + dH) { 
+                        ctx.fillStyle = p.c ? p.c : this.color; 
+                        ctx.fillRect(fx, fy, GRID_SIZE - 1, GRID_SIZE - 1); 
+                    }
                 });
 
                 if (selectedObjs.includes(this)) {
@@ -546,7 +600,6 @@
             } findAndToggle(objects); syncPropPanel(); renderTree();
         }
 
-        // --- BUTTON VALIDATION LOGIC ---
         function updateSidebarButtons() {
             if(!screens[activeScreenIdx]) return;
             let type = screens[activeScreenIdx].type;
@@ -560,7 +613,6 @@
                 btnSholat.disabled = true; btnSholat.style.opacity = '0.3';
                 btnIqomah.disabled = true; btnIqomah.style.opacity = '0.3';
             } else {
-                // generic & main
                 btnSholat.disabled = false; btnSholat.style.opacity = '1';
                 btnIqomah.disabled = true; btnIqomah.style.opacity = '0.3';
             }
@@ -584,16 +636,11 @@
             resizeCanvas(); updateSidebarButtons(); syncPropPanel(); renderTree();
         }
 
-        // --- FUNGSI HAPUS SCREEN ---
         function deleteCurrentScreen() {
-            if (screens.length <= 1) {
-                alert("Tidak bisa menghapus screen terakhir! Proyek harus memiliki minimal 1 screen.");
-                return;
-            }
+            if (screens.length <= 1) { alert("Tidak bisa menghapus screen terakhir! Proyek harus memiliki minimal 1 screen."); return; }
             let scrName = screens[activeScreenIdx].id;
             if (confirm(`Hapus screen '${scrName}' beserta seluruh objek di dalamnya?`)) {
-                saveState();
-                screens.splice(activeScreenIdx, 1);
+                saveState(); screens.splice(activeScreenIdx, 1);
                 let newIdx = activeScreenIdx > 0 ? activeScreenIdx - 1 : 0;
                 switchScreen(newIdx);
             }
@@ -654,17 +701,10 @@
             let newType = document.getElementById('propType').value;
             let scrType = screens[activeScreenIdx].type;
 
-            if (newType === 'iqomah' && scrType !== 'iqomah') {
-                alert("Object Counter Iqomah HANYA bisa digunakan di Screen khusus Iqomah!");
-                document.getElementById('propType').value = selectedObj.type; return;
-            }
-            if (newType === 'sholat' && (scrType === 'iqomah' || scrType === 'adzan' || scrType === 'splash')) {
-                alert("Object Jadwal Sholat TIDAK bisa digunakan di Screen Adzan, Iqomah, atau Splash!");
-                document.getElementById('propType').value = selectedObj.type; return;
-            }
+            if (newType === 'iqomah' && scrType !== 'iqomah') { alert("Object Counter Iqomah HANYA bisa digunakan di Screen khusus Iqomah!"); document.getElementById('propType').value = selectedObj.type; return; }
+            if (newType === 'sholat' && (scrType === 'iqomah' || scrType === 'adzan' || scrType === 'splash')) { alert("Object Jadwal Sholat TIDAK bisa digunakan di Screen Adzan, Iqomah, atau Splash!"); document.getElementById('propType').value = selectedObj.type; return; }
             
-            selectedObj.type = newType; 
-            setupFormatDropdown(); updateFromProp(); 
+            selectedObj.type = newType; setupFormatDropdown(); updateFromProp(); 
         }
 
         function setupFormatDropdown() {
