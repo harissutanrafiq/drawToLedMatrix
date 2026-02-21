@@ -2,7 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Pixel Pro Studio v18.0 - Global Canvas Resolution</title>
+    <title>Pixel Pro Studio v19.2 - Advanced Anim & Hooks</title>
+    <script src="fonts.js"></script>
     <style>
         :root { --bg: #1a1a1b; --side: #252526; --accent: #2ecc71; --text: #eee; --border: #3e3e42; }
         body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
@@ -43,7 +44,6 @@
         .btn-blue { background: #3498db; }
         .btn-green { background: #27ae60; font-weight: bold; }
         .btn-red { background: #e74c3c; font-weight: bold; }
-        .btn-orange { background: #f39c12; color: #000; font-weight: bold; }
         
         .zoom-btn { background: transparent; font-size: 14px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
         .zoom-btn:hover { background: #555; }
@@ -252,11 +252,7 @@
                 <div id="boxFont" style="margin-top:5px;">
                     <label>Font Style</label>
                     <select id="propFont" onchange="updateFromProp()">
-                        <option value="custom">Retro Mono5x7 (HEX)</option>
-                        <option value="monospace">System Monospace</option>
-                        <option value="sans-serif">System Sans-Serif</option>
-                        <option value="serif">System Serif</option>
-                    </select>
+                        </select>
                 </div>
 
                 <div id="boxText" style="margin-top:5px;">
@@ -317,10 +313,23 @@
                     <option value="explode">Explode</option>
                     <option value="pixel-fade">Pixel Fade</option>
                 </select>
-                <div>
-                    <label>Speed <span id="speedVal" style="color:var(--accent); font-family:monospace; margin-left:5px;">1.0x</span></label>
-                    <input type="range" id="propSpeed" min="0.1" max="5" step="0.1" value="1" oninput="updateFromProp()" style="margin-top:4px;">
+                <div class="grid-2">
+                    <div>
+                        <label>Speed <span id="speedVal" style="color:var(--accent); font-family:monospace; margin-left:2px;">1.0x</span></label>
+                        <input type="range" id="propSpeed" min="0.1" max="5" step="0.1" value="1" oninput="updateFromProp()" style="margin-top:4px;">
+                    </div>
+                    <div>
+                        <label>Jeda (Detik)</label>
+                        <input type="number" id="propAnimDelay" min="0" step="0.1" value="0" onchange="updateFromProp()" style="margin-top:4px; height: 28px; text-align:center;">
+                    </div>
                 </div>
+            </div>
+
+            <div class="group" id="boxHooks">
+                <label>Hook Functions (JS Callbacks)</label>
+                <div style="margin-top:4px;"><label>Before</label><input type="text" id="propHookBefore" placeholder="fn_before()" oninput="updateFromProp()"></div>
+                <div style="margin-top:4px;"><label>After</label><input type="text" id="propHookAfter" placeholder="fn_after()" oninput="updateFromProp()"></div>
+                <div style="margin-top:4px;"><label>Call (Active)</label><input type="text" id="propHookCall" placeholder="fn_call()" oninput="updateFromProp()"></div>
             </div>
 
             <button onclick="deleteSelected()" class="btn-red" style="margin-top: 5px; padding: 10px;">🗑️ Delete Selected</button>
@@ -334,24 +343,6 @@
     </div>
 
     <script>
-        const MONO5X7_HEX = [
-            0x00,0x00,0x00,0x00,0x00, 0x00,0x00,0x5F,0x00,0x00, 0x00,0x07,0x00,0x07,0x00, 0x14,0x7F,0x14,0x7F,0x14, 
-            0x24,0x2A,0x7F,0x2A,0x12, 0x23,0x13,0x08,0x64,0x62, 0x36,0x49,0x55,0x22,0x50, 0x00,0x05,0x03,0x00,0x00, 
-            0x00,0x1C,0x22,0x41,0x00, 0x00,0x41,0x22,0x1C,0x00, 0x14,0x08,0x3E,0x08,0x14, 0x08,0x08,0x3E,0x08,0x08, 
-            0x00,0x50,0x30,0x00,0x00, 0x08,0x08,0x08,0x08,0x08, 0x00,0x60,0x60,0x00,0x00, 0x20,0x10,0x08,0x04,0x02, 
-            0x3E,0x51,0x49,0x45,0x3E, 0x00,0x42,0x7F,0x40,0x00, 0x42,0x61,0x51,0x49,0x46, 0x21,0x41,0x45,0x4B,0x31, 
-            0x18,0x14,0x12,0x7F,0x10, 0x27,0x45,0x45,0x45,0x39, 0x3C,0x4A,0x49,0x49,0x30, 0x01,0x71,0x09,0x05,0x03, 
-            0x36,0x49,0x49,0x49,0x36, 0x06,0x49,0x49,0x29,0x1E, 0x00,0x36,0x36,0x00,0x00, 0x00,0x56,0x36,0x00,0x00, 
-            0x08,0x14,0x22,0x41,0x00, 0x14,0x14,0x14,0x14,0x14, 0x00,0x41,0x22,0x14,0x08, 0x02,0x01,0x51,0x09,0x06, 
-            0x32,0x49,0x79,0x41,0x3E, 0x7E,0x11,0x11,0x11,0x7E, 0x7F,0x49,0x49,0x49,0x36, 0x3E,0x41,0x41,0x41,0x22, 
-            0x7F,0x41,0x41,0x22,0x1C, 0x7F,0x49,0x49,0x49,0x41, 0x7F,0x09,0x09,0x09,0x01, 0x3E,0x41,0x49,0x49,0x78, 
-            0x7F,0x08,0x08,0x08,0x7F, 0x00,0x41,0x7F,0x41,0x00, 0x20,0x40,0x41,0x3F,0x01, 0x7F,0x08,0x14,0x22,0x41, 
-            0x7F,0x40,0x40,0x40,0x40, 0x7F,0x02,0x0C,0x02,0x7F, 0x7F,0x04,0x08,0x10,0x7F, 0x3E,0x41,0x41,0x41,0x3E, 
-            0x7F,0x09,0x09,0x09,0x06, 0x3E,0x41,0x51,0x21,0x5E, 0x7F,0x09,0x19,0x29,0x46, 0x46,0x49,0x49,0x49,0x31, 
-            0x01,0x01,0x7F,0x01,0x01, 0x3F,0x40,0x40,0x40,0x3F, 0x1F,0x20,0x40,0x20,0x1F, 0x3F,0x40,0x38,0x40,0x3F, 
-            0x63,0x14,0x08,0x14,0x63, 0x07,0x08,0x70,0x08,0x07, 0x61,0x51,0x49,0x45,0x43
-        ];
-
         const canvas = document.getElementById('editorCanvas');
         const ctx = canvas.getContext('2d');
         const tooltip = document.getElementById('hoverTooltip');
@@ -380,6 +371,27 @@
             iqomah: ['MM:SS', 'SS'] 
         };
 
+        // BACA FONT DARI FILE EKSTERNAL (fonts.js) - TANPA SYSTEM FONT
+        function initFonts() {
+            const fontSelect = document.getElementById('propFont');
+            if(!fontSelect) return;
+            fontSelect.innerHTML = '';
+            
+            if (typeof PixelFonts !== 'undefined') {
+                for (let key in PixelFonts) {
+                    let opt = document.createElement('option');
+                    opt.value = key;
+                    opt.innerText = PixelFonts[key].name;
+                    fontSelect.appendChild(opt);
+                }
+            } else {
+                let opt = document.createElement('option');
+                opt.value = "error";
+                opt.innerText = "Error: fonts.js tidak ditemukan";
+                fontSelect.appendChild(opt);
+            }
+        }
+
         function updateProjectRes() {
             PROJECT_W = parseInt(document.getElementById('globalW').value) || 64;
             PROJECT_H = parseInt(document.getElementById('globalH').value) || 32;
@@ -407,10 +419,16 @@
                 this.w = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah') ? 25 : 32; 
                 this.h = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah') ? 10 : 10;  
                 this.text = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah' || type === 'group') ? "" : "PIXEL"; 
-                this.format = ""; this.font = "custom"; this.color = "#ffffff"; this.fColor = "#00ff00"; this.transparentBG = true; 
+                this.format = ""; 
+                this.font = (typeof PixelFonts !== 'undefined' && Object.keys(PixelFonts).length > 0) ? Object.keys(PixelFonts)[0] : "monospace"; 
+                this.color = "#ffffff"; this.fColor = "#00ff00"; this.transparentBG = true; 
                 this.radius = 0; 
-                this.alignH = 'center'; this.alignV = 'middle'; this.anim = 'none'; this.speed = 1.0; this.scrollOffset = 0;
-                this.opacity = 1; this.fadeDir = 1; this.fnBefore = ""; this.fnAfter = ""; this.fnCall = "";
+                this.alignH = 'center'; this.alignV = 'middle'; 
+                
+                this.anim = 'none'; this.speed = 1.0; this.animDelay = 0; this.scrollOffset = 0;
+                this.opacity = 1; this.fadeDir = 1; 
+                this.fnBefore = ""; this.fnAfter = ""; this.fnCall = "";
+                
                 this.sholatType = 'Subuh';
                 this.pixels = []; this.customPixels = []; this.children = []; this.particles = []; this.textWidth = 0; this.textHeight = 7; 
                 if (type !== 'group') this.updateContent();
@@ -425,33 +443,107 @@
                 if (this.type === 'clock') { const h = String(now.getHours()).padStart(2,'0'), m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0'); if(this.format === 'HH:mm') return `${h}:${m}`; if(this.format === 'hh:mm A') return now.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}); return `${h}:${m}:${s}`; }
                 if (this.type === 'cal_masehi') { const d = String(now.getDate()).padStart(2,'0'), m = String(now.getMonth()+1).padStart(2,'0'), y = now.getFullYear(); if(this.format === 'DD-MM-YYYY') return `${d}-${m}-${y}`; if(this.format === 'DD MMM YYYY') return now.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase(); return `${d}/${m}/${y}`; }
                 if (this.type === 'cal_hijri') { if (this.format === 'DD/MM/YYYY (H)') return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'2-digit',month:'2-digit',year:'numeric'}).format(now); return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'numeric',month:'long',year:'numeric'}).format(now).toUpperCase(); }
-                return this.text.toUpperCase();
+                return this.text;
             }
+			updateContent() {
+				if (this.type === 'group') return; 
 
-            updateContent() {
-                if (this.type === 'group') return; 
-                if (this.type === 'drawing' || this.type === 'image') { this.pixels = this.customPixels.map(p => ({ x: p.x, y: p.y, c: p.c })); this.textWidth = this.w; this.textHeight = this.h;
-                } else {
-                    const str = this.getDisplayString(); this.pixels = []; 
-                    if (this.font === 'custom') {
-                        let xOff = 0;
-                        for (let char of str) {
-                            const code = char.charCodeAt(0) - 32;
-                            if (code >= 0 && code < MONO5X7_HEX.length/5) {
-                                for (let col = 0; col < 5; col++) { const byte = MONO5X7_HEX[code * 5 + col]; for (let row = 0; row < 7; row++) { if ((byte >> row) & 1) this.pixels.push({ x: col + xOff, y: row }); } }
-                            } xOff += 6; 
-                        } this.textWidth = Math.max(0, xOff - 1); this.textHeight = 7;
-                    } else {
-                        const fontSize = 8; offCanvas.width = Math.max(1, str.length * (fontSize * 0.8)); offCanvas.height = fontSize + 4;
-                        offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height); offCtx.fillStyle = "black"; offCtx.font = `bold ${fontSize}px ${this.font}`; offCtx.textBaseline = "top"; offCtx.fillText(str, 0, 0);
-                        const data = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height); let maxW = 0;
-                        for (let y = 0; y < offCanvas.height; y++) { for (let x = 0; x < offCanvas.width; x++) { if (data.data[(y * offCanvas.width + x) * 4 + 3] > 128) { this.pixels.push({ x: x, y: y }); if (x > maxW) maxW = x; } } }
-                        this.textWidth = maxW + 1; this.textHeight = fontSize;
-                    }
-                }
-                if (this.particles.length !== this.pixels.length) this.particles = this.pixels.map(p => ({ x: p.x, y: p.y, vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3 }));
-            }
+				if (this.type === 'drawing' || this.type === 'image') {
+					this.pixels = this.customPixels.map(p => ({ x: p.x, y: p.y, c: p.c }));
+					this.textWidth = this.w; this.textHeight = this.h;
+				} else {
+					const str = this.getDisplayString();
+					this.pixels = []; 
+					let fontDef = (typeof PixelFonts !== 'undefined') ? PixelFonts[this.font] : null;
 
+					if (fontDef) {
+						let xOff = 0;
+						let height = fontDef.height;
+						let heightBytes = Math.ceil(height / 8); 
+						let firstChar = fontDef.firstChar || 32;
+						let order = fontDef.order || "horiz_page"; 
+
+						for (let char of str) {
+							if (char === ' ') {
+								let nIdx = 'n'.charCodeAt(0) - firstChar;
+								let sw = (fontDef.widths && fontDef.widths[nIdx]) ? fontDef.widths[nIdx] : (fontDef.width || 4);
+								xOff += (sw === 0 ? 4 : sw) + (fontDef.space || 1);
+								continue;
+							}
+
+							const index = char.charCodeAt(0) - firstChar;
+							if (index < 0 || (fontDef.widths && index >= fontDef.widths.length)) continue;
+
+							let charWidth = fontDef.widths ? (fontDef.widths[index] || 0) : fontDef.width;
+							let charDataStart = 0;
+
+							if (fontDef.widths) {
+								for (let i = 0; i < index; i++) { 
+									charDataStart += (fontDef.widths[i] || 0) * heightBytes; 
+								}
+							} else {
+								charDataStart = index * heightBytes * charWidth;
+							}
+
+							for (let cx = 0; cx < charWidth; cx++) {
+								for (let cy = 0; cy < heightBytes; cy++) {
+									let dataIndex = (order === "horiz_page") 
+										? charDataStart + (cy * charWidth) + cx
+										: charDataStart + (cx * heightBytes) + cy;
+
+									let value = fontDef.data[dataIndex] || 0;
+									
+									// Logika penempatan baris (Vertical Offset)
+									let posn = cy * 8;
+									if (heightBytes > 1 && cy === (heightBytes - 1)) {
+										 posn = height - 8;
+									}
+
+									for (let bit = 0; bit < 8; bit++) {
+										let targetY = posn + bit;
+
+										// PERBAIKAN CLIPPING:
+										// Jika font pendek (<= 8px), abaikan filter boundary Page agar bit ke-8 tampil.
+										// Jika font tinggi (> 8px), gunakan boundary agar tidak tumpang tindih.
+										let isValidY = (height <= 8) 
+											? (targetY < 8) // Izinkan full 1 byte untuk font pendek
+											: (targetY >= cy * 8 && targetY < height);
+
+										if (isValidY) {
+											if ((value >> bit) & 0x01) {
+												this.pixels.push({ x: cx + xOff, y: targetY });
+											}
+										}
+									}
+								}
+							}
+							xOff += charWidth + (fontDef.space || 1);
+						}
+						this.textWidth = Math.max(0, xOff - (fontDef.space || 1)); 
+						this.textHeight = height;
+					} else {
+						// Fallback System Font...
+						const fontSize = 10; 
+						offCanvas.width = Math.max(1, str.length * fontSize); offCanvas.height = fontSize + 4;
+						offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height); offCtx.fillStyle = "black"; 
+						offCtx.font = `bold ${fontSize}px monospace`; offCtx.textBaseline = "top"; offCtx.fillText(str, 0, 0);
+						const data = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height); 
+						let maxW = 0;
+						for (let y = 0; y < offCanvas.height; y++) { 
+							for (let x = 0; x < offCanvas.width; x++) { 
+								if (data.data[(y * offCanvas.width + x) * 4 + 3] > 128) { 
+									this.pixels.push({ x: x, y: y }); if (x > maxW) maxW = x; 
+								} 
+							} 
+						} 
+						this.textWidth = maxW + 1; this.textHeight = fontSize;
+					}
+				}
+
+				if (this.particles.length !== this.pixels.length) {
+					this.particles = this.pixels.map(p => ({ x: p.x, y: p.y, vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3 }));
+				}
+			}
             calcAlign() {
                 if (this.type === 'drawing' || this.type === 'image' || this.type === 'group') return { aX: 0, aY: 0 }; 
                 let aX = 0; if(this.alignH === 'center') aX = Math.floor((this.w - this.textWidth) / 2); if(this.alignH === 'right') aX = this.w - this.textWidth;
@@ -463,14 +555,11 @@
                 const renderX = this.x * GRID_SIZE; const renderY = this.y * GRID_SIZE; const dW = this.w * GRID_SIZE; const dH = this.h * GRID_SIZE;
                 const rPx = this.radius * Math.min(GRID_SIZE/2, 4);
 
-                ctx.save(); // Save Context utuh
-                
-                // === STRICT CLIPPING MASK ===
+                ctx.save(); 
                 ctx.beginPath();
                 if(ctx.roundRect) ctx.roundRect(renderX, renderY, dW, dH, rPx); 
                 else ctx.rect(renderX, renderY, dW, dH);
-                ctx.clip(); // Potong semua hal yang digambar setelah baris ini!
-                // ============================
+                ctx.clip(); 
 
                 if (this.type === 'group') {
                     let sOffX = 0, sOffY = 0;
@@ -554,9 +643,8 @@
                     });
                 }
                 
-                ctx.restore(); // Lepas Clipping Mask agar stroke/garis luarnya bisa digambar utuh
+                ctx.restore(); 
 
-                // --- BORDER SELECTION (Digambar setelah area clip dilepas) ---
                 if (selectedObjs.includes(this)) {
                     ctx.save();
                     ctx.globalAlpha = 1; 
@@ -641,7 +729,6 @@
             saveState(); 
             let newId = type === 'splash' ? "Screen_Splash" : type === 'main' ? "Screen_Main" : type === 'iqomah' ? "Screen_Iqomah" : type === 'adzan' ? "Screen_Adzan" : "Screen_" + (screens.length + 1);
             let durFixed = type === 'splash' ? '00:00:03' : '00:00:10';
-            // Perhatikan tidak ada lagi 'w' dan 'h' karena bersifat global
             screens.push({ id: newId, type: type, objects: [], durationMode: 'fixed', durationFixed: durFixed, durationAnimObj: '' });
             switchScreen(screens.length - 1);
         }
@@ -707,7 +794,6 @@
             }; reader.readAsDataURL(file); event.target.value = '';
         }
 
-        // Resolusi sekarang menggunakan variabel global
         function resizeCanvas() { canvas.width = PROJECT_W * GRID_SIZE; canvas.height = PROJECT_H * GRID_SIZE; }
         
         function setMode(m) { mode = m; document.querySelectorAll('.sidebar-left button').forEach(b => b.classList.remove('active')); document.getElementById(m+'Btn').classList.add('active'); canvas.style.cursor = m === 'select' ? 'default' : 'crosshair'; }
@@ -727,17 +813,26 @@
         function setupFormatDropdown() {
             if (!selectedObj) return;
             const bF = document.getElementById('boxFormat'), bT = document.getElementById('boxText'), bFont = document.getElementById('boxFont'), bAlign = document.getElementById('boxAlign'), bImg = document.getElementById('boxImage');
-            const bSholat = document.getElementById('boxSholat'), bAnim = document.getElementById('boxAnim'), bColors = document.getElementById('boxColors'), bCoords = document.getElementById('boxObjCoords');
+            const bSholat = document.getElementById('boxSholat'), bAnim = document.getElementById('boxAnim'), bColors = document.getElementById('boxColors'), bCoords = document.getElementById('boxObjCoords'), bHooks = document.getElementById('boxHooks');
             
             bF.classList.add('hidden'); bT.classList.add('hidden'); bFont.classList.add('hidden'); bAlign.classList.add('hidden'); bImg.classList.add('hidden'); bSholat.classList.add('hidden');
-            bAnim.classList.remove('hidden'); bColors.classList.remove('hidden'); bCoords.classList.remove('hidden');
+            bColors.classList.remove('hidden'); bCoords.classList.remove('hidden');
+
+            // Default untuk Animasi & Hooks: TAMPIL untuk semua kecuali Iqomah
+            if (selectedObj.type === 'iqomah') {
+                bAnim.classList.add('hidden'); 
+                bHooks.classList.add('hidden');
+                selectedObj.anim = 'none'; // Paksa Iqomah selalu statis
+            } else {
+                bAnim.classList.remove('hidden'); 
+                bHooks.classList.remove('hidden');
+            }
 
             if (selectedObj.type === 'group') { bColors.classList.add('hidden'); bCoords.classList.add('hidden'); 
             } else if (selectedObj.type === 'image') { bImg.classList.remove('hidden');
-            } else if (selectedObj.type === 'sholat') { bSholat.classList.remove('hidden'); bFont.classList.remove('hidden'); bAnim.classList.add('hidden'); document.getElementById('propSholatType').value = selectedObj.sholatType;
+            } else if (selectedObj.type === 'sholat') { bSholat.classList.remove('hidden'); bFont.classList.remove('hidden'); document.getElementById('propSholatType').value = selectedObj.sholatType;
             } else if (selectedObj.type === 'iqomah') { 
-                bF.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden'); bAnim.classList.add('hidden');
-                selectedObj.anim = 'none'; 
+                bF.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden'); 
                 let sF = document.getElementById('propFormat'); sF.innerHTML = ""; FORMATS[selectedObj.type].forEach(f => { let o = document.createElement('option'); o.value = f; o.innerText = f; sF.appendChild(o); }); 
                 if (!selectedObj.format || !FORMATS[selectedObj.type].includes(selectedObj.format)) { selectedObj.format = sF.options[0].value; } sF.value = selectedObj.format;
             } else if (selectedObj.type === 'text') { bT.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden');
@@ -780,7 +875,13 @@
                 document.getElementById('propType').value = selectedObj.type; document.getElementById('propFont').value = selectedObj.font; 
                 document.getElementById('propText').value = selectedObj.text; document.getElementById('propColor').value = selectedObj.color; document.getElementById('propFColor').value = selectedObj.fColor; document.getElementById('propAnim').value = selectedObj.anim;
                 document.getElementById('propTransparent').checked = selectedObj.transparentBG; document.getElementById('propRadius').value = selectedObj.radius; document.getElementById('radiusVal').innerText = selectedObj.radius;
+                
+                // Animasi Speed, Delay, Hooks
                 document.getElementById('propSpeed').value = selectedObj.speed; document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
+                document.getElementById('propAnimDelay').value = selectedObj.animDelay || 0;
+                document.getElementById('propHookBefore').value = selectedObj.fnBefore || "";
+                document.getElementById('propHookAfter').value = selectedObj.fnAfter || "";
+                document.getElementById('propHookCall').value = selectedObj.fnCall || "";
                 
                 setupFormatDropdown(); if(!['text', 'drawing', 'image', 'sholat', 'iqomah', 'group'].includes(selectedObj.type)) document.getElementById('propFormat').value = selectedObj.format; 
             } else {
@@ -811,7 +912,12 @@
                 selectedObj.visible = document.getElementById('propVisible').checked; selectedObj.font = document.getElementById('propFont').value; selectedObj.text = document.getElementById('propText').value; 
                 selectedObj.color = document.getElementById('propColor').value; selectedObj.fColor = document.getElementById('propFColor').value; selectedObj.anim = document.getElementById('propAnim').value; selectedObj.transparentBG = document.getElementById('propTransparent').checked; 
                 selectedObj.radius = parseInt(document.getElementById('propRadius').value); document.getElementById('radiusVal').innerText = selectedObj.radius;
+                
                 selectedObj.speed = parseFloat(document.getElementById('propSpeed').value);
+                selectedObj.animDelay = parseFloat(document.getElementById('propAnimDelay').value) || 0;
+                selectedObj.fnBefore = document.getElementById('propHookBefore').value;
+                selectedObj.fnAfter = document.getElementById('propHookAfter').value;
+                selectedObj.fnCall = document.getElementById('propHookCall').value;
                 
                 if (selectedObj.type === 'sholat') selectedObj.sholatType = document.getElementById('propSholatType').value; 
                 else if (selectedObj.type === 'iqomah') { selectedObj.format = document.getElementById('propFormat').value; selectedObj.anim = 'none'; } 
@@ -901,7 +1007,6 @@
             
             saveState(); 
             let base = type === 'drawing' ? "Draw" : type === 'image' ? "Img" : type === 'sholat' ? "Jadwal" : type === 'iqomah' ? "Count" : "Layer";
-            // Objek baru sekarang terpusat pada resolusi Global (PROJECT_W, PROJECT_H)
             let o = new PixelObject(getUniqueName(base), type, Math.max(0, Math.floor(PROJECT_W/2) - 8), Math.max(0, Math.floor(PROJECT_H/2) - 4)); 
             
             objects.push(o); selectedObjs = [o]; setMode(type === 'drawing' || type === 'image' ? 'pen' : 'select'); syncPropPanel(); renderTree();
@@ -916,7 +1021,13 @@
 
         function serializeObj(o) {
             let align = o.calcAlign();
-            let objData = { id: o.name, type: o.type, visible: o.visible, frameX: o.x, frameY: o.y, w: o.w, h: o.h, contentX: o.x + align.aX, contentY: o.y + align.aY, font: o.font, color: o.color, format: o.format, anim: o.anim, speed: o.speed, radius: o.radius, hooks: { before: o.fnBefore, after: o.fnAfter, call: o.fnCall } };
+            let objData = { 
+                id: o.name, type: o.type, visible: o.visible, frameX: o.x, frameY: o.y, w: o.w, h: o.h, 
+                contentX: o.x + align.aX, contentY: o.y + align.aY, 
+                font: o.font, color: o.color, format: o.format, 
+                anim: o.anim, speed: o.speed, animDelay: o.animDelay, radius: o.radius, 
+                hooks: { before: o.fnBefore, after: o.fnAfter, call: o.fnCall } 
+            };
             if (o.type === 'drawing' || o.type === 'image') objData.pixels = o.pixels; 
             if (o.type === 'sholat') { objData.sholatType = o.sholatType; objData.bgColor = o.transparentBG ? "transparent" : o.fColor; }
             if (!['sholat','drawing','image','group'].includes(o.type)) objData.bgColor = o.transparentBG ? "transparent" : o.fColor;
@@ -948,7 +1059,8 @@
             if(selectedObj && selectedObjs.length === 1 && (selectedObj.anim !== 'none' || !['text','drawing','image','sholat','iqomah','group'].includes(selectedObj.type))) syncGeometryUI();
         }
 
-        // INIT PROJECT DEFAULTS (SPLASH -> MAIN)
+        // INIT PROJECT DEFAULTS
+        initFonts();
         screens.push({ id: "Screen_Splash", type: "splash", objects: [], durationMode: 'fixed', durationFixed: '00:00:03', durationAnimObj: '' });
         screens.push({ id: "Screen_Main", type: "main", objects: [], durationMode: 'fixed', durationFixed: '00:00:10', durationAnimObj: '' });
         switchScreen(0);
