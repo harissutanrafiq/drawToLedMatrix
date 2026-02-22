@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Pixel Pro Studio v19.2 - Advanced Anim & Hooks</title>
+    <title>Pixel Pro Studio v20.14 - Fixed Timer, Tooltip & New Screens</title>
     <script src="fonts.js"></script>
     <style>
         :root { --bg: #1a1a1b; --side: #252526; --accent: #2ecc71; --text: #eee; --border: #3e3e42; }
@@ -12,9 +12,9 @@
         .sidebar-right { width: 320px; flex-shrink: 0; background: var(--side); padding: 15px; border-left: 1px solid var(--border); overflow-y: auto; z-index: 10; display: flex; flex-direction: column; gap: 12px; }
         
         .main-workspace { flex-grow: 1; flex-shrink: 1; min-width: 0; display: flex; flex-direction: column; background: #000; position: relative; }
-        .top-bar { height: 50px; flex-shrink: 0; background: #1e1e1e; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; padding: 0 20px; gap: 15px; z-index: 5; }
+        .top-bar { height: 50px; flex-shrink: 0; background: #1e1e1e; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 15px; z-index: 5; }
         
-        .canvas-container { flex-grow: 1; overflow: auto; padding: 30px; display: grid; place-items: center; background: #111; }
+        .canvas-container { flex-grow: 1; overflow: auto; padding: 30px; display: grid; place-items: center; background: #111; position: relative; }
         canvas { background: #0a0a0a; border: 2px solid #555; image-rendering: pixelated; box-shadow: 0 0 30px rgba(0,0,0,0.8); cursor: crosshair; margin: auto; }
 
         .group { display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
@@ -35,21 +35,33 @@
         button.active { background: var(--accent); color: #000; font-weight: bold; }
         button:disabled { cursor: not-allowed !important; }
         
+        .top-btn { width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; border-radius: 4px; border: 1px solid #444; background: #333; color: white; }
+        .top-btn:hover { background: #444; border-color: var(--accent); }
+        .btn-green-icon { background: #27ae60; border-color: #2ecc71; }
+        .btn-green-icon:hover { background: #2ecc71; color: #000; border-color: #fff; }
+        .btn-red-icon { background: #e74c3c; border-color: #e74c3c; }
+        .btn-red-icon:hover { background: #c0392b; color: #fff; border-color: #fff; }
+
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
         .hidden { display: none !important; }
 
         #hoverTooltip { position: fixed; background: rgba(0,0,0,0.9); color: var(--accent); padding: 8px 12px; border-radius: 6px; font-size: 11px; font-family: monospace; pointer-events: none; z-index: 1000; border: 1px solid var(--accent); display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.5); line-height: 1.4; transform: translateX(-50%); }
 
-        .btn-blue { background: #3498db; }
-        .btn-green { background: #27ae60; font-weight: bold; }
-        .btn-red { background: #e74c3c; font-weight: bold; }
+        /* SIMULATION HUD OVERLAY */
+        #simOverlay { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(15, 15, 15, 0.95); border: 1px solid var(--accent); border-radius: 8px; padding: 10px 25px; text-align: center; z-index: 1000; pointer-events: none; display: none; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
+        #simOverlayTime { font-size: 24px; color: var(--accent); font-weight: bold; font-family: 'Consolas', monospace; letter-spacing: 2px; }
+        #simOverlayAction { font-size: 11px; color: #aaa; margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+
+        .btn-blue { background: #3498db; color: #fff !important; }
+        .btn-green { background: #27ae60; color: #fff !important; font-weight: bold; }
+        .btn-red { background: #e74c3c; color: #fff !important; font-weight: bold; }
         
         .zoom-btn { background: transparent; font-size: 14px; padding: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
         .zoom-btn:hover { background: #555; }
 
-        #exportModal { display:none; position:fixed; top:5%; left:5%; width:90%; height:90%; background:var(--side); padding:20px; border:2px solid var(--accent); z-index:2000; box-shadow: 0 0 50px rgba(0,0,0,0.8); border-radius: 8px; }
-        #outputArea { background:#0a0a0a; color:#2ecc71; padding:15px; font-family:'Consolas', monospace; font-size: 13px; height: calc(100% - 100px); overflow:auto; white-space: pre-wrap; border: 1px solid #444; border-radius: 4px; }
+        .modal { display:none; position:fixed; top:5%; left:5%; width:90%; height:90%; background:var(--side); padding:20px; border:2px solid var(--accent); z-index:2000; box-shadow: 0 0 50px rgba(0,0,0,0.8); border-radius: 8px; box-sizing: border-box;}
+        .modal textarea { background:#0a0a0a; color:#2ecc71; padding:15px; font-family:'Consolas', monospace; font-size: 13px; height: calc(100% - 100px); border: 1px solid #444; border-radius: 4px; width:100%; box-sizing: border-box; resize:none;}
 
         #ctxMenu { position:fixed; display:none; background:#252526; border:1px solid #3e3e42; box-shadow: 0 4px 15px rgba(0,0,0,0.8); z-index:9999; border-radius: 6px; padding: 5px 0; min-width: 150px; flex-direction: column; }
         .ctx-item { padding: 10px 16px; cursor: pointer; color: #eee; font-size: 12px; font-weight: 500; transition: 0.1s; }
@@ -69,6 +81,12 @@
         .screen-iqomah.active-screen { border-left: 2px solid #e74c3c !important; }
         .screen-adzan { color: #9b59b6 !important; }
         .screen-adzan.active-screen { border-left: 2px solid #9b59b6 !important; }
+        .screen-after-iqomah { color: #1abc9c !important; }
+        .screen-after-iqomah.active-screen { border-left: 2px solid #1abc9c !important; }
+        .screen-adzan-jumat { color: #2980b9 !important; }
+        .screen-adzan-jumat.active-screen { border-left: 2px solid #2980b9 !important; }
+        .screen-saat-sholat { color: #c0392b !important; }
+        .screen-saat-sholat.active-screen { border-left: 2px solid #c0392b !important; }
 
         .obj-item { margin-left: 10px; }
         .obj-item.selected { background: var(--accent); color: #000; font-weight: bold; }
@@ -92,6 +110,9 @@
                 <button onclick="addScreen('generic')" style="flex:1 1 30%; padding: 4px; font-size: 10px; background: #3498db;">+ Screen</button>
                 <button onclick="addScreen('adzan')" style="flex:1 1 30%; padding: 4px; font-size: 10px; background: #9b59b6;">+ Adzan</button>
                 <button onclick="addScreen('iqomah')" style="flex:1 1 30%; padding: 4px; font-size: 10px; background: #e74c3c;">+ Iqomah</button>
+                <button onclick="addScreen('after_iqomah')" style="flex:1 1 30%; padding: 4px; font-size: 10px; background: #1abc9c; color:#000; font-weight:bold;">+ Stlh Iqomah</button>
+                <button onclick="addScreen('adzan_jumat')" style="flex:1 1 30%; padding: 4px; font-size: 10px; background: #2980b9; color:#fff; font-weight:bold;">+ Jumat</button>
+                <button onclick="addScreen('saat_sholat')" style="flex:1 1 30%; padding: 4px; font-size: 10px; background: #c0392b; color:#fff; font-weight:bold;">+ Saat Sholat</button>
             </div>
             <div id="treeBrowser"></div>
         </div>
@@ -108,33 +129,48 @@
         <div class="group" style="flex-grow: 1;">
             <h3>Project Actions</h3>
             <button onclick="addPixelObject('text')" class="btn-blue" style="margin-bottom: 6px;">+ Text Object</button>
+            <button onclick="addPixelObject('line')" class="btn-blue" style="margin-bottom: 6px; background:#8e44ad;">+ Line Object</button>
             <button onclick="addPixelObject('drawing')" class="btn-blue" style="margin-bottom: 6px; background:#f39c12; color:#000;">+ Draw Object</button>
             <button onclick="addPixelObject('image')" class="btn-blue" style="margin-bottom: 6px; background:#e67e22;">+ Image Object</button>
             
             <button id="btnAddSholat" onclick="addPixelObject('sholat')" class="btn-blue" style="margin-bottom: 6px; background:#16a085;">+ Waktu Sholat</button>
             <button id="btnAddIqomah" onclick="addPixelObject('iqomah')" class="btn-blue" style="margin-bottom: 6px; background:#e74c3c;">+ Counter Iqomah</button>
-            
-            <button onclick="exportToJerryScript()" class="btn-green" style="margin-bottom: 6px; margin-top: 10px;">💾 Export Logic (JS)</button>
         </div>
     </div>
 
     <div class="main-workspace">
         <div class="top-bar">
-            <div style="display: flex; align-items: center; gap: 8px; background: #252526; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); margin-right: auto;">
-                <span style="font-size: 11px; color: var(--accent); font-weight: bold; letter-spacing: 1px;">CANVAS SIZE:</span>
-                <label style="margin:0; color:#aaa;">W</label>
-                <input type="number" id="globalW" value="64" onchange="updateProjectRes()" style="width: 50px; padding: 2px 4px; height: 24px; text-align: center;">
-                <label style="margin:0; color:#aaa;">H</label>
-                <input type="number" id="globalH" value="32" onchange="updateProjectRes()" style="width: 50px; padding: 2px 4px; height: 24px; text-align: center;">
+            
+            <button class="top-btn btn-green-icon" id="btnSimulate" onclick="toggleSimulation()" title="Play All (Simulate)">▶️</button>
+
+            <div style="display: flex; align-items: center; gap: 8px; margin-right: auto; margin-left: 15px;">
+                <button class="top-btn" onclick="undo()" title="Undo (Ctrl+Z)">↩️</button>
+                <button class="top-btn" onclick="redo()" title="Redo (Ctrl+Y)">↪️</button>
+                <button class="top-btn" onclick="openImportModal()" title="Open / Paste JSON">📂</button>
+                <button class="top-btn" onclick="exportToJerryScript()" title="Save / Generate JSON">💾</button>
+
+                <div style="display: flex; align-items: center; gap: 8px; background: #252526; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); margin-left: 15px; height: 32px; box-sizing: border-box;">
+                    <span style="font-size: 11px; color: var(--accent); font-weight: bold; letter-spacing: 1px;">CANVAS:</span>
+                    <label style="margin:0; color:#aaa;">W</label>
+                    <input type="number" id="globalW" value="64" onchange="updateProjectRes()" style="width: 45px; padding: 2px 4px; height: 24px; text-align: center;">
+                    <label style="margin:0; color:#aaa;">H</label>
+                    <input type="number" id="globalH" value="32" onchange="updateProjectRes()" style="width: 45px; padding: 2px 4px; height: 24px; text-align: center;">
+                </div>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 6px; background: #333; padding: 4px 8px; border-radius: 6px; border: 1px solid #444;">
+            <div style="display: flex; align-items: center; gap: 6px; background: #333; padding: 3px 8px; border-radius: 6px; border: 1px solid #444; height: 32px; box-sizing: border-box;">
                 <button onclick="changeZoom(-2)" class="zoom-btn" title="Zoom Out">➖</button>
-                <span id="zoomLabel" style="font-size: 12px; font-family: monospace; width: 45px; text-align: center; color: var(--accent); font-weight: bold;">100%</span>
+                <span id="zoomLabel" style="font-size: 12px; font-family: monospace; width: 40px; text-align: center; color: var(--accent); font-weight: bold;">100%</span>
                 <button onclick="changeZoom(2)" class="zoom-btn" title="Zoom In">➕</button>
             </div>
         </div>
+        
         <div class="canvas-container" id="canvasWrapper">
+            <div id="simOverlay">
+                <div id="simOverlayTime">⏱️ 00:00:10</div>
+                <div id="simOverlayAction">NEXT: <span style="color:#fff;">SHOW_SCREEN ➡️ Screen_2</span></div>
+            </div>
+
             <div id="hoverTooltip"></div>
             <canvas id="editorCanvas"></canvas>
         </div>
@@ -149,7 +185,8 @@
         
         <div id="noSelectionMsg" style="text-align:center; color:#666; margin-top:80px; padding:20px; display:none;">
             <div style="font-size: 40px; margin-bottom: 10px;">📦</div>
-            <p><b>Multiple Objects Selected</b><br>Klik kanan di kanvas untuk opsi Grouping.</p>
+            <p style="margin-bottom:8px;"><b>Multiple Objects Selected</b><br>Klik kanan di kanvas untuk opsi Grouping.</p>
+            <p style="font-size:10px; color:#e67e22; margin:0; line-height: 1.3;">⚠️ Objek yang bisa digabung harus <b>TIDAK</b> memiliki animasi.</p>
         </div>
 
         <div id="screenPropContent" class="hidden">
@@ -157,12 +194,24 @@
             
             <div class="group">
                 <label>Screen Name (ID)</label>
-                <input type="text" id="propScreenName" oninput="updateScreenProp()" placeholder="Screen_1">
+                <input type="text" id="propScreenName" maxlength="20" oninput="updateScreenProp()" placeholder="Screen_1">
                 
                 <p id="splashScreenTag" style="color:#f1c40f; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🚀 DEDICATED SPLASH SCREEN</p>
                 <p id="mainScreenTag" style="color:#2ecc71; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🏠 DEDICATED MAIN SCREEN</p>
                 <p id="iqomahScreenTag" style="color:#e74c3c; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🚨 DEDICATED IQOMAH SCREEN</p>
                 <p id="adzanScreenTag" style="color:#9b59b6; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🕌 DEDICATED ADZAN SCREEN</p>
+                <p id="afterIqomahScreenTag" style="color:#1abc9c; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🤲 DEDICATED AFTER IQOMAH</p>
+                <p id="adzanJumatScreenTag" style="color:#2980b9; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">📢 DEDICATED ADZAN JUMAT</p>
+                <p id="saatSholatScreenTag" style="color:#c0392b; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🧎 DEDICATED SAAT SHOLAT</p>
+                
+                <div style="display:flex; align-items:center; gap:6px; margin-top:12px;">
+                    <input type="checkbox" id="propScrVisibleCanvas" onchange="updateScreenProp()">
+                    <label style="margin:0; text-transform:none; font-weight:bold; font-size:11px; cursor:pointer;" for="propScrVisibleCanvas">👁️ Visible on Canvas</label>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
+                    <input type="checkbox" id="propScrVisibleLed" onchange="updateScreenProp()">
+                    <label style="margin:0; text-transform:none; font-weight:bold; font-size:11px; cursor:pointer; color:#f39c12;" for="propScrVisibleLed">💡 Visible on LED</label>
+                </div>
             </div>
 
             <div class="group">
@@ -184,6 +233,20 @@
                 </div>
             </div>
             
+            <div class="group" id="boxNextEventScr" style="margin-top: 5px; border-top:1px solid #444; padding-top:10px;">
+                <label style="color:#3498db;">Screen Next Event</label>
+                <select id="propNextActionScr" onchange="updateNextTargets('scr'); updateScreenProp()">
+                    <option value="">-- No Action --</option>
+                    <option value="show_screen">Show Screen</option>
+                    <option value="show_object">Show Object</option>
+                    <option value="show_group">Show Group</option>
+                    <option value="hide_screen">Hide Screen</option>
+                    <option value="hide_object">Hide Object</option>
+                    <option value="hide_group">Hide Group</option>
+                </select>
+                <select id="propNextTargetScr" onchange="updateScreenProp()" style="margin-top:6px;" class="hidden"></select>
+            </div>
+
             <div style="margin-top:15px; padding-top:15px; border-top:1px solid #444;">
                 <button onclick="deleteCurrentScreen()" class="btn-red" style="padding: 10px;">🗑️ Delete This Screen</button>
             </div>
@@ -193,11 +256,16 @@
             <h3 style="color:var(--accent); font-size: 14px; margin-bottom:10px;">Properties Manager</h3>
             
             <div class="group">
-                <label>Object Name (ID Unik)</label>
-                <input type="text" id="propName" oninput="updateName()" placeholder="Layer_1">
+                <label>Object/Frame Name (ID Unik)</label>
+                <input type="text" id="propName" maxlength="20" oninput="updateName()" placeholder="Layer_1">
+                
                 <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
-                    <input type="checkbox" id="propVisible" onchange="updateFromProp()">
-                    <label style="margin:0; text-transform:none; font-weight:bold; font-size:11px; cursor:pointer;" for="propVisible">👁️ Visible on Canvas</label>
+                    <input type="checkbox" id="propVisibleCanvas" onchange="updateFromProp()">
+                    <label style="margin:0; text-transform:none; font-weight:bold; font-size:11px; cursor:pointer;" for="propVisibleCanvas">👁️ Visible on Canvas</label>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+                    <input type="checkbox" id="propVisibleLed" onchange="updateFromProp()">
+                    <label style="margin:0; text-transform:none; font-weight:bold; font-size:11px; cursor:pointer; color:#f39c12;" for="propVisibleLed">💡 Visible on LED</label>
                 </div>
             </div>
 
@@ -221,6 +289,7 @@
                 <label>Data Provider</label>
                 <select id="propType" onchange="changeObjType()">
                     <option value="text">Standard Text</option>
+                    <option value="line" style="color:#8e44ad; font-weight:bold;">Line (Baris)</option>
                     <option value="clock">Clock (Real-time)</option>
                     <option value="cal_masehi">Masehi Calendar</option>
                     <option value="cal_hijri">Hijriah Calendar</option>
@@ -229,6 +298,33 @@
                     <option value="sholat">Waktu Sholat (JWS)</option>
                     <option value="iqomah" id="optIqomahType" style="color:#e74c3c;">Counter Iqomah</option>
                 </select>
+
+                <div id="boxLine" class="hidden" style="margin-top:10px;">
+                    <label style="color:#8e44ad;">Line Properties</label>
+                    <div class="grid-2">
+                        <div>
+                            <label>Direction</label>
+                            <select id="propLineDir" onchange="updateFromProp()">
+                                <option value="h">Horizontal</option>
+                                <option value="v">Vertical</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Ketebalan</label>
+                            <input type="number" id="propLineThick" min="1" max="64" onchange="updateFromProp()">
+                        </div>
+                    </div>
+                    <div class="grid-2" style="margin-top:6px;">
+                        <div>
+                            <label>Panjang (Length)</label>
+                            <input type="number" id="propLineLength" min="1" max="256" onchange="updateFromProp()">
+                        </div>
+                        <div>
+                            <label>Warna Garis</label>
+                            <input type="color" id="propLineColor" oninput="updateFromProp()">
+                        </div>
+                    </div>
+                </div>
 
                 <div id="boxSholat" class="hidden" style="margin-top:10px;">
                     <label style="color:#16a085;">Pilih Waktu Sholat</label>
@@ -251,33 +347,54 @@
 
                 <div id="boxFont" style="margin-top:5px;">
                     <label>Font Style</label>
-                    <select id="propFont" onchange="updateFromProp()">
-                        </select>
+                    <select id="propFont" onchange="updateFromProp(true)" onkeydown="setTimeout(()=>updateFromProp(true),10)"></select>
                 </div>
 
                 <div id="boxText" style="margin-top:5px;">
-                    <label>Content</label>
-                    <input type="text" id="propText" oninput="updateFromProp()">
+                    <label>Content (Max 20 Karakter)</label>
+                    <input type="text" id="propText" maxlength="20" oninput="updateFromProp(true)">
                 </div>
                 <div id="boxFormat" class="hidden" style="margin-top:5px;">
                     <label>Display Format</label>
-                    <select id="propFormat" onchange="updateFromProp()"></select>
+                    <select id="propFormat" onchange="updateFromProp(true)"></select>
                 </div>
             </div>
 
             <div class="group" id="boxColors">
-                <label>Colors & Frame</label>
-                <div class="grid-2">
-                    <div><label>Text / Pen</label><input type="color" id="propColor" oninput="updateFromProp()"></div>
-                    <div><label>Frame / BG</label><input type="color" id="propFColor" oninput="updateFromProp()"></div>
-                </div>
-                
-                <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
-                    <input type="checkbox" id="propTransparent" onchange="updateFromProp()">
-                    <label style="margin:0; text-transform:none; font-weight:normal; font-size:11px; cursor:pointer;" for="propTransparent">Transparent Background / Frame</label>
+                <label>Colors Styling</label>
+                <div class="grid-3" style="margin-bottom: 8px;">
+                    <div style="background:#222; padding:6px; border-radius:4px; text-align:center;">
+                        <label style="color:var(--accent);">Text / Pen</label>
+                        <div style="display:flex; justify-content:center; margin-top:4px;">
+                            <input type="color" id="propColor" oninput="updateFromProp()" style="width:100%; height:26px; padding:0;">
+                        </div>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:4px; margin-top:6px;">
+                            <input type="checkbox" id="propColorNone" onchange="updateFromProp()"> <span style="font-size:10px; color:#aaa;">None</span>
+                        </div>
+                    </div>
+                    
+                    <div style="background:#222; padding:6px; border-radius:4px; text-align:center;">
+                        <label style="color:#f39c12;">Frame</label>
+                        <div style="display:flex; justify-content:center; margin-top:4px;">
+                            <input type="color" id="propFColor" oninput="updateFromProp()" style="width:100%; height:26px; padding:0;">
+                        </div>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:4px; margin-top:6px;">
+                            <input type="checkbox" id="propFColorNone" onchange="updateFromProp()"> <span style="font-size:10px; color:#aaa;">None</span>
+                        </div>
+                    </div>
+
+                    <div style="background:#222; padding:6px; border-radius:4px; text-align:center;">
+                        <label style="color:#3498db;">Background</label>
+                        <div style="display:flex; justify-content:center; margin-top:4px;">
+                            <input type="color" id="propBgColor" oninput="updateFromProp()" style="width:100%; height:26px; padding:0;">
+                        </div>
+                        <div style="display:flex; align-items:center; justify-content:center; gap:4px; margin-top:6px;">
+                            <input type="checkbox" id="propBgColorNone" onchange="updateFromProp()"> <span style="font-size:10px; color:#aaa;">None</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div style="display:flex; align-items:center; gap:6px; margin-top:12px;">
+                <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
                     <label style="margin:0; width:90px; color:#f39c12;">Frame Radius</label>
                     <input type="range" id="propRadius" min="0" max="16" value="0" oninput="updateFromProp()" style="padding:0;">
                     <span id="radiusVal" style="font-size:11px; color:var(--accent); font-family:monospace; width:20px; text-align:right;">0</span>
@@ -301,17 +418,23 @@
             </div>
 
             <div class="group" id="boxAnim">
-                <label>Animation Engine</label>
-                <select id="propAnim" onchange="updateFromProp()" style="margin-bottom: 8px;">
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                    <label style="color:var(--accent); font-size: 11px;">Animation Sequences</label>
+                </div>
+                
+                <div style="display:flex; gap:6px; margin-bottom:10px;">
+                    <button onclick="playObjectAnim()" class="btn-green" style="padding:4px 8px; flex:1;">▶️ Play</button>
+                    <button onclick="stopObjectAnim()" class="btn-red" style="padding:4px 8px; flex:1;">⏹️ Stop</button>
+                </div>
+
+                <label style="color:#ddd;">Engine 1</label>
+                <select id="propAnim" onchange="updateFromProp()" style="margin-bottom: 4px;">
                     <option value="none">Static</option>
-                    <option value="scroll">Scroll (Auto Left)</option>
                     <option value="slide-left">Slide Left</option>
                     <option value="slide-right">Slide Right</option>
                     <option value="slide-up">Slide Up</option>
                     <option value="slide-down">Slide Down</option>
-                    <option value="fade">Fade</option>
-                    <option value="explode">Explode</option>
-                    <option value="pixel-fade">Pixel Fade</option>
+                    <option value="blink">Berkedip (Blink)</option>
                 </select>
                 <div class="grid-2">
                     <div>
@@ -320,26 +443,66 @@
                     </div>
                     <div>
                         <label>Jeda (Detik)</label>
-                        <input type="number" id="propAnimDelay" min="0" step="0.1" value="0" onchange="updateFromProp()" style="margin-top:4px; height: 28px; text-align:center;">
+                        <input type="number" id="propAnimDelay" min="0" step="0.1" value="0" oninput="updateFromProp()" style="margin-top:4px; height: 28px; text-align:center;">
+                    </div>
+                </div>
+                
+                <label style="color:#ddd; margin-top:8px;">Engine 2</label>
+                <select id="propAnim2" onchange="updateFromProp()" style="margin-bottom: 4px;">
+                    <option value="none">None</option>
+                    <option value="slide-left">Slide Left</option>
+                    <option value="slide-right">Slide Right</option>
+                    <option value="slide-up">Slide Up</option>
+                    <option value="slide-down">Slide Down</option>
+                    <option value="blink">Berkedip (Blink)</option>
+                </select>
+                <div class="grid-2">
+                    <div>
+                        <label>Speed <span id="speedVal2" style="color:var(--accent); font-family:monospace; margin-left:2px;">1.0x</span></label>
+                        <input type="range" id="propSpeed2" min="0.1" max="5" step="0.1" value="1" oninput="updateFromProp()" style="margin-top:4px;">
+                    </div>
+                    <div>
+                        <label>Jeda (Detik)</label>
+                        <input type="number" id="propAnimDelay2" min="0" step="0.1" value="0" oninput="updateFromProp()" style="margin-top:4px; height: 28px; text-align:center;">
                     </div>
                 </div>
             </div>
 
-            <div class="group" id="boxHooks">
-                <label>Hook Functions (JS Callbacks)</label>
-                <div style="margin-top:4px;"><label>Before</label><input type="text" id="propHookBefore" placeholder="fn_before()" oninput="updateFromProp()"></div>
-                <div style="margin-top:4px;"><label>After</label><input type="text" id="propHookAfter" placeholder="fn_after()" oninput="updateFromProp()"></div>
-                <div style="margin-top:4px;"><label>Call (Active)</label><input type="text" id="propHookCall" placeholder="fn_call()" oninput="updateFromProp()"></div>
+            <div class="group" id="boxNextEventObj" style="margin-top: 5px; border-top:1px solid #444; padding-top:10px;">
+                <label style="color:#3498db;">Object Next Event</label>
+                <p style="font-size:11px; color:#ffff00; font-weight:bold; margin: 4px 0 6px 0; line-height:1.3; font-style:italic;">⚠️ Trigger dieksekusi setelah rentetan Engine 1 & 2 selesai.</p>
+                <select id="propNextActionObj" onchange="updateNextTargets('obj'); updateFromProp()">
+                    <option value="">-- No Action --</option>
+                    <option value="show_screen">Show Screen</option>
+                    <option value="show_object">Show Object</option>
+                    <option value="show_group">Show Group</option>
+                    <option value="hide_screen">Hide Screen</option>
+                    <option value="hide_object">Hide Object</option>
+                    <option value="hide_group">Hide Group</option>
+                </select>
+                <select id="propNextTargetObj" onchange="updateFromProp()" style="margin-top:6px;" class="hidden"></select>
             </div>
 
             <button onclick="deleteSelected()" class="btn-red" style="margin-top: 5px; padding: 10px;">🗑️ Delete Selected</button>
         </div>
     </div>
 
-    <div id="exportModal">
-        <h2 style="color:var(--accent); margin-top:0;">JERRYSCRIPT PRODUCTION CODE</h2>
-        <pre id="outputArea"></pre>
-        <button onclick="document.getElementById('exportModal').style.display='none'" class="btn-red" style="padding:10px 20px; font-size:14px; margin-top:15px; width: 150px;">CLOSE WINDOW</button>
+    <div id="exportModal" class="modal">
+        <h2 style="color:var(--accent); margin-top:0;">💾 SAVE PROJECT (JERRYSCRIPT EXPORT)</h2>
+        <textarea id="outputArea" readonly></textarea>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button onclick="copyToClipboard()" class="btn-blue" style="padding:10px 20px; font-size:14px; width: 150px;">📋 COPY TO CLIPBOARD</button>
+            <button onclick="document.getElementById('exportModal').style.display='none'" class="btn-red" style="padding:10px 20px; font-size:14px; width: 150px;">CLOSE WINDOW</button>
+        </div>
+    </div>
+
+    <div id="importModal" class="modal">
+        <h2 style="color:#3498db; margin-top:0;">📂 OPEN PROJECT (PASTE JSON)</h2>
+        <textarea id="importArea" placeholder="Paste kode JSON (var sceneData = {...}) di sini..."></textarea>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button onclick="importFromJson()" class="btn-green" style="padding:10px 20px; font-size:14px; width: 150px;">LOAD PROJECT</button>
+            <button onclick="document.getElementById('importModal').style.display='none'" class="btn-red" style="padding:10px 20px; font-size:14px; width: 150px;">CANCEL</button>
+        </div>
     </div>
 
     <script>
@@ -358,11 +521,27 @@
         let screens = [];
         let activeScreenIdx = 0;
         let objects = []; 
-        
-        let selectedObjs = [], history = [];
+        let selectedObjs = []; 
+        let undoStack = [], redoStack = [];
         let selectedObj = null; 
+        
         let mode = 'pen', isDrawing = false, isDragging = false, isResizing = false;
         let resizeDir = ''; let dragOffsets = [];
+
+        // CLIPBOARD VARIABLE
+        let clipboardData = [];
+
+        // SIMULATION VARIABLES
+        let isSimulating = false;
+        let simTimer = 0;
+        let preSimState = null;
+        
+        // FONT MEMORY VARIABLE
+        let lastUsedFont = null;
+        
+        // GLOBAL TIMER FIX (DeltaTime)
+        let lastFrameTime = 0;
+        window.deltaTime = 16.6;
 
         const FORMATS = { 
             clock: ['HH:mm:ss', 'HH:mm', 'hh:mm A'], 
@@ -371,290 +550,301 @@
             iqomah: ['MM:SS', 'SS'] 
         };
 
-        // BACA FONT DARI FILE EKSTERNAL (fonts.js) - TANPA SYSTEM FONT
         function initFonts() {
             const fontSelect = document.getElementById('propFont');
             if(!fontSelect) return;
             fontSelect.innerHTML = '';
-            
             if (typeof PixelFonts !== 'undefined') {
-                for (let key in PixelFonts) {
-                    let opt = document.createElement('option');
-                    opt.value = key;
-                    opt.innerText = PixelFonts[key].name;
-                    fontSelect.appendChild(opt);
-                }
-            } else {
-                let opt = document.createElement('option');
-                opt.value = "error";
-                opt.innerText = "Error: fonts.js tidak ditemukan";
-                fontSelect.appendChild(opt);
-            }
+                for (let key in PixelFonts) { let opt = document.createElement('option'); opt.value = key; opt.innerText = PixelFonts[key].name; fontSelect.appendChild(opt); }
+            } else { let opt = document.createElement('option'); opt.value = "error"; opt.innerText = "Error: fonts.js tidak ditemukan"; fontSelect.appendChild(opt); }
         }
 
-        function updateProjectRes() {
-            PROJECT_W = parseInt(document.getElementById('globalW').value) || 64;
-            PROJECT_H = parseInt(document.getElementById('globalH').value) || 32;
-            resizeCanvas();
-            renderTree();
-        }
-
-        function isNameUnique(name) {
-            let found = false;
-            function checkList(list) { for(let o of list) { if(o.name === name) found = true; if(o.type === 'group' && o.children) checkList(o.children); } }
-            screens.forEach(s => checkList(s.objects)); return !found;
-        }
-
+        function updateProjectRes() { PROJECT_W = parseInt(document.getElementById('globalW').value) || 64; PROJECT_H = parseInt(document.getElementById('globalH').value) || 32; resizeCanvas(); renderTree(); }
+        function isNameUnique(name) { let found = false; function checkList(list) { for(let o of list) { if(o.name === name) found = true; if(o.type === 'group' && o.children) checkList(o.children); } } screens.forEach(s => checkList(s.objects)); return !found; }
         function getUniqueName(base) { let count = 1; let n = `${base}_${count}`; while (!isNameUnique(n)) { count++; n = `${base}_${count}`; } return n; }
-
-        function getAllObjectNames(objList) {
-            let names = [];
-            objList.forEach(o => { names.push(o.name); if (o.type === 'group' && o.children) { names = names.concat(getAllObjectNames(o.children)); } });
-            return names;
-        }
-
+        
         class PixelObject {
             constructor(name, type, gridX, gridY) {
-                this.name = name; this.type = type; this.x = gridX; this.y = gridY; this.visible = true;
-                this.w = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah') ? 25 : 32; 
-                this.h = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah') ? 10 : 10;  
-                this.text = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah' || type === 'group') ? "" : "PIXEL"; 
+                this.name = name; this.type = type; this.x = gridX; this.y = gridY; 
+                this.visibleCanvas = true; this.visibleLed = true;
+                
+                this.w = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah') ? 25 : (type === 'line' ? 32 : 32); 
+                this.h = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah') ? 10 : (type === 'line' ? 1 : 10);  
+                this.text = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah' || type === 'group' || type === 'line') ? "" : "TEXT"; 
                 this.format = ""; 
-                this.font = (typeof PixelFonts !== 'undefined' && Object.keys(PixelFonts).length > 0) ? Object.keys(PixelFonts)[0] : "monospace"; 
-                this.color = "#ffffff"; this.fColor = "#00ff00"; this.transparentBG = true; 
-                this.radius = 0; 
-                this.alignH = 'center'; this.alignV = 'middle'; 
                 
-                this.anim = 'none'; this.speed = 1.0; this.animDelay = 0; this.scrollOffset = 0;
-                this.opacity = 1; this.fadeDir = 1; 
-                this.fnBefore = ""; this.fnAfter = ""; this.fnCall = "";
+                let defaultFont = (typeof PixelFonts !== 'undefined' && Object.keys(PixelFonts).length > 0) ? Object.keys(PixelFonts)[0] : "monospace"; 
+                this.font = lastUsedFont || defaultFont; 
                 
+                this.color = "#ffffff"; this.colorNone = false;
+                this.fColor = "#00ff00"; this.fColorNone = true;
+                this.bgColor = "#000000"; this.bgColorNone = true;
+                
+                this.lineDir = 'h'; this.lineThick = 1; this.lineLength = 32; this.lineColor = "#8e44ad";
+                this.radius = 0; this.alignH = 'center'; this.alignV = 'middle'; 
+                
+                this.anim = 'none'; this.speed = 1.0; this.animDelay = 0;
+                this.anim2 = 'none'; this.speed2 = 1.0; this.animDelay2 = 0; 
+                
+                this.isAnimPlaying = true;
+                this.animState = 1; 
+                this.delayTimer = 0;
+                this.currentOffsetX = 0;
+                this.currentOffsetY = 0;
+                
+                this.nextAction = ""; this.nextTarget = "";
                 this.sholatType = 'Subuh';
-                this.pixels = []; this.customPixels = []; this.children = []; this.particles = []; this.textWidth = 0; this.textHeight = 7; 
-                if (type !== 'group') this.updateContent();
+                this.pixels = []; this.customPixels = []; this.children = []; this.textWidth = 0; this.textHeight = 7; 
+                if (type !== 'group' && type !== 'line') this.updateContent();
+            }
+
+            resetAnimation() {
+                this.animState = (this.anim !== 'none') ? 1 : ((this.anim2 !== 'none') ? 3 : 0);
+                this.delayTimer = 0;
+                this._setupAnimStart(this.animState === 1 ? this.anim : (this.animState === 3 ? this.anim2 : 'none'));
+                if (this.children) this.children.forEach(c => c.resetAnimation());
+            }
+
+            _setupAnimStart(type) {
+                if(type === 'slide-left') { this.currentOffsetX = this.w; this.currentOffsetY = 0; }
+                else if(type === 'slide-right') { this.currentOffsetX = -(this.textWidth || this.w); this.currentOffsetY = 0; }
+                else if(type === 'slide-up') { this.currentOffsetX = 0; this.currentOffsetY = this.h; }
+                else if(type === 'slide-down') { this.currentOffsetX = 0; this.currentOffsetY = 0; }
+                else { this.currentOffsetX = 0; this.currentOffsetY = 0; }
+            }
+
+            _stepAnimation(type, speed) {
+                let done = false;
+                let dtRatio = window.deltaTime / 16.6; 
+                let step = 0.5 * speed * dtRatio; 
+                
+                if(type === 'slide-left') {
+                    this.currentOffsetX -= step;
+                    if(this.currentOffsetX <= -(this.textWidth || this.w)) { this.currentOffsetX = -(this.textWidth || this.w); done = true; }
+                } else if(type === 'slide-right') {
+                    this.currentOffsetX += step;
+                    if(this.currentOffsetX >= this.w) { this.currentOffsetX = this.w; done = true; }
+                } else if(type === 'slide-up') {
+                    this.currentOffsetY -= step;
+                    if(this.currentOffsetY <= 0) { this.currentOffsetY = 0; done = true; } 
+                } else if(type === 'slide-down') {
+                    this.currentOffsetY += step;
+                    if(this.currentOffsetY >= this.h) { this.currentOffsetY = this.h; done = true; } 
+                } else {
+                    done = true; 
+                }
+                return done;
             }
 
             getDisplayString() {
-                if (this.type === 'drawing' || this.type === 'image' || this.type === 'group') return "";
+                if (this.type === 'drawing' || this.type === 'image' || this.type === 'group' || this.type === 'line') return "";
                 if (this.type === 'sholat') { const st = { 'Imsak': '04:15', 'Subuh': '04:25', 'Terbit': '05:40', 'Dzuhur': '11:50', 'Ashar': '15:00', 'Maghrib': '17:55', 'Isya': '19:05' }; return st[this.sholatType] || '00:00'; }
                 if (this.type === 'iqomah') { return this.format === 'SS' ? "300" : "05:00"; }
                 
                 const now = new Date();
                 if (this.type === 'clock') { const h = String(now.getHours()).padStart(2,'0'), m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0'); if(this.format === 'HH:mm') return `${h}:${m}`; if(this.format === 'hh:mm A') return now.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}); return `${h}:${m}:${s}`; }
-                if (this.type === 'cal_masehi') { const d = String(now.getDate()).padStart(2,'0'), m = String(now.getMonth()+1).padStart(2,'0'), y = now.getFullYear(); if(this.format === 'DD-MM-YYYY') return `${d}-${m}-${y}`; if(this.format === 'DD MMM YYYY') return now.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'}).toUpperCase(); return `${d}/${m}/${y}`; }
-                if (this.type === 'cal_hijri') { if (this.format === 'DD/MM/YYYY (H)') return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'2-digit',month:'2-digit',year:'numeric'}).format(now); return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'numeric',month:'long',year:'numeric'}).format(now).toUpperCase(); }
+                if (this.type === 'cal_masehi') { const d = String(now.getDate()).padStart(2,'0'), m = String(now.getMonth()+1).padStart(2,'0'), y = now.getFullYear(); if(this.format === 'DD-MM-YYYY') return `${d}-${m}-${y}`; if(this.format === 'DD MMM YYYY') return now.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'}); return `${d}/${m}/${y}`; }
+                if (this.type === 'cal_hijri') { if (this.format === 'DD/MM/YYYY (H)') return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'2-digit',month:'2-digit',year:'numeric'}).format(now); return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'numeric',month:'long',year:'numeric'}).format(now); }
                 return this.text;
             }
-			updateContent() {
-				if (this.type === 'group') return; 
+            
+            updateContent() {
+                if (this.type === 'group' || this.type === 'line') return; 
 
-				if (this.type === 'drawing' || this.type === 'image') {
-					this.pixels = this.customPixels.map(p => ({ x: p.x, y: p.y, c: p.c }));
-					this.textWidth = this.w; this.textHeight = this.h;
-				} else {
-					const str = this.getDisplayString();
-					this.pixels = []; 
-					let fontDef = (typeof PixelFonts !== 'undefined') ? PixelFonts[this.font] : null;
+                if (this.type === 'drawing' || this.type === 'image') {
+                    this.pixels = this.customPixels.map(p => ({ x: p.x, y: p.y, c: p.c }));
+                    this.textWidth = this.w; this.textHeight = this.h;
+                } else {
+                    const str = this.getDisplayString();
+                    this.pixels = []; 
+                    let fontDef = (typeof PixelFonts !== 'undefined') ? PixelFonts[this.font] : null;
 
-					if (fontDef) {
-						let xOff = 0;
-						let height = fontDef.height;
-						let heightBytes = Math.ceil(height / 8); 
-						let firstChar = fontDef.firstChar || 32;
-						let order = fontDef.order || "horiz_page"; 
+                    if (fontDef) {
+                        let xOff = 0;
+                        let height = fontDef.height;
+                        let heightBytes = Math.ceil(height / 8); 
+                        let firstChar = fontDef.firstChar || 32;
+                        let order = fontDef.order || "horiz_page"; 
 
-						for (let char of str) {
-							if (char === ' ') {
-								let nIdx = 'n'.charCodeAt(0) - firstChar;
-								let sw = (fontDef.widths && fontDef.widths[nIdx]) ? fontDef.widths[nIdx] : (fontDef.width || 4);
-								xOff += (sw === 0 ? 4 : sw) + (fontDef.space || 1);
-								continue;
-							}
+                        for (let char of str) {
+                            if (char === ' ') {
+                                let nIdx = 'n'.charCodeAt(0) - firstChar;
+                                let sw = (fontDef.widths && fontDef.widths[nIdx]) ? fontDef.widths[nIdx] : (fontDef.width || 4);
+                                xOff += (sw === 0 ? 4 : sw) + (fontDef.space || 1);
+                                continue;
+                            }
 
-							const index = char.charCodeAt(0) - firstChar;
-							if (index < 0 || (fontDef.widths && index >= fontDef.widths.length)) continue;
+                            const index = char.charCodeAt(0) - firstChar;
+                            if (index < 0 || (fontDef.widths && index >= fontDef.widths.length)) continue;
 
-							let charWidth = fontDef.widths ? (fontDef.widths[index] || 0) : fontDef.width;
-							let charDataStart = 0;
+                            let charWidth = fontDef.widths ? (fontDef.widths[index] || 0) : fontDef.width;
+                            let charDataStart = 0;
 
-							if (fontDef.widths) {
-								for (let i = 0; i < index; i++) { 
-									charDataStart += (fontDef.widths[i] || 0) * heightBytes; 
-								}
-							} else {
-								charDataStart = index * heightBytes * charWidth;
-							}
+                            if (fontDef.widths) {
+                                for (let i = 0; i < index; i++) { charDataStart += (fontDef.widths[i] || 0) * heightBytes; }
+                            } else {
+                                charDataStart = index * heightBytes * charWidth;
+                            }
 
-							for (let cx = 0; cx < charWidth; cx++) {
-								for (let cy = 0; cy < heightBytes; cy++) {
-									let dataIndex = (order === "horiz_page") 
-										? charDataStart + (cy * charWidth) + cx
-										: charDataStart + (cx * heightBytes) + cy;
+                            for (let cx = 0; cx < charWidth; cx++) {
+                                for (let cy = 0; cy < heightBytes; cy++) {
+                                    let dataIndex = (order === "horiz_page") ? charDataStart + (cy * charWidth) + cx : charDataStart + (cx * heightBytes) + cy;
+                                    let value = fontDef.data[dataIndex] || 0;
+                                    let posn = cy * 8; if (heightBytes > 1 && cy === (heightBytes - 1)) { posn = height - 8; }
 
-									let value = fontDef.data[dataIndex] || 0;
-									
-									// Logika penempatan baris (Vertical Offset)
-									let posn = cy * 8;
-									if (heightBytes > 1 && cy === (heightBytes - 1)) {
-										 posn = height - 8;
-									}
-
-									for (let bit = 0; bit < 8; bit++) {
-										let targetY = posn + bit;
-
-										// PERBAIKAN CLIPPING:
-										// Jika font pendek (<= 8px), abaikan filter boundary Page agar bit ke-8 tampil.
-										// Jika font tinggi (> 8px), gunakan boundary agar tidak tumpang tindih.
-										let isValidY = (height <= 8) 
-											? (targetY < 8) // Izinkan full 1 byte untuk font pendek
-											: (targetY >= cy * 8 && targetY < height);
-
-										if (isValidY) {
-											if ((value >> bit) & 0x01) {
-												this.pixels.push({ x: cx + xOff, y: targetY });
-											}
-										}
-									}
-								}
-							}
-							xOff += charWidth + (fontDef.space || 1);
-						}
-						this.textWidth = Math.max(0, xOff - (fontDef.space || 1)); 
-						this.textHeight = height;
-					} else {
-						// Fallback System Font...
-						const fontSize = 10; 
-						offCanvas.width = Math.max(1, str.length * fontSize); offCanvas.height = fontSize + 4;
-						offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height); offCtx.fillStyle = "black"; 
-						offCtx.font = `bold ${fontSize}px monospace`; offCtx.textBaseline = "top"; offCtx.fillText(str, 0, 0);
-						const data = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height); 
-						let maxW = 0;
-						for (let y = 0; y < offCanvas.height; y++) { 
-							for (let x = 0; x < offCanvas.width; x++) { 
-								if (data.data[(y * offCanvas.width + x) * 4 + 3] > 128) { 
-									this.pixels.push({ x: x, y: y }); if (x > maxW) maxW = x; 
-								} 
-							} 
-						} 
-						this.textWidth = maxW + 1; this.textHeight = fontSize;
-					}
-				}
-
-				if (this.particles.length !== this.pixels.length) {
-					this.particles = this.pixels.map(p => ({ x: p.x, y: p.y, vx: (Math.random()-0.5)*3, vy: (Math.random()-0.5)*3 }));
-				}
-			}
+                                    for (let bit = 0; bit < 8; bit++) {
+                                        let targetY = posn + bit;
+                                        let isValidY = (height <= 8) ? (targetY < 8) : (targetY >= cy * 8 && targetY < height);
+                                        if (isValidY && ((value >> bit) & 0x01)) { this.pixels.push({ x: cx + xOff, y: targetY }); }
+                                    }
+                                }
+                            }
+                            xOff += charWidth + (fontDef.space || 1);
+                        }
+                        this.textWidth = Math.max(0, xOff - (fontDef.space || 1)); this.textHeight = height;
+                    } else {
+                        const fontSize = 10; 
+                        offCanvas.width = Math.max(1, str.length * fontSize); offCanvas.height = fontSize + 4;
+                        offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height); offCtx.fillStyle = "black"; 
+                        offCtx.font = `bold ${fontSize}px monospace`; offCtx.textBaseline = "top"; offCtx.fillText(str, 0, 0);
+                        const data = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height); 
+                        let maxW = 0;
+                        for (let y = 0; y < offCanvas.height; y++) { for (let x = 0; x < offCanvas.width; x++) { if (data.data[(y * offCanvas.width + x) * 4 + 3] > 128) { this.pixels.push({ x: x, y: y }); if (x > maxW) maxW = x; } } } 
+                        this.textWidth = maxW + 1; this.textHeight = fontSize;
+                    }
+                }
+            }
+            
             calcAlign() {
-                if (this.type === 'drawing' || this.type === 'image' || this.type === 'group') return { aX: 0, aY: 0 }; 
+                if (this.type === 'drawing' || this.type === 'image' || this.type === 'group' || this.type === 'line') return { aX: 0, aY: 0 }; 
                 let aX = 0; if(this.alignH === 'center') aX = Math.floor((this.w - this.textWidth) / 2); if(this.alignH === 'right') aX = this.w - this.textWidth;
                 let aY = 0; if(this.alignV === 'middle') aY = Math.floor((this.h - this.textHeight) / 2); if(this.alignV === 'bottom') aY = this.h - this.textHeight; return { aX, aY };
             }
 
             draw() {
-                if (!this.visible) return;
+                if (isSimulating) {
+                    if (!this.visibleLed || !this.visibleCanvas) return;
+                } else {
+                    if (!this.visibleCanvas) return;
+                }
+
                 const renderX = this.x * GRID_SIZE; const renderY = this.y * GRID_SIZE; const dW = this.w * GRID_SIZE; const dH = this.h * GRID_SIZE;
                 const rPx = this.radius * Math.min(GRID_SIZE/2, 4);
 
-                ctx.save(); 
-                ctx.beginPath();
-                if(ctx.roundRect) ctx.roundRect(renderX, renderY, dW, dH, rPx); 
-                else ctx.rect(renderX, renderY, dW, dH);
+                ctx.save(); ctx.beginPath();
+                if(ctx.roundRect) ctx.roundRect(renderX, renderY, dW, dH, rPx); else ctx.rect(renderX, renderY, dW, dH);
                 ctx.clip(); 
 
-                if (this.type === 'group') {
-                    let sOffX = 0, sOffY = 0;
-                    if (this.anim.startsWith('slide') || this.anim === 'scroll') {
-                        this.scrollOffset += 0.2 * this.speed;
-                        if (this.anim === 'scroll' || this.anim === 'slide-left') {
-                            if (this.scrollOffset > this.w) this.scrollOffset = -this.w;
-                            sOffX = -this.scrollOffset * GRID_SIZE;
-                        } else if (this.anim === 'slide-right') {
-                            if (this.scrollOffset > this.w) this.scrollOffset = -this.w;
-                            sOffX = this.scrollOffset * GRID_SIZE;
-                        } else if (this.anim === 'slide-up') {
-                            if (this.scrollOffset > this.h) this.scrollOffset = -this.h;
-                            sOffY = -this.scrollOffset * GRID_SIZE;
-                        } else if (this.anim === 'slide-down') {
-                            if (this.scrollOffset > this.h) this.scrollOffset = -this.h;
-                            sOffY = this.scrollOffset * GRID_SIZE;
-                        }
-                    } else if (this.anim === 'fade') { 
-                        this.opacity += 0.02 * this.fadeDir * this.speed; 
-                        if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1; 
-                    }
-                    
-                    ctx.globalAlpha = Math.max(0, Math.min(1, this.opacity));
-                    
-                    if (!this.transparentBG) { 
-                        ctx.fillStyle = this.fColor; ctx.beginPath(); 
-                        if(ctx.roundRect) ctx.roundRect(renderX + sOffX, renderY + sOffY, dW, dH, rPx); 
-                        else ctx.rect(renderX + sOffX, renderY + sOffY, dW, dH);
-                        ctx.fill(); 
-                    }
+                let isBlinking = (this.animState === 1 && this.anim === 'blink') || (this.animState === 3 && this.anim2 === 'blink');
+                let blinkSpeed = (this.animState === 1) ? this.speed : this.speed2;
+                ctx.globalAlpha = (isBlinking && Math.floor(Date.now() / (500 / blinkSpeed)) % 2 === 0) ? 0 : 1;
 
+                if (this.isAnimPlaying) {
+                    if (this.animState === 1) { 
+                        if (this._stepAnimation(this.anim, this.speed)) { this.animState = 2; this.delayTimer = this.animDelay * 1000; }
+                    } else if (this.animState === 2) { 
+                        this.delayTimer -= window.deltaTime;
+                        if (this.delayTimer <= 0) {
+                            if (this.anim2 !== 'none') { this.animState = 3; this._setupAnimStart(this.anim2); } 
+                            else { 
+                                triggerObjectEvent(this); 
+                                
+                                if (isSimulating) {
+                                    let currentScr = screens[activeScreenIdx];
+                                    if (currentScr && currentScr.durationMode === 'anim' && currentScr.durationAnimObj === this.name) simTimer = 0;
+                                }
+
+                                if (isSimulating) {
+                                    let lastAnim = this.anim;
+                                    if (lastAnim.includes('slide')) {
+                                        this.visibleCanvas = false; 
+                                        this.isAnimPlaying = false;
+                                    } else if (lastAnim === 'none') {
+                                        this.isAnimPlaying = false; 
+                                    } else {
+                                        this.animState = 1; this._setupAnimStart(this.anim); 
+                                    }
+                                } else {
+                                    this.animState = 1; this._setupAnimStart(this.anim); 
+                                }
+                            }
+                        }
+                    } else if (this.animState === 3) { 
+                        if (this._stepAnimation(this.anim2, this.speed2)) { this.animState = 4; this.delayTimer = this.animDelay2 * 1000; }
+                    } else if (this.animState === 4) { 
+                        this.delayTimer -= window.deltaTime;
+                        if (this.delayTimer <= 0) {
+                            triggerObjectEvent(this);
+
+                            if (isSimulating) {
+                                let currentScr = screens[activeScreenIdx];
+                                if (currentScr && currentScr.durationMode === 'anim' && currentScr.durationAnimObj === this.name) simTimer = 0;
+                            }
+
+                            if (isSimulating) {
+                                let lastAnim = this.anim2 !== 'none' ? this.anim2 : this.anim;
+                                if (lastAnim.includes('slide')) {
+                                    this.visibleCanvas = false; 
+                                    this.isAnimPlaying = false;
+                                } else if (lastAnim === 'none') {
+                                    this.isAnimPlaying = false; 
+                                } else {
+                                    if (this.anim !== 'none') { this.animState = 1; this._setupAnimStart(this.anim); } 
+                                    else { this.animState = 3; this._setupAnimStart(this.anim2); }
+                                }
+                            } else {
+                                if (this.anim !== 'none') { this.animState = 1; this._setupAnimStart(this.anim); } 
+                                else { this.animState = 3; this._setupAnimStart(this.anim2); }
+                            }
+                        }
+                    }
+                } else if (!isSimulating) {
+                    this.currentOffsetX = 0; this.currentOffsetY = 0;
+                }
+
+                if (this.type === 'group') {
+                    let sOffX = this.currentOffsetX * GRID_SIZE; let sOffY = this.currentOffsetY * GRID_SIZE;
+                    if (!this.bgColorNone && ctx.globalAlpha !== 0) { 
+                        ctx.fillStyle = this.bgColor; ctx.beginPath(); 
+                        if(ctx.roundRect) ctx.roundRect(renderX + sOffX, renderY + sOffY, dW, dH, rPx); else ctx.rect(renderX + sOffX, renderY + sOffY, dW, dH); ctx.fill(); 
+                    }
+                    if (!this.fColorNone && ctx.globalAlpha !== 0) {
+                        ctx.fillStyle = this.fColor;
+                        ctx.fillRect(renderX + sOffX, renderY + sOffY, dW, GRID_SIZE); ctx.fillRect(renderX + sOffX, renderY + sOffY + dH - GRID_SIZE, dW, GRID_SIZE); 
+                        ctx.fillRect(renderX + sOffX, renderY + sOffY, GRID_SIZE, dH); ctx.fillRect(renderX + sOffX + dW - GRID_SIZE, renderY + sOffY, GRID_SIZE, dH); 
+                    }
                     ctx.translate(sOffX, sOffY);
-                    
                     this.children.forEach(c => { let origX = c.x, origY = c.y; c.x = this.x + c.x; c.y = this.y + c.y; c.draw(); c.x = origX; c.y = origY; });
                     
+                } else if (this.type === 'line') {
+                    if (ctx.globalAlpha !== 0) { ctx.fillStyle = this.lineColor; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(renderX, renderY, dW, dH, rPx); else ctx.rect(renderX, renderY, dW, dH); ctx.fill(); }
                 } else {
                     this.updateContent(); 
                     let align = this.calcAlign(); let aX = align.aX, aY = align.aY;
 
-                    if (!this.transparentBG) { 
-                        ctx.fillStyle = this.fColor; ctx.beginPath(); 
-                        if(ctx.roundRect) ctx.roundRect(renderX, renderY, dW, dH, rPx); else ctx.rect(renderX, renderY, dW, dH);
-                        ctx.fill(); 
+                    if (!this.bgColorNone && ctx.globalAlpha !== 0) { 
+                        ctx.fillStyle = this.bgColor; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(renderX, renderY, dW, dH, rPx); else ctx.rect(renderX, renderY, dW, dH); ctx.fill(); 
+                    }
+                    if (!this.fColorNone && ctx.globalAlpha !== 0) {
+                        ctx.fillStyle = this.fColor;
+                        ctx.fillRect(renderX, renderY, dW, GRID_SIZE); ctx.fillRect(renderX, renderY + dH - GRID_SIZE, dW, GRID_SIZE); 
+                        ctx.fillRect(renderX, renderY, GRID_SIZE, dH); ctx.fillRect(renderX + dW - GRID_SIZE, renderY, GRID_SIZE, dH); 
                     }
 
-                    let maxW = Math.max(this.w, this.textWidth || 0);
-                    let maxH = Math.max(this.h, this.textHeight || 0);
-
-                    if (this.anim.startsWith('slide') || this.anim === 'scroll') {
-                        this.scrollOffset += 0.2 * this.speed;
-                        if (this.anim === 'scroll' || this.anim === 'slide-left') {
-                            if (this.scrollOffset > maxW) this.scrollOffset = -this.w;
-                        } else if (this.anim === 'slide-right') {
-                            if (this.scrollOffset > this.w) this.scrollOffset = -maxW;
-                        } else if (this.anim === 'slide-up') {
-                            if (this.scrollOffset > maxH) this.scrollOffset = -this.h;
-                        } else if (this.anim === 'slide-down') {
-                            if (this.scrollOffset > this.h) this.scrollOffset = -maxH;
-                        }
+                    if (ctx.globalAlpha !== 0 && !this.colorNone) {
+                        this.pixels.forEach((p, i) => {
+                            let dx = p.x + aX + this.currentOffsetX; let dy = p.y + aY + this.currentOffsetY;
+                            const fx = renderX + (dx * GRID_SIZE); const fy = renderY + (dy * GRID_SIZE);
+                            ctx.fillStyle = p.c ? p.c : this.color; ctx.fillRect(fx, fy, GRID_SIZE - 1, GRID_SIZE - 1); 
+                        });
                     }
-                    else if (this.anim === 'fade') { this.opacity += 0.02 * this.fadeDir * this.speed; if (this.opacity >= 1 || this.opacity <= 0) this.fadeDir *= -1; }
-                    else if (this.anim === 'explode') { this.particles.forEach(p => { p.x += p.vx * 0.1 * this.speed; p.y += p.vy * 0.1 * this.speed; }); }
-
-                    ctx.globalAlpha = Math.max(0, Math.min(1, this.opacity));
-
-                    this.pixels.forEach((p, i) => {
-                        let dx = p.x + aX; let dy = p.y + aY;
-                        
-                        if (this.anim === 'scroll' || this.anim === 'slide-left') dx -= this.scrollOffset;
-                        else if (this.anim === 'slide-right') dx += this.scrollOffset;
-                        else if (this.anim === 'slide-up') dy -= this.scrollOffset;
-                        else if (this.anim === 'slide-down') dy += this.scrollOffset;
-                        else if (this.anim === 'explode') { dx = this.particles[i].x + aX; dy = this.particles[i].y + aY; }
-                        
-                        if (this.anim === 'pixel-fade' && Math.random() > 0.3 * this.speed) return;
-                        
-                        const fx = renderX + (dx * GRID_SIZE); const fy = renderY + (dy * GRID_SIZE);
-                        ctx.fillStyle = p.c ? p.c : this.color; 
-                        ctx.fillRect(fx, fy, GRID_SIZE - 1, GRID_SIZE - 1); 
-                    });
                 }
                 
                 ctx.restore(); 
 
-                if (selectedObjs.includes(this)) {
-                    ctx.save();
-                    ctx.globalAlpha = 1; 
-                    ctx.strokeStyle = (this.transparentBG && this.type !== 'group') ? this.fColor : "#2ecc71"; 
-                    if (this.type === 'group') ctx.strokeStyle = this.fColor;
-                    
-                    ctx.lineWidth = 2; ctx.beginPath();
-                    if(ctx.roundRect) ctx.roundRect(renderX, renderY, dW, dH, rPx); else ctx.rect(renderX, renderY, dW, dH);
-                    ctx.stroke();
-
+                if (!isSimulating && selectedObjs.includes(this)) {
+                    ctx.save(); ctx.globalAlpha = 1; ctx.strokeStyle = (this.type === 'line' || this.type === 'group') ? "#e67e22" : "#2ecc71";
+                    ctx.lineWidth = 2; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(renderX, renderY, dW, dH, rPx); else ctx.rect(renderX, renderY, dW, dH); ctx.stroke();
                     if (mode === 'select' && selectedObjs.length === 1) { 
                         const hs = 10; ctx.fillStyle = "#e74c3c";
                         ctx.fillRect(renderX + dW/2 - hs/2, renderY - hs/2, hs, hs); ctx.fillRect(renderX + dW/2 - hs/2, renderY + dH - hs/2, hs, hs); 
@@ -665,30 +855,187 @@
             }
         }
 
+        function parseDuration(str) { 
+            if(!str) return 10000;
+            let pts = str.split(':'); 
+            if(pts.length === 3) return (parseInt(pts[0], 10)*3600 + parseInt(pts[1], 10)*60 + parseInt(pts[2], 10)) * 1000; 
+            return 10000; 
+        }
+
+        function toggleSimulation(forceStartIdx = null) {
+            if(isSimulating) { 
+                stopSimulation(); 
+                if(typeof forceStartIdx !== 'number') return; 
+            } 
+            else {
+                isSimulating = true; selectedObjs = []; syncPropPanel();
+                let btn = document.getElementById('btnSimulate');
+                btn.innerHTML = "⏹️"; btn.className = "top-btn btn-red-icon"; btn.title = "Stop Simulation";
+                
+                function buildBackup(list) {
+                    return list.map(o => ({ name: o.name, vis: o.visibleCanvas, children: o.children ? buildBackup(o.children) : null }));
+                }
+                preSimState = JSON.stringify(screens.map(s => ({ id: s.id, objects: buildBackup(s.objects) })));
+
+                screens.forEach(s => {
+                    function stopAllRec(list) {
+                        list.forEach(o => { o.isAnimPlaying = false; o.currentOffsetX = 0; o.currentOffsetY = 0; if(o.children) stopAllRec(o.children); });
+                    }
+                    stopAllRec(s.objects);
+                });
+
+                let startIdx = 0;
+                if (typeof forceStartIdx === 'number') {
+                    startIdx = forceStartIdx;
+                } else {
+                    startIdx = screens.findIndex(s => s.type === 'splash' && s.visibleLed);
+                    if(startIdx === -1) startIdx = screens.findIndex(s => s.type === 'main' && s.visibleLed);
+                    if(startIdx === -1) startIdx = 0;
+                }
+                startScreenSim(startIdx);
+            }
+        }
+
+        function previewScreen(idx, event) {
+            if (event) event.stopPropagation();
+            if (isSimulating) stopSimulation();
+            toggleSimulation(idx);
+        }
+
+        function stopSimulation() {
+            isSimulating = false;
+            let btn = document.getElementById('btnSimulate');
+            btn.innerHTML = "▶️"; btn.className = "top-btn btn-green-icon"; btn.title = "Play All (Simulate)";
+            
+            document.getElementById('simOverlay').style.display = 'none';
+
+            if(preSimState) {
+                let backup = JSON.parse(preSimState);
+                backup.forEach(bScr => {
+                    let s = screens.find(x => x.id === bScr.id);
+                    if(s) {
+                        function restoreRec(backupList, realList) {
+                            backupList.forEach(bObj => {
+                                let o = realList.find(x => x.name === bObj.name);
+                                if (o) {
+                                    o.visibleCanvas = bObj.vis; o.isAnimPlaying = true; o.resetAnimation();
+                                    if (o.children && bObj.children) restoreRec(bObj.children, o.children);
+                                }
+                            });
+                        }
+                        restoreRec(bScr.objects, s.objects);
+                    }
+                });
+            }
+            
+            let splashIdx = screens.findIndex(s => s.type === 'splash');
+            switchScreen(splashIdx !== -1 ? splashIdx : 0); 
+        }
+
+        function startScreenSim(idx) {
+            switchScreen(idx); let scr = screens[idx];
+            function startVisRec(list) {
+                list.forEach(o => {
+                    if (o.visibleCanvas && o.visibleLed) { o.isAnimPlaying = true; o.resetAnimation(); }
+                    if (o.children) startVisRec(o.children);
+                });
+            }
+            startVisRec(scr.objects);
+            
+            if (scr.durationMode === 'fixed') { simTimer = parseDuration(scr.durationFixed || "00:00:10"); } else { simTimer = 999999; }
+        }
+
+        function findAndToggleVisibilityRecursive(list, name, isShow) {
+            for(let o of list) {
+                if(o.name === name) {
+                    if(o.visibleLed) {
+                        o.visibleCanvas = isShow;
+                        function setPlayStateRec(obj, state) {
+                            obj.isAnimPlaying = state;
+                            if(state) obj.resetAnimation(); 
+                            if(obj.children) obj.children.forEach(c => setPlayStateRec(c, state));
+                        }
+                        setPlayStateRec(o, isShow);
+                    }
+                    return true;
+                }
+                if(o.type === 'group' && o.children) {
+                    if(findAndToggleVisibilityRecursive(o.children, name, isShow)) return true;
+                }
+            }
+            return false;
+        }
+
+        function triggerObjectEvent(obj) {
+            if (!isSimulating || !obj.nextAction) return; let act = obj.nextAction; let tgt = obj.nextTarget;
+            
+            if(act === 'show_screen') { 
+                let idx = screens.findIndex(s => s.id === tgt && s.visibleLed); 
+                if(idx !== -1) startScreenSim(idx); 
+            }
+            else if(act === 'hide_screen') { stopSimulation(); }
+            else if(act === 'show_object' || act === 'show_group') { 
+                findAndToggleVisibilityRecursive(screens[activeScreenIdx].objects, tgt, true);
+            }
+            else if(act === 'hide_object' || act === 'hide_group') { 
+                findAndToggleVisibilityRecursive(screens[activeScreenIdx].objects, tgt, false);
+            }
+        }
+
+        function playObjectAnim() { 
+            if(selectedObj) { 
+                function playRec(o) { o.isAnimPlaying = true; o.resetAnimation(); if(o.children) o.children.forEach(c=>playRec(c)); }
+                playRec(selectedObj);
+            } 
+        }
+        function stopObjectAnim() { 
+            if(selectedObj) { 
+                function stopRec(o) { o.isAnimPlaying = false; o.currentOffsetX = 0; o.currentOffsetY = 0; if(o.children) o.children.forEach(c=>stopRec(c)); }
+                stopRec(selectedObj);
+            } 
+        }
+
         function renderTree() {
             const container = document.getElementById('treeBrowser'); container.innerHTML = '';
             screens.forEach((scr, sIdx) => {
                 let sDiv = document.createElement('div'); 
-                
-                let sClass = scr.type === 'splash' ? ' screen-splash' : scr.type === 'main' ? ' screen-main' : scr.type === 'iqomah' ? ' screen-iqomah' : scr.type === 'adzan' ? ' screen-adzan' : '';
+                let sClass = scr.type === 'splash' ? ' screen-splash' : 
+                             scr.type === 'main' ? ' screen-main' : 
+                             scr.type === 'iqomah' ? ' screen-iqomah' : 
+                             scr.type === 'adzan' ? ' screen-adzan' : 
+                             scr.type === 'after_iqomah' ? ' screen-after-iqomah' : 
+                             scr.type === 'adzan_jumat' ? ' screen-adzan-jumat' : 
+                             scr.type === 'saat_sholat' ? ' screen-saat-sholat' : '';
+                             
+                let ledIconScr = !scr.visibleLed ? '<span style="color:#e74c3c; margin-right:4px;" title="Hidden on LED JSON">💡🚫</span>' : '';
+                let opacityStyle = !scr.visibleCanvas ? 'opacity: 0.4; text-decoration: line-through;' : '';
                 sDiv.className = 'tree-item screen-item' + sClass + (sIdx === activeScreenIdx ? ' active-screen' : '');
                 
-                let scrIcon = scr.type === 'splash' ? '🚀' : scr.type === 'main' ? '🏠' : scr.type === 'iqomah' ? '🚨' : scr.type === 'adzan' ? '🕌' : '📺';
-                sDiv.innerHTML = `<span>${scrIcon} ${scr.id}</span>`; 
-                sDiv.onclick = () => switchScreen(sIdx); container.appendChild(sDiv);
+                let scrIcon = scr.type === 'splash' ? '🚀' : 
+                              scr.type === 'main' ? '🏠' : 
+                              scr.type === 'iqomah' ? '🚨' : 
+                              scr.type === 'adzan' ? '🕌' : 
+                              scr.type === 'after_iqomah' ? '🤲' : 
+                              scr.type === 'adzan_jumat' ? '📢' : 
+                              scr.type === 'saat_sholat' ? '🧎' : '📺';
+                              
+                sDiv.innerHTML = `<span style="${opacityStyle}">${ledIconScr}${scrIcon} ${scr.id}</span>
+                                  <span style="font-size:12px; cursor:pointer; opacity:0.7; transition:0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'" onclick="previewScreen(${sIdx}, event)" title="Preview Screen Ini">▶️</span>`;
+                sDiv.onclick = () => { if(!isSimulating) switchScreen(sIdx); }; container.appendChild(sDiv);
 
                 if (sIdx === activeScreenIdx) {
                     const buildNodes = (list, parentIsGroup = false) => {
                         list.forEach(o => {
-                            let oDiv = document.createElement('div'); oDiv.className = 'tree-item obj-item ' + (selectedObjs.includes(o) ? ' selected ' : '') + (!o.visible ? ' hidden-obj ' : '') + (parentIsGroup ? ' child-item' : '');
-                            let icon = o.type === 'group' ? '📁' : o.type === 'sholat' ? '🕌' : o.type === 'iqomah' ? '⏱️' : o.type === 'image' ? '🖼️' : o.type === 'drawing' ? '🎨' : '📄';
-                            oDiv.innerHTML = `<span><span class="tree-icon">${icon}</span> ${o.name}</span><span style="font-size:10px; cursor:pointer;" onclick="event.stopPropagation(); toggleVisibility('${o.name}')">${o.visible ? '👁️' : '🕶️'}</span>`;
+                            let oDiv = document.createElement('div'); oDiv.className = 'tree-item obj-item ' + (selectedObjs.includes(o) ? ' selected ' : '') + (!o.visibleCanvas ? ' hidden-obj ' : '') + (parentIsGroup ? ' child-item' : '');
+                            let icon = o.type === 'group' ? '📁' : o.type === 'sholat' ? '🕌' : o.type === 'iqomah' ? '⏱️' : o.type === 'image' ? '🖼️' : o.type === 'line' ? '➖' : o.type === 'drawing' ? '🎨' : '📄';
+                            let ledIcon = !o.visibleLed ? '<span style="color:#e74c3c; margin-right:4px;" title="Hidden on LED JSON">💡🚫</span>' : '';
+                            
+                            oDiv.innerHTML = `<span>${ledIcon}<span class="tree-icon">${icon}</span> ${o.name}</span><span style="font-size:10px; cursor:pointer;" onclick="event.stopPropagation(); toggleVisibility('${o.name}')">${o.visibleCanvas ? '👁️' : '🕶️'}</span>`;
                             oDiv.onclick = (e) => { 
-                                e.stopPropagation(); 
+                                if(isSimulating) return; e.stopPropagation(); 
                                 if (e.shiftKey) { if(selectedObjs.includes(o)) selectedObjs = selectedObjs.filter(x=>x!==o); else selectedObjs.push(o); } else { selectedObjs = [o]; }
                                 setMode('select'); syncPropPanel(); renderTree(); 
-                            };
-                            container.appendChild(oDiv);
+                            }; container.appendChild(oDiv);
                             if (o.type === 'group' && o.children) { buildNodes(o.children, true); }
                         });
                     }; buildNodes(scr.objects);
@@ -697,27 +1044,16 @@
         }
 
         function toggleVisibility(objName) {
-            function findAndToggle(list) {
-                for(let o of list) { if(o.name === objName) { o.visible = !o.visible; return true; } if(o.type === 'group' && o.children) { if(findAndToggle(o.children)) return true; } } return false;
-            } findAndToggle(objects); syncPropPanel(); renderTree();
+            if(isSimulating) return;
+            function findAndToggle(list) { for(let o of list) { if(o.name === objName) { o.visibleCanvas = !o.visibleCanvas; return true; } if(o.type === 'group' && o.children) { if(findAndToggle(o.children)) return true; } } return false; } 
+            findAndToggle(objects); syncPropPanel(); renderTree();
         }
 
         function updateSidebarButtons() {
-            if(!screens[activeScreenIdx]) return;
-            let type = screens[activeScreenIdx].type;
-            let btnSholat = document.getElementById('btnAddSholat');
-            let btnIqomah = document.getElementById('btnAddIqomah');
-            
-            if (type === 'iqomah') {
-                btnSholat.disabled = true; btnSholat.style.opacity = '0.3';
-                btnIqomah.disabled = false; btnIqomah.style.opacity = '1';
-            } else if (type === 'adzan' || type === 'splash') {
-                btnSholat.disabled = true; btnSholat.style.opacity = '0.3';
-                btnIqomah.disabled = true; btnIqomah.style.opacity = '0.3';
-            } else {
-                btnSholat.disabled = false; btnSholat.style.opacity = '1';
-                btnIqomah.disabled = true; btnIqomah.style.opacity = '0.3';
-            }
+            if(!screens[activeScreenIdx]) return; let type = screens[activeScreenIdx].type; let btnSholat = document.getElementById('btnAddSholat'); let btnIqomah = document.getElementById('btnAddIqomah');
+            if (type === 'iqomah') { btnSholat.disabled = true; btnSholat.style.opacity = '0.3'; btnIqomah.disabled = false; btnIqomah.style.opacity = '1'; } 
+            else if (['adzan', 'splash', 'after_iqomah', 'adzan_jumat', 'saat_sholat'].includes(type)) { btnSholat.disabled = true; btnSholat.style.opacity = '0.3'; btnIqomah.disabled = true; btnIqomah.style.opacity = '0.3'; } 
+            else { btnSholat.disabled = false; btnSholat.style.opacity = '1'; btnIqomah.disabled = true; btnIqomah.style.opacity = '0.3'; }
         }
 
         function addScreen(type = 'generic') {
@@ -725,27 +1061,37 @@
             if (type === 'main' && screens.some(s => s.type === 'main')) { alert("Maksimal hanya boleh ada 1 Main Screen!"); return; }
             if (type === 'iqomah' && screens.some(s => s.type === 'iqomah')) { alert("Maksimal hanya boleh ada 1 Screen khusus Iqomah!"); return; }
             if (type === 'adzan' && screens.some(s => s.type === 'adzan')) { alert("Maksimal hanya boleh ada 1 Screen khusus Adzan!"); return; }
+            if (type === 'after_iqomah' && screens.some(s => s.type === 'after_iqomah')) { alert("Maksimal hanya boleh ada 1 Screen Setelah Iqomah!"); return; }
+            if (type === 'adzan_jumat' && screens.some(s => s.type === 'adzan_jumat')) { alert("Maksimal hanya boleh ada 1 Screen Adzan Jumat!"); return; }
+            if (type === 'saat_sholat' && screens.some(s => s.type === 'saat_sholat')) { alert("Maksimal hanya boleh ada 1 Screen Saat Sholat!"); return; }
             
             saveState(); 
-            let newId = type === 'splash' ? "Screen_Splash" : type === 'main' ? "Screen_Main" : type === 'iqomah' ? "Screen_Iqomah" : type === 'adzan' ? "Screen_Adzan" : "Screen_" + (screens.length + 1);
+            let newId = type === 'splash' ? "Screen_Splash" : 
+                        type === 'main' ? "Screen_Main" : 
+                        type === 'iqomah' ? "Screen_Iqomah" : 
+                        type === 'adzan' ? "Screen_Adzan" : 
+                        type === 'after_iqomah' ? "Screen_Stlh_Iqomah" : 
+                        type === 'adzan_jumat' ? "Screen_Adzan_Jumat" : 
+                        type === 'saat_sholat' ? "Screen_Saat_Sholat" : 
+                        "Screen_" + (screens.length + 1);
             let durFixed = type === 'splash' ? '00:00:03' : '00:00:10';
-            screens.push({ id: newId, type: type, objects: [], durationMode: 'fixed', durationFixed: durFixed, durationAnimObj: '' });
+            screens.push({ id: newId, type: type, visibleCanvas: true, visibleLed: true, objects: [], durationMode: 'fixed', durationFixed: durFixed, durationAnimObj: '', nextAction: '', nextTarget: '' });
             switchScreen(screens.length - 1);
         }
 
         function switchScreen(idx) {
-            saveState(); activeScreenIdx = idx; objects = screens[idx].objects; selectedObjs = [];
+            if(isSimulating && idx !== activeScreenIdx) { } else { saveState(); }
+            activeScreenIdx = idx; objects = screens[idx].objects; selectedObjs = [];
+            
+            function resetRec(list) { list.forEach(o => { o.resetAnimation(); if (o.children) resetRec(o.children); }); }
+            resetRec(objects);
+            
             resizeCanvas(); updateSidebarButtons(); syncPropPanel(); renderTree();
         }
 
         function deleteCurrentScreen() {
-            if (screens.length <= 1) { alert("Tidak bisa menghapus screen terakhir! Proyek harus memiliki minimal 1 screen."); return; }
-            let scrName = screens[activeScreenIdx].id;
-            if (confirm(`Hapus screen '${scrName}' beserta seluruh objek di dalamnya?`)) {
-                saveState(); screens.splice(activeScreenIdx, 1);
-                let newIdx = activeScreenIdx > 0 ? activeScreenIdx - 1 : 0;
-                switchScreen(newIdx);
-            }
+            if (screens.length <= 1) { alert("Tidak bisa menghapus screen terakhir!"); return; } let scrName = screens[activeScreenIdx].id;
+            if (confirm(`Hapus screen '${scrName}' beserta seluruh objek di dalamnya?`)) { saveState(); screens.splice(activeScreenIdx, 1); switchScreen(activeScreenIdx > 0 ? activeScreenIdx - 1 : 0); }
         }
 
         function changeZoom(delta) { let newSize = GRID_SIZE + delta; if (newSize >= 4 && newSize <= 50) { GRID_SIZE = newSize; document.getElementById('zoomLabel').innerText = Math.round((GRID_SIZE / BASE_GRID_SIZE) * 100) + "%"; resizeCanvas(); } }
@@ -754,7 +1100,7 @@
             document.getElementById('ctxMenu').style.display = 'none'; if (selectedObjs.length < 2) return; saveState();
             let minX = Math.min(...selectedObjs.map(o => o.x)); let minY = Math.min(...selectedObjs.map(o => o.y));
             let maxW = Math.max(...selectedObjs.map(o => o.x + o.w)) - minX; let maxH = Math.max(...selectedObjs.map(o => o.y + o.h)) - minY;
-            let group = new PixelObject(getUniqueName("Group"), "group", minX, minY); group.w = maxW; group.h = maxH;
+            let group = new PixelObject(getUniqueName("Group"), "group", minX, minY); group.w = Math.min(PROJECT_W, maxW); group.h = Math.min(PROJECT_H, maxH);
             group.children = selectedObjs.map(o => { o.x -= minX; o.y -= minY; return o; });
             objects = objects.filter(o => !selectedObjs.includes(o)); screens[activeScreenIdx].objects = objects; objects.push(group); selectedObjs = [group]; syncPropPanel(); renderTree();
         }
@@ -765,14 +1111,72 @@
             objects = objects.filter(o => o !== group); screens[activeScreenIdx].objects = objects; selectedObjs = [...group.children]; syncPropPanel(); renderTree();
         }
 
+        function saveState() { 
+            if(isSimulating) return;
+            let state = { w: PROJECT_W, h: PROJECT_H, activeScreenIdx: activeScreenIdx, screens: screens.map(scr => ({ id: scr.id, type: scr.type, visibleCanvas: scr.visibleCanvas, visibleLed: scr.visibleLed, durationMode: scr.durationMode, durationFixed: scr.durationFixed, durationAnimObj: scr.durationAnimObj, nextAction: scr.nextAction, nextTarget: scr.nextTarget, objects: scr.objects.map(serializeObj) })) };
+            undoStack.push(state); if (undoStack.length > 30) undoStack.shift(); redoStack = []; 
+        }
+        function undo() { if (undoStack.length > 0 && !isSimulating) { let state = { w: PROJECT_W, h: PROJECT_H, activeScreenIdx: activeScreenIdx, screens: screens.map(scr => ({ id: scr.id, type: scr.type, visibleCanvas: scr.visibleCanvas, visibleLed: scr.visibleLed, durationMode: scr.durationMode, durationFixed: scr.durationFixed, durationAnimObj: scr.durationAnimObj, nextAction: scr.nextAction, nextTarget: scr.nextTarget, objects: scr.objects.map(serializeObj) })) }; redoStack.push(state); restoreFromState(undoStack.pop()); } }
+        function redo() { if (redoStack.length > 0 && !isSimulating) { let state = { w: PROJECT_W, h: PROJECT_H, activeScreenIdx: activeScreenIdx, screens: screens.map(scr => ({ id: scr.id, type: scr.type, visibleCanvas: scr.visibleCanvas, visibleLed: scr.visibleLed, durationMode: scr.durationMode, durationFixed: scr.durationFixed, durationAnimObj: scr.durationAnimObj, nextAction: scr.nextAction, nextTarget: scr.nextTarget, objects: scr.objects.map(serializeObj) })) }; undoStack.push(state); restoreFromState(redoStack.pop()); } }
+        
+        function restoreFromState(s) {
+            PROJECT_W = s.w || 64; PROJECT_H = s.h || 32; document.getElementById('globalW').value = PROJECT_W; document.getElementById('globalH').value = PROJECT_H;
+            screens = s.screens.map(scrData => { 
+                let scr = { id: scrData.id, type: scrData.type, visibleCanvas: scrData.visible_canvas !== false && scrData.visibleCanvas !== false, visibleLed: scrData.visible_led !== false && scrData.visibleLed !== false, objects: [], durationMode: scrData.durationMode, durationFixed: scrData.durationFixed, durationAnimObj: scrData.durationAnimObj, nextAction: scrData.nextAction, nextTarget: scrData.nextTarget }; 
+                scr.objects = scrData.objects.map(oData => restoreObject(oData)); return scr; 
+            });
+            activeScreenIdx = s.activeScreenIdx; objects = screens[activeScreenIdx].objects; selectedObjs = []; resizeCanvas(); updateSidebarButtons(); syncPropPanel(); renderTree();
+        }
+
+        function copyObjects() {
+            if (selectedObjs.length === 0) return;
+            clipboardData = selectedObjs.map(o => serializeObj(o));
+        }
+
+        function pasteObjects() {
+            if (clipboardData.length === 0) return;
+            saveState(); 
+            let newSelected = [];
+            
+            function renameDeep(data) {
+                let base = (data.id || data.name || "Obj").replace(/(_Copy)?(_\d+)?$/, '');
+                if (data.type === 'group' && !base.startsWith('Group_')) base = "Group_" + base;
+                data.id = getUniqueName(base + "_Copy");
+                data.name = data.id; 
+                if (data.children) data.children.forEach(c => renameDeep(c));
+            }
+
+            clipboardData.forEach(objData => {
+                let dataCopy = JSON.parse(JSON.stringify(objData)); 
+                dataCopy.frameX = (dataCopy.frameX !== undefined ? dataCopy.frameX : dataCopy.x) + 2;
+                dataCopy.frameY = (dataCopy.frameY !== undefined ? dataCopy.frameY : dataCopy.y) + 2;
+                
+                renameDeep(dataCopy);
+                let newObj = restoreObject(dataCopy);
+                objects.push(newObj);
+                newSelected.push(newObj);
+            });
+            
+            selectedObjs = newSelected; setMode('select'); syncPropPanel(); renderTree();
+        }
+
         window.addEventListener('keydown', (e) => {
+            if(isSimulating) return; 
             const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName);
-            if (e.key === 'Delete' && !isInput) { if (selectedObjs.length > 0) { if (confirm(`Hapus ${selectedObjs.length} objek terpilih dari Screen ini?`)) { deleteSelected(true); } } }
-            if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !isInput) { e.preventDefault(); undo(); }
+            
+            if (e.key === 'Delete' && !isInput) { 
+                if (selectedObjs.length > 0) { 
+                    if (confirm(`Hapus ${selectedObjs.length} objek terpilih dari Screen ini?`)) { deleteSelected(true); } 
+                } 
+            }
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !isInput) { e.preventDefault(); if (e.shiftKey) redo(); else undo(); }
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y') && !isInput) { e.preventDefault(); redo(); }
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C') && !isInput) { e.preventDefault(); copyObjects(); }
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V') && !isInput) { e.preventDefault(); pasteObjects(); }
         });
 
         window.addEventListener('contextmenu', (e) => {
-            if (e.target.id === 'editorCanvas') {
+            if (e.target.id === 'editorCanvas' && !isSimulating) {
                 e.preventDefault(); const canGroup = selectedObjs.length > 1 && selectedObjs.every(o => o.anim === 'none'); const canUngroup = selectedObjs.length === 1 && selectedObjs[0].type === 'group';
                 if (canGroup || canUngroup) {
                     const ctxMenu = document.getElementById('ctxMenu'); ctxMenu.style.display = 'flex'; ctxMenu.style.left = e.clientX + 'px'; ctxMenu.style.top = e.clientY + 'px';
@@ -797,38 +1201,25 @@
         function resizeCanvas() { canvas.width = PROJECT_W * GRID_SIZE; canvas.height = PROJECT_H * GRID_SIZE; }
         
         function setMode(m) { mode = m; document.querySelectorAll('.sidebar-left button').forEach(b => b.classList.remove('active')); document.getElementById(m+'Btn').classList.add('active'); canvas.style.cursor = m === 'select' ? 'default' : 'crosshair'; }
-        function setAlign(type, val) { if(selectedObj && !['drawing','image','sholat','group'].includes(selectedObj.type)) { if(type === 'h') selectedObj.alignH = val; else selectedObj.alignV = val; syncGeometryUI(); } }
+        function setAlign(type, val) { if(selectedObj && !['drawing','image','sholat','group', 'line'].includes(selectedObj.type)) { if(type === 'h') selectedObj.alignH = val; else selectedObj.alignV = val; syncGeometryUI(); } }
         
         function changeObjType() { 
-            if (!selectedObj) return; 
-            let newType = document.getElementById('propType').value;
-            let scrType = screens[activeScreenIdx].type;
-
+            if (!selectedObj) return; let newType = document.getElementById('propType').value; let scrType = screens[activeScreenIdx].type;
             if (newType === 'iqomah' && scrType !== 'iqomah') { alert("Object Counter Iqomah HANYA bisa digunakan di Screen khusus Iqomah!"); document.getElementById('propType').value = selectedObj.type; return; }
-            if (newType === 'sholat' && (scrType === 'iqomah' || scrType === 'adzan' || scrType === 'splash')) { alert("Object Jadwal Sholat TIDAK bisa digunakan di Screen Adzan, Iqomah, atau Splash!"); document.getElementById('propType').value = selectedObj.type; return; }
-            
-            selectedObj.type = newType; setupFormatDropdown(); updateFromProp(); 
+            if (newType === 'sholat' && ['iqomah', 'adzan', 'splash', 'after_iqomah', 'adzan_jumat', 'saat_sholat'].includes(scrType)) { alert("Object Jadwal Sholat TIDAK bisa digunakan di Screen Khusus!"); document.getElementById('propType').value = selectedObj.type; return; }
+            selectedObj.type = newType; setupFormatDropdown(); updateFromProp(true); 
         }
 
         function setupFormatDropdown() {
             if (!selectedObj) return;
             const bF = document.getElementById('boxFormat'), bT = document.getElementById('boxText'), bFont = document.getElementById('boxFont'), bAlign = document.getElementById('boxAlign'), bImg = document.getElementById('boxImage');
-            const bSholat = document.getElementById('boxSholat'), bAnim = document.getElementById('boxAnim'), bColors = document.getElementById('boxColors'), bCoords = document.getElementById('boxObjCoords'), bHooks = document.getElementById('boxHooks');
-            
+            const bSholat = document.getElementById('boxSholat'), bAnim = document.getElementById('boxAnim'), bColors = document.getElementById('boxColors'), bCoords = document.getElementById('boxObjCoords'), bLine = document.getElementById('boxLine');
             bF.classList.add('hidden'); bT.classList.add('hidden'); bFont.classList.add('hidden'); bAlign.classList.add('hidden'); bImg.classList.add('hidden'); bSholat.classList.add('hidden');
-            bColors.classList.remove('hidden'); bCoords.classList.remove('hidden');
+            bLine.classList.add('hidden'); bColors.classList.remove('hidden'); bCoords.classList.remove('hidden');
 
-            // Default untuk Animasi & Hooks: TAMPIL untuk semua kecuali Iqomah
-            if (selectedObj.type === 'iqomah') {
-                bAnim.classList.add('hidden'); 
-                bHooks.classList.add('hidden');
-                selectedObj.anim = 'none'; // Paksa Iqomah selalu statis
-            } else {
-                bAnim.classList.remove('hidden'); 
-                bHooks.classList.remove('hidden');
-            }
-
+            if (selectedObj.type === 'iqomah' || selectedObj.type === 'line') { bAnim.classList.add('hidden'); selectedObj.anim = 'none'; selectedObj.anim2 = 'none'; } else { bAnim.classList.remove('hidden'); }
             if (selectedObj.type === 'group') { bColors.classList.add('hidden'); bCoords.classList.add('hidden'); 
+            } else if (selectedObj.type === 'line') { bLine.classList.remove('hidden'); 
             } else if (selectedObj.type === 'image') { bImg.classList.remove('hidden');
             } else if (selectedObj.type === 'sholat') { bSholat.classList.remove('hidden'); bFont.classList.remove('hidden'); document.getElementById('propSholatType').value = selectedObj.sholatType;
             } else if (selectedObj.type === 'iqomah') { 
@@ -855,11 +1246,53 @@
             if (mode === 'fixed') { document.getElementById('boxDurFixed').classList.remove('hidden'); document.getElementById('boxDurAnim').classList.add('hidden'); } 
             else { document.getElementById('boxDurFixed').classList.add('hidden'); document.getElementById('boxDurAnim').classList.remove('hidden'); }
         }
+        
+        function updateNextTargets(context) {
+            let actionVal = context === 'obj' ? document.getElementById('propNextActionObj').value : document.getElementById('propNextActionScr').value;
+            let targetSel = context === 'obj' ? document.getElementById('propNextTargetObj') : document.getElementById('propNextTargetScr');
+
+            if (!actionVal) { targetSel.classList.add('hidden'); targetSel.innerHTML = ''; return; }
+            targetSel.classList.remove('hidden'); targetSel.innerHTML = '<option value="">-- Pilih Target --</option>';
+
+            if (actionVal.includes('screen')) { 
+                screens.filter(s => s.visibleLed).forEach(s => { 
+                    let opt = document.createElement('option'); opt.value = s.id; opt.innerText = s.id; targetSel.appendChild(opt); 
+                });
+            } else if (actionVal.includes('group')) {
+                let groups = screens[activeScreenIdx].objects.filter(o => o.type === 'group' && o.visibleLed);
+                groups.forEach(g => { let opt = document.createElement('option'); opt.value = g.name; opt.innerText = g.name; targetSel.appendChild(opt); });
+            } else if (actionVal.includes('object')) {
+                let allObjs = []; 
+                screens.forEach(s => {
+                    function getValidObjNames(list) {
+                        let arr = [];
+                        list.forEach(o => {
+                            if (o.type !== 'group' && o.visibleLed) arr.push(o.name);
+                            if (o.type === 'group' && o.children) arr = arr.concat(getValidObjNames(o.children));
+                        });
+                        return arr;
+                    }
+                    allObjs = allObjs.concat(getValidObjNames(s.objects));
+                });
+                allObjs.forEach(n => { let opt = document.createElement('option'); opt.value = n; opt.innerText = n; targetSel.appendChild(opt); });
+            }
+
+            if (targetSel.options.length > 1 && !targetSel.value) {
+                targetSel.value = targetSel.options[1].value;
+            }
+        }
 
         function updateScreenProp() {
             let scr = screens[activeScreenIdx];
-            scr.id = document.getElementById('propScreenName').value || `Screen_${activeScreenIdx+1}`;
-            scr.durationMode = document.getElementById('propScreenDurMode').value; scr.durationFixed = document.getElementById('propScreenDurFixed').value; scr.durationAnimObj = document.getElementById('propScreenDurAnim').value;
+            let nameVal = document.getElementById('propScreenName').value || `Screen_${activeScreenIdx+1}`; scr.id = nameVal.substring(0, 20);
+            scr.visibleCanvas = document.getElementById('propScrVisibleCanvas').checked;
+            scr.visibleLed = document.getElementById('propScrVisibleLed').checked;
+            scr.durationMode = document.getElementById('propScreenDurMode').value; 
+            scr.durationFixed = document.getElementById('propScreenDurFixed').value; 
+            scr.durationAnimObj = document.getElementById('propScreenDurAnim').value;
+            
+            scr.nextAction = document.getElementById('propNextActionScr').value; 
+            scr.nextTarget = document.getElementById('propNextTargetScr').value;
             renderTree();
         }
 
@@ -871,75 +1304,153 @@
                 panelMsg.style.display = 'block';
             } else if (selectedObjs.length === 1) {
                 selectedObj = selectedObjs[0]; panelObject.classList.remove('hidden');
-                document.getElementById('propName').value = selectedObj.name; document.getElementById('propVisible').checked = selectedObj.visible; syncGeometryUI(); 
-                document.getElementById('propType').value = selectedObj.type; document.getElementById('propFont').value = selectedObj.font; 
-                document.getElementById('propText').value = selectedObj.text; document.getElementById('propColor').value = selectedObj.color; document.getElementById('propFColor').value = selectedObj.fColor; document.getElementById('propAnim').value = selectedObj.anim;
-                document.getElementById('propTransparent').checked = selectedObj.transparentBG; document.getElementById('propRadius').value = selectedObj.radius; document.getElementById('radiusVal').innerText = selectedObj.radius;
+                document.getElementById('propName').value = selectedObj.name; 
+                document.getElementById('propVisibleCanvas').checked = selectedObj.visibleCanvas; 
+                document.getElementById('propVisibleLed').checked = selectedObj.visibleLed; 
                 
-                // Animasi Speed, Delay, Hooks
+                syncGeometryUI(); 
+                document.getElementById('propType').value = selectedObj.type; document.getElementById('propFont').value = selectedObj.font; 
+                document.getElementById('propText').value = selectedObj.text; 
+                
+                document.getElementById('propColor').value = selectedObj.color; document.getElementById('propColorNone').checked = selectedObj.colorNone; 
+                document.getElementById('propFColor').value = selectedObj.fColor; document.getElementById('propFColorNone').checked = selectedObj.fColorNone;
+                document.getElementById('propBgColor').value = selectedObj.bgColor; document.getElementById('propBgColorNone').checked = selectedObj.bgColorNone;
+
+                document.getElementById('propRadius').value = selectedObj.radius; document.getElementById('radiusVal').innerText = selectedObj.radius;
+                
+                if (selectedObj.type === 'line') {
+                    document.getElementById('propLineDir').value = selectedObj.lineDir; document.getElementById('propLineThick').value = selectedObj.lineThick;
+                    document.getElementById('propLineLength').value = selectedObj.lineLength; document.getElementById('propLineColor').value = selectedObj.lineColor;
+                    ['propColor', 'propColorNone', 'propFColor', 'propFColorNone', 'propBgColor', 'propBgColorNone'].forEach(id => { document.getElementById(id).disabled = true; document.getElementById(id).parentElement.style.opacity = '0.4'; });
+                } else {
+                    ['propColor', 'propColorNone', 'propFColor', 'propFColorNone', 'propBgColor', 'propBgColorNone'].forEach(id => { document.getElementById(id).disabled = false; document.getElementById(id).parentElement.style.opacity = '1'; });
+                }
+
+                document.getElementById('propAnim').value = selectedObj.anim;
                 document.getElementById('propSpeed').value = selectedObj.speed; document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x';
                 document.getElementById('propAnimDelay').value = selectedObj.animDelay || 0;
-                document.getElementById('propHookBefore').value = selectedObj.fnBefore || "";
-                document.getElementById('propHookAfter').value = selectedObj.fnAfter || "";
-                document.getElementById('propHookCall').value = selectedObj.fnCall || "";
+
+                document.getElementById('propAnim2').value = selectedObj.anim2;
+                document.getElementById('propSpeed2').value = selectedObj.speed2; document.getElementById('speedVal2').innerText = selectedObj.speed2.toFixed(1) + 'x';
+                document.getElementById('propAnimDelay2').value = selectedObj.animDelay2 || 0;
                 
-                setupFormatDropdown(); if(!['text', 'drawing', 'image', 'sholat', 'iqomah', 'group'].includes(selectedObj.type)) document.getElementById('propFormat').value = selectedObj.format; 
+                document.getElementById('propNextActionObj').value = selectedObj.nextAction || ""; 
+                updateNextTargets('obj');
+                if (selectedObj.nextAction) document.getElementById('propNextTargetObj').value = selectedObj.nextTarget || "";
+                
+                setupFormatDropdown(); if(!['text', 'drawing', 'image', 'sholat', 'iqomah', 'group', 'line'].includes(selectedObj.type)) document.getElementById('propFormat').value = selectedObj.format; 
             } else {
-                selectedObj = null; panelScreen.classList.remove('hidden');
-                let scr = screens[activeScreenIdx];
+                selectedObj = null; panelScreen.classList.remove('hidden'); let scr = screens[activeScreenIdx];
                 document.getElementById('propScreenName').value = scr.id;
+                document.getElementById('propScrVisibleCanvas').checked = scr.visibleCanvas !== false;
+                document.getElementById('propScrVisibleLed').checked = scr.visibleLed !== false;
+                
                 document.getElementById('propScreenDurMode').value = scr.durationMode || 'fixed'; document.getElementById('propScreenDurFixed').value = scr.durationFixed || '00:00:10';
                 
                 document.getElementById('splashScreenTag').style.display = scr.type === 'splash' ? 'block' : 'none';
                 document.getElementById('mainScreenTag').style.display = scr.type === 'main' ? 'block' : 'none';
                 document.getElementById('iqomahScreenTag').style.display = scr.type === 'iqomah' ? 'block' : 'none';
                 document.getElementById('adzanScreenTag').style.display = scr.type === 'adzan' ? 'block' : 'none';
+                document.getElementById('afterIqomahScreenTag').style.display = scr.type === 'after_iqomah' ? 'block' : 'none';
+                document.getElementById('adzanJumatScreenTag').style.display = scr.type === 'adzan_jumat' ? 'block' : 'none';
+                document.getElementById('saatSholatScreenTag').style.display = scr.type === 'saat_sholat' ? 'block' : 'none';
 
-                let animSelect = document.getElementById('propScreenDurAnim'); animSelect.innerHTML = '<option value="">-- Pilih Objek --</option>'; let allObjNames = getAllObjectNames(scr.objects);
+                let animSelect = document.getElementById('propScreenDurAnim'); animSelect.innerHTML = '<option value="">-- Pilih Objek --</option>'; 
+                let allObjNames = [];
+                function getValidObjNames(list) {
+                    let arr = []; list.forEach(o => { if (o.type !== 'group') arr.push(o.name); if (o.type === 'group' && o.children) arr = arr.concat(getValidObjNames(o.children)); });
+                    return arr;
+                }
+                allObjNames = getValidObjNames(scr.objects);
                 allObjNames.forEach(n => { let opt = document.createElement('option'); opt.value = n; opt.innerText = n; if(scr.durationAnimObj === n) opt.selected = true; animSelect.appendChild(opt); });
                 updateScreenPropUI();
+                
+                document.getElementById('propNextActionScr').value = scr.nextAction || ""; 
+                updateNextTargets('scr');
+                if (scr.nextAction) document.getElementById('propNextTargetScr').value = scr.nextTarget || "";
             }
         }
 
         function updateName() {
-            if(!selectedObj) return; let newName = document.getElementById('propName').value.trim(); if(newName === selectedObj.name || newName === "") return;
-            if(isNameUnique(newName)) { selectedObj.name = newName; } else { selectedObj.name = getUniqueName(newName); document.getElementById('propName').value = selectedObj.name; } renderTree();
+            if(!selectedObj) return; 
+            let newName = document.getElementById('propName').value.trim(); 
+            
+            if (selectedObj.type === 'group' && !newName.startsWith('Group_')) {
+                newName = "Group_" + newName.replace(/^Group_/, ''); 
+            }
+            
+            newName = newName.substring(0, 20);
+            if(newName === selectedObj.name || newName === "" || newName === "Group_") return;
+            
+            if(isNameUnique(newName)) { 
+                selectedObj.name = newName; 
+            } else { 
+                selectedObj.name = getUniqueName(newName); 
+            } 
+            
+            document.getElementById('propName').value = selectedObj.name;
+            renderTree();
         }
 
-        function updateFromProp() {
+        function updateFromProp(autoSize = false) {
             if (selectedObj) {
                 if(selectedObj.type !== 'group') selectedObj.type = document.getElementById('propType').value; 
-                selectedObj.visible = document.getElementById('propVisible').checked; selectedObj.font = document.getElementById('propFont').value; selectedObj.text = document.getElementById('propText').value; 
-                selectedObj.color = document.getElementById('propColor').value; selectedObj.fColor = document.getElementById('propFColor').value; selectedObj.anim = document.getElementById('propAnim').value; selectedObj.transparentBG = document.getElementById('propTransparent').checked; 
+                selectedObj.visibleCanvas = document.getElementById('propVisibleCanvas').checked; 
+                selectedObj.visibleLed = document.getElementById('propVisibleLed').checked; 
+                
+                selectedObj.font = document.getElementById('propFont').value; 
+                lastUsedFont = selectedObj.font; 
+                
+                let rawText = document.getElementById('propText').value; selectedObj.text = rawText.substring(0, 20);
+                if (rawText.length > 20) document.getElementById('propText').value = selectedObj.text;
+
+                selectedObj.color = document.getElementById('propColor').value; selectedObj.colorNone = document.getElementById('propColorNone').checked;
+                selectedObj.fColor = document.getElementById('propFColor').value; selectedObj.fColorNone = document.getElementById('propFColorNone').checked;
+                selectedObj.bgColor = document.getElementById('propBgColor').value; selectedObj.bgColorNone = document.getElementById('propBgColorNone').checked;
+                
+                if (selectedObj.type === 'line') {
+                    selectedObj.lineDir = document.getElementById('propLineDir').value; selectedObj.lineThick = parseInt(document.getElementById('propLineThick').value) || 1;
+                    selectedObj.lineLength = parseInt(document.getElementById('propLineLength').value) || 10; selectedObj.lineColor = document.getElementById('propLineColor').value;
+                    if (selectedObj.lineDir === 'h') { selectedObj.w = Math.min(PROJECT_W, selectedObj.lineLength); selectedObj.h = Math.min(PROJECT_H, selectedObj.lineThick);
+                    } else { selectedObj.w = Math.min(PROJECT_W, selectedObj.lineThick); selectedObj.h = Math.min(PROJECT_H, selectedObj.lineLength); }
+                }
+
                 selectedObj.radius = parseInt(document.getElementById('propRadius').value); document.getElementById('radiusVal').innerText = selectedObj.radius;
                 
-                selectedObj.speed = parseFloat(document.getElementById('propSpeed').value);
-                selectedObj.animDelay = parseFloat(document.getElementById('propAnimDelay').value) || 0;
-                selectedObj.fnBefore = document.getElementById('propHookBefore').value;
-                selectedObj.fnAfter = document.getElementById('propHookAfter').value;
-                selectedObj.fnCall = document.getElementById('propHookCall').value;
+                let newAnim1 = document.getElementById('propAnim').value; let newAnim2 = document.getElementById('propAnim2').value;
+                if (newAnim1 !== 'none' && newAnim1 === newAnim2) { alert("Animasi Engine 1 dan Engine 2 tidak boleh menggunakan jenis yang sama!"); document.getElementById('propAnim2').value = 'none'; newAnim2 = 'none'; }
+                
+                selectedObj.anim = newAnim1; selectedObj.speed = parseFloat(document.getElementById('propSpeed').value); selectedObj.animDelay = parseFloat(document.getElementById('propAnimDelay').value) || 0;
+                selectedObj.anim2 = newAnim2; selectedObj.speed2 = parseFloat(document.getElementById('propSpeed2').value); selectedObj.animDelay2 = parseFloat(document.getElementById('propAnimDelay2').value) || 0;
+                
+                selectedObj.nextAction = document.getElementById('propNextActionObj').value; 
+                selectedObj.nextTarget = document.getElementById('propNextTargetObj').value;
                 
                 if (selectedObj.type === 'sholat') selectedObj.sholatType = document.getElementById('propSholatType').value; 
-                else if (selectedObj.type === 'iqomah') { selectedObj.format = document.getElementById('propFormat').value; selectedObj.anim = 'none'; } 
-                else if (!['text', 'drawing', 'image', 'group'].includes(selectedObj.type)) selectedObj.format = document.getElementById('propFormat').value;
+                else if (selectedObj.type === 'iqomah') { selectedObj.format = document.getElementById('propFormat').value; selectedObj.anim = 'none'; selectedObj.anim2 = 'none'; } 
+                else if (!['text', 'drawing', 'image', 'group', 'line'].includes(selectedObj.type)) selectedObj.format = document.getElementById('propFormat').value;
                 
-                document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x'; selectedObj.updateContent(); syncGeometryUI(); renderTree();
+                document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x'; document.getElementById('speedVal2').innerText = selectedObj.speed2.toFixed(1) + 'x'; 
+                selectedObj.updateContent(); 
+                
+                if (autoSize && !['drawing', 'image', 'group', 'line'].includes(selectedObj.type)) { selectedObj.w = Math.min(PROJECT_W, Math.max(2, selectedObj.textWidth)); selectedObj.h = Math.min(PROJECT_H, Math.max(2, selectedObj.textHeight)); }
+                syncGeometryUI(); renderTree();
             }
         }
 
         canvas.onmousedown = (e) => {
-            if (e.button === 2) return; const r = canvas.getBoundingClientRect(); const mx = e.clientX - r.left; const my = e.clientY - r.top;
+            if(isSimulating) return; if (e.button === 2) return; const r = canvas.getBoundingClientRect(); const mx = e.clientX - r.left; const my = e.clientY - r.top;
             if (mode === 'select') {
                 const hs = 10; const hc = hs/2;
                 if (selectedObjs.length === 1) {
-                    let s = selectedObjs[0]; if(!s.visible) return;
+                    let s = selectedObjs[0]; if(!s.visibleCanvas) return;
                     const renderX = s.x * GRID_SIZE, renderY = s.y * GRID_SIZE, w = s.w * GRID_SIZE, h = s.h * GRID_SIZE; let checkResize = '';
                     if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY-hc && my < renderY+hc) checkResize = 'n'; else if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY+h-hc && my < renderY+h+hc) checkResize = 's'; else if (mx > renderX-hc && mx < renderX+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) checkResize = 'w'; else if (mx > renderX+w-hc && mx < renderX+w+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) checkResize = 'e';
                     if (checkResize !== '') { isResizing = true; resizeDir = checkResize; saveState(); if (s.type === 'drawing' || s.type === 'image') { s._preResizePixels = JSON.parse(JSON.stringify(s.customPixels)); s._preResizeW = s.w; s._preResizeH = s.h; } return; }
                 }
                 let hitFound = false;
                 for (let i = objects.length - 1; i >= 0; i--) {
-                    let o = objects[i]; if(!o.visible) continue; const renderX = o.x * GRID_SIZE, renderY = o.y * GRID_SIZE, w = o.w * GRID_SIZE, h = o.h * GRID_SIZE;
+                    let o = objects[i]; if(!o.visibleCanvas) continue; const renderX = o.x * GRID_SIZE, renderY = o.y * GRID_SIZE, w = o.w * GRID_SIZE, h = o.h * GRID_SIZE;
                     if (mx > renderX && mx < renderX+w && my > renderY && my < renderY+h) { 
                         hitFound = true; if (e.shiftKey) { if (selectedObjs.includes(o)) selectedObjs = selectedObjs.filter(x => x !== o); else selectedObjs.push(o); } else { if (!selectedObjs.includes(o)) selectedObjs = [o]; isDragging = true; dragOffsets = selectedObjs.map(s => ({ obj: s, dx: Math.floor(mx/GRID_SIZE) - s.x, dy: Math.floor(my/GRID_SIZE) - s.y })); saveState(); }
                         syncPropPanel(); renderTree(); return; 
@@ -948,40 +1459,58 @@
                 if (!hitFound) { selectedObjs = []; syncPropPanel(); renderTree(); }
             } else if (mode === 'pen' || mode === 'eraser') {
                 saveState(); let hitDrawing = null; const gridMouseX = Math.floor(mx/GRID_SIZE); const gridMouseY = Math.floor(my/GRID_SIZE);
-                if (selectedObj && selectedObj.visible && (selectedObj.type === 'drawing' || selectedObj.type === 'image')) { if (gridMouseX >= selectedObj.x && gridMouseX < selectedObj.x+selectedObj.w && gridMouseY >= selectedObj.y && gridMouseY < selectedObj.y+selectedObj.h) { hitDrawing = selectedObj; } }
-                if (!hitDrawing) { for (let i = objects.length - 1; i >= 0; i--) { let o = objects[i]; if(!o.visible) continue; if (o.type === 'drawing' || o.type === 'image') { if (gridMouseX >= o.x && gridMouseX < o.x+o.w && gridMouseY >= o.y && gridMouseY < o.y+o.h) { hitDrawing = o; break; } } } }
+                if (selectedObj && selectedObj.visibleCanvas && (selectedObj.type === 'drawing' || selectedObj.type === 'image')) { if (gridMouseX >= selectedObj.x && gridMouseX < selectedObj.x+selectedObj.w && gridMouseY >= selectedObj.y && gridMouseY < selectedObj.y+selectedObj.h) { hitDrawing = selectedObj; } }
+                if (!hitDrawing) { for (let i = objects.length - 1; i >= 0; i--) { let o = objects[i]; if(!o.visibleCanvas) continue; if (o.type === 'drawing' || o.type === 'image') { if (gridMouseX >= o.x && gridMouseX < o.x+o.w && gridMouseY >= o.y && gridMouseY < o.y+o.h) { hitDrawing = o; break; } } } }
                 if (hitDrawing) { selectedObjs = [hitDrawing]; syncPropPanel(); } else if (mode === 'pen') { let o = new PixelObject(getUniqueName("Draw"), 'drawing', gridMouseX, gridMouseY); objects.push(o); selectedObjs = [o]; syncPropPanel(); }
                 isDrawing = true; handleDraw(mx, my); renderTree();
             }
         };
 
         canvas.onmousemove = (e) => {
-            const r = canvas.getBoundingClientRect(); const mx = e.clientX - r.left; const my = e.clientY - r.top;
+            if(isSimulating) return; const r = canvas.getBoundingClientRect(); const mx = e.clientX - r.left; const my = e.clientY - r.top;
             if (mode === 'select' && !isDragging && !isResizing) {
                 let currCursor = 'default'; const hs = 10; const hc = hs/2;
-                if (selectedObjs.length === 1 && selectedObjs[0].visible) {
+                if (selectedObjs.length === 1 && selectedObjs[0].visibleCanvas) {
                     let s = selectedObjs[0]; const renderX = s.x * GRID_SIZE, renderY = s.y * GRID_SIZE, w = s.w * GRID_SIZE, h = s.h * GRID_SIZE;
                     if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY-hc && my < renderY+hc) currCursor = 'n-resize'; else if (mx > renderX+w/2-hc && mx < renderX+w/2+hc && my > renderY+h-hc && my < renderY+h+hc) currCursor = 's-resize'; else if (mx > renderX-hc && mx < renderX+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) currCursor = 'w-resize'; else if (mx > renderX+w-hc && mx < renderX+w+hc && my > renderY+h/2-hc && my < renderY+h/2+hc) currCursor = 'e-resize'; else if (mx > renderX && mx < renderX+w && my > renderY && my < renderY+h) currCursor = 'move';
-                } else if(selectedObjs.length > 1) { let isHovering = selectedObjs.some(s => s.visible && mx > s.x*GRID_SIZE && mx < (s.x+s.w)*GRID_SIZE && my > s.y*GRID_SIZE && my < (s.y+s.h)*GRID_SIZE); if(isHovering) currCursor = 'move'; } canvas.style.cursor = currCursor;
+                } else if(selectedObjs.length > 1) { let isHovering = selectedObjs.some(s => s.visibleCanvas && mx > s.x*GRID_SIZE && mx < (s.x+s.w)*GRID_SIZE && my > s.y*GRID_SIZE && my < (s.y+s.h)*GRID_SIZE); if(isHovering) currCursor = 'move'; } canvas.style.cursor = currCursor;
             }
-            let hovering = null; for(let o of objects) { if(!o.visible) continue; const renderX = o.x * GRID_SIZE, renderY = o.y * GRID_SIZE; if(mx > renderX && mx < renderX+(o.w*GRID_SIZE) && my > renderY && my < renderY+(o.h*GRID_SIZE)) { hovering = o; break; } }
+            let hovering = null; for(let o of objects) { if(!o.visibleCanvas) continue; const renderX = o.x * GRID_SIZE, renderY = o.y * GRID_SIZE; if(mx > renderX && mx < renderX+(o.w*GRID_SIZE) && my > renderY && my < renderY+(o.h*GRID_SIZE)) { hovering = o; break; } }
             if(hovering && !isDragging && !isResizing) { tooltip.style.display = 'block'; tooltip.style.left = e.clientX + 'px'; tooltip.style.top = (e.clientY + 20) + 'px'; tooltip.innerHTML = `<span style="color:#fff">Name:</span> ${hovering.name}<br><span style="color:#fff">Type:</span> ${hovering.type.toUpperCase()}`; } else { tooltip.style.display = 'none'; }
-            if (isDragging && dragOffsets.length > 0) { dragOffsets.forEach(item => { item.obj.x = Math.floor(mx/GRID_SIZE) - item.dx; item.obj.y = Math.floor(my/GRID_SIZE) - item.dy; }); syncGeometryUI();
+            
+            if (isDragging && dragOffsets.length > 0) { 
+                dragOffsets.forEach(item => { item.obj.x = Math.floor(mx/GRID_SIZE) - item.dx; item.obj.y = Math.floor(my/GRID_SIZE) - item.dy; }); syncGeometryUI();
             } else if (isResizing && selectedObjs.length === 1) {
                 let s = selectedObjs[0]; let gridX = Math.round(mx / GRID_SIZE); let gridY = Math.round(my / GRID_SIZE);
-                if (resizeDir === 'e') { s.w = Math.max(2, gridX - s.x); } else if (resizeDir === 's') { s.h = Math.max(2, gridY - s.y); } else if (resizeDir === 'w') { let oldX = s.x; let newW = s.w + (oldX - gridX); if (newW >= 2) { s.x = gridX; s.w = newW; } } else if (resizeDir === 'n') { let oldY = s.y; let newH = s.h + (oldY - gridY); if (newH >= 2) { s.y = gridY; s.h = newH; } }
+                if (resizeDir === 'e') { s.w = Math.min(PROJECT_W, Math.max(1, gridX - s.x)); } else if (resizeDir === 's') { s.h = Math.min(PROJECT_H, Math.max(1, gridY - s.y)); } 
+                else if (resizeDir === 'w') { let oldX = s.x; let newW = s.w + (oldX - gridX); if (newW >= 1 && newW <= PROJECT_W) { s.x = gridX; s.w = newW; } } 
+                else if (resizeDir === 'n') { let oldY = s.y; let newH = s.h + (oldY - gridY); if (newH >= 1 && newH <= PROJECT_H) { s.y = gridY; s.h = newH; } }
+                
+                if (s.type === 'line') {
+                    if (s.lineDir === 'h') { s.lineLength = s.w; s.lineThick = s.h; } else { s.lineThick = s.w; s.lineLength = s.h; }
+                    if(document.getElementById('propLineThick') && selectedObj === s) { document.getElementById('propLineLength').value = s.lineLength; document.getElementById('propLineThick').value = s.lineThick; }
+                }
+                
                 if ((s.type === 'drawing' || s.type === 'image') && s._preResizePixels) {
                     let scaleX = s.w / s._preResizeW; let scaleY = s.h / s._preResizeH; let oldMap = {}; for(let p of s._preResizePixels) { oldMap[p.x + ',' + p.y] = p.c; } let scaledPixels = [];
                     for(let ny = 0; ny < s.h; ny++) { for(let nx = 0; nx < s.w; nx++) { let ox = Math.floor(nx / scaleX); let oy = Math.floor(ny / scaleY); let color = oldMap[ox + ',' + oy]; if (color) scaledPixels.push({x: nx, y: ny, c: color}); } }
                     s.customPixels = scaledPixels; s.updateContent();
-                } syncGeometryUI();
+                } 
+                syncGeometryUI();
             } else if (isDrawing) { handleDraw(mx, my); }
         };
 
         window.onmouseup = () => { isDrawing = isDragging = isResizing = false; dragOffsets = []; if (selectedObjs.length === 1) { delete selectedObjs[0]._preResizePixels; delete selectedObjs[0]._preResizeW; delete selectedObjs[0]._preResizeH; } };
 
+        // FIX BUG: Tooltip nyangkut saat kursor keluar layar
+        canvas.onmouseleave = () => {
+            tooltip.style.display = 'none';
+            isDrawing = isDragging = isResizing = false;
+            dragOffsets = [];
+        };
+
         function handleDraw(mx, my) {
-            if (!selectedObj || !selectedObj.visible || (selectedObj.type !== 'drawing' && selectedObj.type !== 'image')) return;
+            if (!selectedObj || !selectedObj.visibleCanvas || (selectedObj.type !== 'drawing' && selectedObj.type !== 'image')) return;
             let gridX = Math.floor(mx/GRID_SIZE); let gridY = Math.floor(my/GRID_SIZE); let relX = gridX - selectedObj.x; let relY = gridY - selectedObj.y;
             if (relX >= 0 && relX < selectedObj.w && relY >= 0 && relY < selectedObj.h) {
                 const color = document.getElementById('propColor') ? document.getElementById('propColor').value : "#ffffff";
@@ -989,83 +1518,199 @@
             }
         }
 
-        function restoreObject(o) { let n = new PixelObject(o.name, o.type, o.x, o.y); Object.assign(n, o); if(n.type === 'group' && n.children) n.children = n.children.map(c => restoreObject(c)); if(n.type !== 'group') n.updateContent(); return n; }
-        function saveState() { history.push({ screens: JSON.parse(JSON.stringify(screens)), activeScreenIdx: activeScreenIdx }); if (history.length > 30) history.shift(); }
-        
-        function undo() { 
-            if (history.length > 0) { 
-                const s = history.pop(); screens = s.screens.map(scr => { scr.objects = scr.objects.map(o => restoreObject(o)); return scr; });
-                activeScreenIdx = s.activeScreenIdx; objects = screens[activeScreenIdx].objects; selectedObjs = [];
-                resizeCanvas(); updateSidebarButtons(); syncPropPanel(); renderTree();
-            } 
+        function restoreObject(oData) { 
+            let n = new PixelObject(oData.id || oData.name, oData.type, oData.frameX ?? oData.x, oData.frameY ?? oData.y); 
+            n.visibleCanvas = (oData.visible_canvas !== false && oData.visible !== false); 
+            n.visibleLed = oData.visible_led !== false; 
+            
+            n.w = oData.w; n.h = oData.h; n.text = oData.text || ""; n.font = oData.font || "monospace"; n.format = oData.format || "";
+            n.colorNone = oData.color === "transparent" || oData.colorNone === true; n.color = n.colorNone ? "#ffffff" : (oData.color || "#ffffff");
+            n.bgColorNone = oData.bgColor === "transparent" || oData.bgColorNone === true; n.bgColor = n.bgColorNone ? "#000000" : (oData.bgColor || "#000000");
+            n.fColorNone = oData.frameColor === "transparent" || oData.fColor === "transparent" || oData.fColorNone === true; n.fColor = n.fColorNone ? "#00ff00" : (oData.frameColor || oData.fColor || "#00ff00");
+            
+            if (oData.anim1) { n.anim = oData.anim1.type; n.speed = oData.anim1.speed; n.animDelay = oData.anim1.delay; } else { n.anim = oData.anim || 'none'; n.speed = oData.speed || 1; n.animDelay = oData.animDelay || 0; }
+            if (oData.anim2) { n.anim2 = oData.anim2.type; n.speed2 = oData.anim2.speed; n.animDelay2 = oData.anim2.delay || 0; } else { n.anim2 = oData.anim2 || 'none'; n.speed2 = oData.speed2 || 1; n.animDelay2 = oData.animDelay2 || 0; }
+            
+            n.radius = oData.radius || 0;
+            if (oData.nextEvent) { n.nextAction = oData.nextEvent.action; n.nextTarget = oData.nextEvent.target; } else { n.nextAction = oData.nextAction || ""; n.nextTarget = oData.nextTarget || ""; }
+            
+            if (n.type === 'sholat') n.sholatType = oData.sholatType || 'Subuh';
+            if (n.type === 'line') { n.lineDir = oData.lineDir || 'h'; n.lineThick = oData.lineThick || 1; n.lineLength = oData.lineLength || 32; n.lineColor = oData.lineColor || '#8e44ad'; }
+            if (n.type === 'drawing' || n.type === 'image') n.customPixels = oData.customPixels || oData.pixels || [];
+            if (n.type === 'group' && oData.children) n.children = oData.children.map(c => restoreObject(c));
+            
+            n.resetAnimation(); if(n.type !== 'group' && n.type !== 'line') n.updateContent(); return n; 
         }
 
         function addPixelObject(type) { 
             let scrType = screens[activeScreenIdx].type;
             if (type === 'iqomah' && scrType !== 'iqomah') { return; } 
-            if (type === 'sholat' && (scrType === 'iqomah' || scrType === 'adzan' || scrType === 'splash')) { return; } 
-            
+            if (type === 'sholat' && ['iqomah', 'adzan', 'splash', 'after_iqomah', 'adzan_jumat', 'saat_sholat'].includes(scrType)) { return; } 
             saveState(); 
-            let base = type === 'drawing' ? "Draw" : type === 'image' ? "Img" : type === 'sholat' ? "Jadwal" : type === 'iqomah' ? "Count" : "Layer";
+            let base = type === 'drawing' ? "Draw" : type === 'image' ? "Img" : type === 'line' ? "Line" : type === 'sholat' ? "Jadwal" : type === 'iqomah' ? "Count" : type === 'text' ? "Text" : "Layer";
             let o = new PixelObject(getUniqueName(base), type, Math.max(0, Math.floor(PROJECT_W/2) - 8), Math.max(0, Math.floor(PROJECT_H/2) - 4)); 
             
-            objects.push(o); selectedObjs = [o]; setMode(type === 'drawing' || type === 'image' ? 'pen' : 'select'); syncPropPanel(); renderTree();
+            if (type === 'sholat') { o.updateContent(); o.w = Math.max(1, o.textWidth); o.h = Math.max(1, o.textHeight); }
+
+            objects.push(o); selectedObjs = [o]; setMode('select'); syncPropPanel(); renderTree();
         }
 
         function deleteSelected(skipConfirm = false) { 
-            if(selectedObjs.length > 0) { 
-                if(!skipConfirm) { if(!confirm(`Hapus ${selectedObjs.length} objek terpilih dari Screen ini?`)) return; }
-                saveState(); objects = objects.filter(o => !selectedObjs.includes(o)); screens[activeScreenIdx].objects = objects; selectedObjs = []; syncPropPanel(); renderTree(); 
-            } 
+            if(selectedObjs.length > 0) { if(!skipConfirm) { if(!confirm(`Hapus ${selectedObjs.length} objek terpilih dari Screen ini?`)) return; } saveState(); objects = objects.filter(o => !selectedObjs.includes(o)); screens[activeScreenIdx].objects = objects; selectedObjs = []; syncPropPanel(); renderTree(); } 
         }
 
         function serializeObj(o) {
             let align = o.calcAlign();
             let objData = { 
-                id: o.name, type: o.type, visible: o.visible, frameX: o.x, frameY: o.y, w: o.w, h: o.h, 
+                id: o.name, type: o.type, 
+                visible_canvas: o.visibleCanvas, 
+                visible_led: o.visibleLed, 
+                frameX: o.x, frameY: o.y, w: o.w, h: o.h, 
                 contentX: o.x + align.aX, contentY: o.y + align.aY, 
-                font: o.font, color: o.color, format: o.format, 
-                anim: o.anim, speed: o.speed, animDelay: o.animDelay, radius: o.radius, 
-                hooks: { before: o.fnBefore, after: o.fnAfter, call: o.fnCall } 
+                text: o.text, font: o.font, format: o.format, 
+                color: o.colorNone ? "transparent" : o.color, 
+                bgColor: o.bgColorNone ? "transparent" : o.bgColor, 
+                frameColor: o.fColorNone ? "transparent" : o.fColor, 
+                anim1: { type: o.anim, speed: o.speed, delay: o.animDelay }, 
+                anim2: { type: o.anim2, speed: o.speed2, delay: o.animDelay2 }, 
+                radius: o.radius, 
+                nextEvent: { action: o.nextAction, target: o.nextTarget } 
             };
-            if (o.type === 'drawing' || o.type === 'image') objData.pixels = o.pixels; 
-            if (o.type === 'sholat') { objData.sholatType = o.sholatType; objData.bgColor = o.transparentBG ? "transparent" : o.fColor; }
-            if (!['sholat','drawing','image','group'].includes(o.type)) objData.bgColor = o.transparentBG ? "transparent" : o.fColor;
+            
+            if (o.anim !== 'none' || o.anim2 !== 'none') {
+                let lastType = o.anim2 !== 'none' ? o.anim2 : o.anim;
+                let finX = 0, finY = 0;
+                if(lastType === 'slide-left') finX = -(o.textWidth || o.w);
+                if(lastType === 'slide-right') finX = o.w;
+                if(lastType === 'slide-up') finY = 0;
+                if(lastType === 'slide-down') finY = o.h;
+                
+                objData.e_anim_x = Math.round(align.aX + finX);
+                objData.e_anim_y = Math.round(align.aY + finY);
+
+                objData.last_x = 0;
+                objData.last_y = 0;
+                objData.last_w = 0;
+                objData.last_h = 0;
+                objData.last_millis = 0;
+            }
+
+            if (o.type === 'drawing' || o.type === 'image') { objData.pixels = o.pixels; objData.customPixels = o.customPixels; }
+            if (o.type === 'sholat') { objData.sholatType = o.sholatType; }
+            if (o.type === 'line') { objData.lineDir = o.lineDir; objData.lineThick = o.lineThick; objData.lineLength = o.lineLength; objData.lineColor = o.lineColor; }
             if (o.type === 'group') objData.children = o.children.map(c => serializeObj(c));
             return objData;
         }
 
         function exportToJerryScript() {
             const out = { 
-                project: "Pixel Pro Screens",
-                resolution: { w: PROJECT_W, h: PROJECT_H },
+                project: "Pixel Pro Screens", 
+                resolution: { w: PROJECT_W, h: PROJECT_H }, 
                 screens: screens.map(scr => ({ 
                     id: scr.id, type: scr.type, 
-                    duration: scr.durationMode === 'fixed' ? scr.durationFixed : { waitForAnim: scr.durationAnimObj },
-                    objects: scr.objects.filter(o=>o.visible).map(serializeObj) 
-                }))
+                    visible_canvas: scr.visibleCanvas, 
+                    visible_led: scr.visibleLed, 
+                    duration: scr.durationMode === 'fixed' ? scr.durationFixed : { waitForAnim: scr.durationAnimObj }, 
+                    nextEvent: { action: scr.nextAction, target: scr.nextTarget }, 
+                    objects: scr.objects.map(serializeObj) 
+                })) 
             };
-            document.getElementById('outputArea').innerText = "/* \n * JerryScript Logic \n * Full JWS Sequence Export \n */\n\nvar sceneData = " + JSON.stringify(out, null, 2) + ";";
-            document.getElementById('exportModal').style.display = 'block';
+            document.getElementById('outputArea').value = "var sceneData = " + JSON.stringify(out, null, 2) + ";"; document.getElementById('exportModal').style.display = 'block';
         }
 
-        function animate() {
-            ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        function copyToClipboard() { const copyText = document.getElementById("outputArea"); copyText.select(); copyText.setSelectionRange(0, 99999); navigator.clipboard.writeText(copyText.value).then(() => { alert("Kode JSON berhasil di-copy ke Clipboard!"); }); }
+        function openImportModal() { document.getElementById('importArea').value = ""; document.getElementById('importModal').style.display = 'block'; }
+
+        function importFromJson() {
+            try {
+                const str = document.getElementById('importArea').value; let jsonStr = str.replace(/var sceneData = /g, '').replace(/;$/g, '').trim(); const data = JSON.parse(jsonStr);
+                PROJECT_W = data.resolution.w; PROJECT_H = data.resolution.h; document.getElementById('globalW').value = PROJECT_W; document.getElementById('globalH').value = PROJECT_H;
+                screens = data.screens.map(scrData => { 
+                    let scr = { id: scrData.id, type: scrData.type, visibleCanvas: scrData.visible_canvas !== false, visibleLed: scrData.visible_led !== false, objects: [], nextAction: scrData.nextEvent?.action || '', nextTarget: scrData.nextEvent?.target || '' }; 
+                    if (typeof scrData.duration === 'string') { scr.durationMode = 'fixed'; scr.durationFixed = scrData.duration; scr.durationAnimObj = ''; } else { scr.durationMode = 'anim'; scr.durationFixed = '00:00:10'; scr.durationAnimObj = scrData.duration?.waitForAnim || ''; } 
+                    scr.objects = scrData.objects.map(oData => restoreObject(oData)); return scr; 
+                });
+                undoStack = []; redoStack = []; switchScreen(0); document.getElementById('importModal').style.display = 'none'; alert('Project berhasil di-load!');
+            } catch (e) { alert('Format JSON tidak valid atau rusak! Pastikan Anda mem-paste kode yang benar.'); console.error(e); }
+        }
+
+        function animate(timestamp) {
+            if(!timestamp) timestamp = performance.now();
+            if (!lastFrameTime) lastFrameTime = timestamp;
+            window.deltaTime = timestamp - lastFrameTime;
+            lastFrameTime = timestamp;
+            
+            if(window.deltaTime > 100 || window.deltaTime < 0) window.deltaTime = 16.6; 
+
+            ctx.fillStyle = "#050505"; ctx.fillRect(0, 0, canvas.width, canvas.height); 
+            
+            let scr = screens[activeScreenIdx];
+            if (!isSimulating || scr.visibleLed) {
+                objects.forEach(o => o.draw()); 
+            }
+            
             ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"; ctx.lineWidth = 1; ctx.beginPath();
             for(let i=0; i<=canvas.width; i+=GRID_SIZE) { ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); }
-            for(let i=0; i<=canvas.height; i+=GRID_SIZE) { ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); }
-            ctx.stroke();
-            objects.forEach(o => o.draw()); requestAnimationFrame(animate);
-            if(selectedObj && selectedObjs.length === 1 && (selectedObj.anim !== 'none' || !['text','drawing','image','sholat','iqomah','group'].includes(selectedObj.type))) syncGeometryUI();
+            for(let i=0; i<=canvas.height; i+=GRID_SIZE) { ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); } ctx.stroke();
+            
+            if (isSimulating) {
+                
+                // --- HUD UPDATE OVERLAY ---
+                if (scr.durationMode === 'fixed') {
+                    document.getElementById('simOverlay').style.display = 'block';
+                    let s = Math.max(0, Math.ceil(simTimer / 1000));
+                    let h = Math.floor(s/3600).toString().padStart(2,'0');
+                    let m = Math.floor((s%3600)/60).toString().padStart(2,'0');
+                    let sec = Math.floor(s%60).toString().padStart(2,'0');
+                    document.getElementById('simOverlayTime').innerText = `⏱️ ${h}:${m}:${sec}`;
+                    
+                    let actLabel = scr.nextAction ? scr.nextAction.toUpperCase() : 'STOP SIMULATION';
+                    let tgtLabel = scr.nextTarget ? ` ➡️ ${scr.nextTarget}` : '';
+                    document.getElementById('simOverlayAction').innerHTML = `NEXT: <span style="color:#fff;">${actLabel}${tgtLabel}</span>`;
+                } else {
+                    document.getElementById('simOverlay').style.display = 'block';
+                    document.getElementById('simOverlayTime').innerText = `⏳ WAITING ANIM`;
+                    document.getElementById('simOverlayAction').innerHTML = `TRIGGER: <span style="color:#fff;">${scr.durationAnimObj || "NONE"}</span>`;
+                }
+
+                // --- TIMER ENGINE ---
+                simTimer -= window.deltaTime; 
+                
+                if (simTimer <= 0) {
+                    let act = scr.nextAction; let tgt = scr.nextTarget;
+                    
+                    if (act === 'show_screen') {
+                        let idx = screens.findIndex(s => s.id === tgt && s.visibleLed);
+                        if (idx !== -1) startScreenSim(idx); 
+                        else stopSimulation();
+                    } else if (act === 'show_object' || act === 'show_group') {
+                        if(findAndToggleVisibilityRecursive(scr.objects, tgt, true)) {
+                            simTimer = scr.durationMode === 'fixed' ? parseDuration(scr.durationFixed) : 999999;
+                        } else stopSimulation();
+                    } else if (act === 'hide_object' || act === 'hide_group') {
+                        if(findAndToggleVisibilityRecursive(scr.objects, tgt, false)) {
+                            simTimer = scr.durationMode === 'fixed' ? parseDuration(scr.durationFixed) : 999999;
+                        } else stopSimulation();
+                    } else {
+                        if (scr.type === 'splash') {
+                            let mIdx = screens.findIndex(s=>s.type==='main' && s.visibleLed);
+                            if(mIdx !== -1) startScreenSim(mIdx); else stopSimulation();
+                        } else {
+                            stopSimulation();
+                        }
+                    }
+                }
+            }
+
+            requestAnimationFrame(animate);
+            if(selectedObj && selectedObjs.length === 1 && (selectedObj.anim !== 'none' || selectedObj.anim2 !== 'none' || !['text','drawing','image','sholat','iqomah','group', 'line'].includes(selectedObj.type))) syncGeometryUI();
         }
 
-        // INIT PROJECT DEFAULTS
         initFonts();
-        screens.push({ id: "Screen_Splash", type: "splash", objects: [], durationMode: 'fixed', durationFixed: '00:00:03', durationAnimObj: '' });
-        screens.push({ id: "Screen_Main", type: "main", objects: [], durationMode: 'fixed', durationFixed: '00:00:10', durationAnimObj: '' });
-        switchScreen(0);
-        updateSidebarButtons();
-        animate();
+        screens.push({ id: "Screen_Splash", type: "splash", visibleCanvas: true, visibleLed: true, objects: [], durationMode: 'fixed', durationFixed: '00:00:03', durationAnimObj: '', nextAction: '', nextTarget: '' });
+        screens.push({ id: "Screen_Main", type: "main", visibleCanvas: true, visibleLed: true, objects: [], durationMode: 'fixed', durationFixed: '00:00:10', durationAnimObj: '', nextAction: '', nextTarget: '' });
+        switchScreen(0); updateSidebarButtons(); 
+        requestAnimationFrame(animate);
     </script>
 </body>
 </html>
