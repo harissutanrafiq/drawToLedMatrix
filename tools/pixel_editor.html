@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Pixel Pro Studio v20.14 - Fixed Timer, Tooltip & New Screens</title>
+    <title>JWS Designer Pro v20.17</title>
     <script src="fonts.js"></script>
     <style>
         :root { --bg: #1a1a1b; --side: #252526; --accent: #2ecc71; --text: #eee; --border: #3e3e42; }
@@ -26,7 +26,7 @@
         select { padding: 0 8px; height: 28px; border-radius: 4px; border: none; font-size: 12px; background: #333; color: white; width: 100%; box-sizing: border-box; outline: none; font-family: inherit; }
         
         textarea { height: 50px; font-family: 'Consolas', monospace; font-size: 11px; resize: vertical; }
-        input[readonly] { background: #1a1a1b; color: #888; cursor: not-allowed; text-align: center; border: 1px solid #333; }
+        input[readonly] { background: #1a1a1b; color: #888; cursor: not-allowed; border: 1px solid #333; }
         input[type="color"] { padding: 2px 4px; height: 30px; cursor: pointer; }
         input[type="checkbox"] { width: 14px; height: 14px; margin:0; cursor: pointer; }
         
@@ -61,7 +61,7 @@
         .zoom-btn:hover { background: #555; }
 
         .modal { display:none; position:fixed; top:5%; left:5%; width:90%; height:90%; background:var(--side); padding:20px; border:2px solid var(--accent); z-index:2000; box-shadow: 0 0 50px rgba(0,0,0,0.8); border-radius: 8px; box-sizing: border-box;}
-        .modal textarea { background:#0a0a0a; color:#2ecc71; padding:15px; font-family:'Consolas', monospace; font-size: 13px; height: calc(100% - 100px); border: 1px solid #444; border-radius: 4px; width:100%; box-sizing: border-box; resize:none;}
+        .modal textarea { background:#0a0a0a; color:#2ecc71; padding:15px; font-family:'Consolas', monospace; font-size: 13px; height: calc(100% - 220px); border: 1px solid #444; border-radius: 4px; width:100%; box-sizing: border-box; resize:none;}
 
         #ctxMenu { position:fixed; display:none; background:#252526; border:1px solid #3e3e42; box-shadow: 0 4px 15px rgba(0,0,0,0.8); z-index:9999; border-radius: 6px; padding: 5px 0; min-width: 150px; flex-direction: column; }
         .ctx-item { padding: 10px 16px; cursor: pointer; color: #eee; font-size: 12px; font-weight: 500; transition: 0.1s; }
@@ -98,7 +98,7 @@
 <body>
 
     <div class="sidebar-left">
-        <h2 style="font-size: 22px; color: var(--accent); margin: 0; text-align: center; letter-spacing: 2px;">PIXEL PRO</h2>
+        <h2 style="font-size: 22px; color: var(--accent); margin: 0; text-align: center; letter-spacing: 2px;">JWS DESIGNER PRO</h2>
         
         <div class="group">
             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
@@ -149,7 +149,9 @@
                 <button class="top-btn" onclick="openImportModal()" title="Open / Paste JSON">📂</button>
                 <button class="top-btn" onclick="exportToJerryScript()" title="Save / Generate JSON">💾</button>
 
-                <div style="display: flex; align-items: center; gap: 8px; background: #252526; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); margin-left: 15px; height: 32px; box-sizing: border-box;">
+                <input type="text" id="projectName" maxlength="20" value="Project_1" placeholder="Project Name" style="width: 130px; margin-left: 15px; font-weight: bold; color: var(--accent); background: #252526; border: 1px solid var(--border); text-align: center;">
+
+                <div style="display: flex; align-items: center; gap: 8px; background: #252526; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); margin-left: 10px; height: 32px; box-sizing: border-box;">
                     <span style="font-size: 11px; color: var(--accent); font-weight: bold; letter-spacing: 1px;">CANVAS:</span>
                     <label style="margin:0; color:#aaa;">W</label>
                     <input type="number" id="globalW" value="64" onchange="updateProjectRes()" style="width: 45px; padding: 2px 4px; height: 24px; text-align: center;">
@@ -194,7 +196,7 @@
             
             <div class="group">
                 <label>Screen Name (ID)</label>
-                <input type="text" id="propScreenName" maxlength="20" oninput="updateScreenProp()" placeholder="Screen_1">
+                <input type="text" id="propScreenName" maxlength="20" onchange="updateScreenProp()" placeholder="Screen_1">
                 
                 <p id="splashScreenTag" style="color:#f1c40f; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🚀 DEDICATED SPLASH SCREEN</p>
                 <p id="mainScreenTag" style="color:#2ecc71; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🏠 DEDICATED MAIN SCREEN</p>
@@ -256,8 +258,8 @@
             <h3 style="color:var(--accent); font-size: 14px; margin-bottom:10px;">Properties Manager</h3>
             
             <div class="group">
-                <label>Object/Frame Name (ID Unik)</label>
-                <input type="text" id="propName" maxlength="20" oninput="updateName()" placeholder="Layer_1">
+                <label>Object/Frame Name (Max 10 Char)</label>
+                <input type="text" id="propName" maxlength="10" onchange="updateName()" placeholder="Obj">
                 
                 <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
                     <input type="checkbox" id="propVisibleCanvas" onchange="updateFromProp()">
@@ -272,16 +274,16 @@
             <div class="group">
                 <label>Geometry</label>
                 <div class="grid-2" style="margin-bottom: 4px;">
-                    <div><label>X (Left)</label><input type="text" id="propX" readonly></div>
-                    <div><label>Y (Top)</label><input type="text" id="propY" readonly></div>
+                    <div><label>X (Left)</label><input type="text" id="propX" readonly style="text-align: center;"></div>
+                    <div><label>Y (Top)</label><input type="text" id="propY" readonly style="text-align: center;"></div>
                 </div>
                 <div class="grid-2" style="margin-bottom: 8px;">
-                    <div><label>W (Width)</label><input type="text" id="propW" readonly></div>
-                    <div><label>H (Height)</label><input type="text" id="propH" readonly></div>
+                    <div><label>W (Width)</label><input type="text" id="propW" readonly style="text-align: center;"></div>
+                    <div><label>H (Height)</label><input type="text" id="propH" readonly style="text-align: center;"></div>
                 </div>
                 <div class="grid-2" id="boxObjCoords">
-                    <div><label style="color:var(--accent)">Content X</label><input type="text" id="propObjX" readonly style="color:var(--accent); font-weight:bold;"></div>
-                    <div><label style="color:var(--accent)">Content Y</label><input type="text" id="propObjY" readonly style="color:var(--accent); font-weight:bold;"></div>
+                    <div><label style="color:var(--accent)">Content X</label><input type="text" id="propObjX" readonly style="color:var(--accent); font-weight:bold; text-align: center;"></div>
+                    <div><label style="color:var(--accent)">Content Y</label><input type="text" id="propObjY" readonly style="color:var(--accent); font-weight:bold; text-align: center;"></div>
                 </div>
             </div>
 
@@ -354,6 +356,18 @@
                     <label>Content (Max 20 Karakter)</label>
                     <input type="text" id="propText" maxlength="20" oninput="updateFromProp(true)">
                 </div>
+
+                <div id="boxTextExtra" class="hidden" style="margin-top:5px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <input type="checkbox" id="propEditable" onchange="updateFromProp(true)">
+                        <label style="margin:0; text-transform:none; font-weight:bold; font-size:11px; cursor:pointer;" for="propEditable">Text Editable <span style="font-size:9px; color:#aaa; font-weight:normal;">(Nantinya user bisa edit)</span></label>
+                    </div>
+                    <div id="boxTitle" class="hidden" style="margin-top:5px;">
+                        <label>Title</label>
+                        <input type="text" id="propTitle" maxlength="20" oninput="updateFromProp(true)">
+                    </div>
+                </div>
+
                 <div id="boxFormat" class="hidden" style="margin-top:5px;">
                     <label>Display Format</label>
                     <select id="propFormat" onchange="updateFromProp(true)"></select>
@@ -421,13 +435,8 @@
                 <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                     <label style="color:var(--accent); font-size: 11px;">Animation Sequences</label>
                 </div>
-                
-                <div style="display:flex; gap:6px; margin-bottom:10px;">
-                    <button onclick="playObjectAnim()" class="btn-green" style="padding:4px 8px; flex:1;">▶️ Play</button>
-                    <button onclick="stopObjectAnim()" class="btn-red" style="padding:4px 8px; flex:1;">⏹️ Stop</button>
-                </div>
 
-                <label style="color:#ddd;">Engine 1</label>
+                <label style="color:#ddd;">Animasi 1</label>
                 <select id="propAnim" onchange="updateFromProp()" style="margin-bottom: 4px;">
                     <option value="none">Static</option>
                     <option value="slide-left">Slide Left</option>
@@ -447,7 +456,7 @@
                     </div>
                 </div>
                 
-                <label style="color:#ddd; margin-top:8px;">Engine 2</label>
+                <label style="color:#ddd; margin-top:8px;">Animasi 2</label>
                 <select id="propAnim2" onchange="updateFromProp()" style="margin-bottom: 4px;">
                     <option value="none">None</option>
                     <option value="slide-left">Slide Left</option>
@@ -466,12 +475,17 @@
                         <input type="number" id="propAnimDelay2" min="0" step="0.1" value="0" oninput="updateFromProp()" style="margin-top:4px; height: 28px; text-align:center;">
                     </div>
                 </div>
+
+                <div style="display:flex; gap:6px; margin-top:10px;">
+                    <button onclick="playObjectAnim()" class="btn-green" style="padding:6px 8px; flex:1;">▶️ Play</button>
+                    <button onclick="stopObjectAnim()" class="btn-red" style="padding:6px 8px; flex:1;">⏹️ Stop</button>
+                </div>
             </div>
 
-            <div class="group" id="boxNextEventObj" style="margin-top: 5px; border-top:1px solid #444; padding-top:10px;">
-                <label style="color:#3498db;">Object Next Event</label>
-                <p style="font-size:11px; color:#ffff00; font-weight:bold; margin: 4px 0 6px 0; line-height:1.3; font-style:italic;">⚠️ Trigger dieksekusi setelah rentetan Engine 1 & 2 selesai.</p>
-                <select id="propNextActionObj" onchange="updateNextTargets('obj'); updateFromProp()">
+            <div class="group" id="boxOnShowObj" style="margin-top: 5px; border-top:1px solid #444; padding-top:10px;">
+                <label style="color:#2ecc71;">When Object Show</label>
+                <p style="font-size:10px; color:#aaa; margin: 4px 0 6px 0; line-height:1.3; font-style:italic;">Dieksekusi sebelum Animasi 1 dijalankan.</p>
+                <select id="propOnShowActionObj" onchange="updateNextTargets('objShow'); updateFromProp()">
                     <option value="">-- No Action --</option>
                     <option value="show_screen">Show Screen</option>
                     <option value="show_object">Show Object</option>
@@ -480,7 +494,22 @@
                     <option value="hide_object">Hide Object</option>
                     <option value="hide_group">Hide Group</option>
                 </select>
-                <select id="propNextTargetObj" onchange="updateFromProp()" style="margin-top:6px;" class="hidden"></select>
+                <select id="propOnShowTargetObj" onchange="updateFromProp()" style="margin-top:6px;" class="hidden"></select>
+            </div>
+
+            <div class="group" id="boxOnDoneObj" style="margin-top: 5px; border-top:1px solid #444; padding-top:10px;">
+                <label style="color:#3498db;">When Animation Done</label>
+                <p style="font-size:10px; color:#aaa; margin: 4px 0 6px 0; line-height:1.3; font-style:italic;">Dieksekusi setelah seluruh rentetan animasi selesai (termasuk delay).</p>
+                <select id="propOnDoneActionObj" onchange="updateNextTargets('objDone'); updateFromProp()">
+                    <option value="">-- No Action --</option>
+                    <option value="show_screen">Show Screen</option>
+                    <option value="show_object">Show Object</option>
+                    <option value="show_group">Show Group</option>
+                    <option value="hide_screen">Hide Screen</option>
+                    <option value="hide_object">Hide Object</option>
+                    <option value="hide_group">Hide Group</option>
+                </select>
+                <select id="propOnDoneTargetObj" onchange="updateFromProp()" style="margin-top:6px;" class="hidden"></select>
             </div>
 
             <button onclick="deleteSelected()" class="btn-red" style="margin-top: 5px; padding: 10px;">🗑️ Delete Selected</button>
@@ -490,9 +519,14 @@
     <div id="exportModal" class="modal">
         <h2 style="color:var(--accent); margin-top:0;">💾 SAVE PROJECT (JERRYSCRIPT EXPORT)</h2>
         <textarea id="outputArea" readonly></textarea>
+        
+        <div id="exportImagesArea" class="hidden" style="margin-top: 15px; max-height: 140px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 10px; background: #111; padding: 10px; border-radius: 4px; border: 1px solid #444;">
+        </div>
+
         <div style="display:flex; gap:10px; margin-top:15px;">
-            <button onclick="copyToClipboard()" class="btn-blue" style="padding:10px 20px; font-size:14px; width: 150px;">📋 COPY TO CLIPBOARD</button>
-            <button onclick="document.getElementById('exportModal').style.display='none'" class="btn-red" style="padding:10px 20px; font-size:14px; width: 150px;">CLOSE WINDOW</button>
+            <button onclick="copyToClipboard()" class="btn-blue" style="padding:10px 20px; font-size:14px; flex: 1;">📋 COPY JSON</button>
+            <button onclick="downloadAllImages()" id="btnDownloadImages" class="btn-green hidden" style="padding:10px 20px; font-size:14px; flex: 1;">⬇️ DOWNLOAD GIFS</button>
+            <button onclick="document.getElementById('exportModal').style.display='none'" class="btn-red" style="padding:10px 20px; font-size:14px; flex: 1;">CLOSE WINDOW</button>
         </div>
     </div>
 
@@ -535,6 +569,7 @@
         let isSimulating = false;
         let simTimer = 0;
         let preSimState = null;
+        let playMode = 'all'; 
         
         // FONT MEMORY VARIABLE
         let lastUsedFont = null;
@@ -544,8 +579,8 @@
         window.deltaTime = 16.6;
 
         const FORMATS = { 
-            clock: ['HH:mm:ss', 'HH:mm', 'hh:mm A'], 
-            cal_masehi: ['DD/MM/YYYY', 'DD-MM-YYYY', 'DD MMM YYYY'], 
+            clock: ['HH:mm:ss', 'HH:mm', 'hh:mm A', 'DD-MM-YY', 'DD-MON-YY', 'DD-MONTH-YY'], 
+            cal_masehi: ['DD/MM/YYYY', 'DD-MM-YYYY', 'DD MMM YYYY', 'DD-MM-YY', 'DD-MON-YY', 'DD-MONTH-YY'], 
             cal_hijri: ['DD MMMM YYYY (H)', 'DD/MM/YYYY (H)'],
             iqomah: ['MM:SS', 'SS'] 
         };
@@ -561,7 +596,15 @@
 
         function updateProjectRes() { PROJECT_W = parseInt(document.getElementById('globalW').value) || 64; PROJECT_H = parseInt(document.getElementById('globalH').value) || 32; resizeCanvas(); renderTree(); }
         function isNameUnique(name) { let found = false; function checkList(list) { for(let o of list) { if(o.name === name) found = true; if(o.type === 'group' && o.children) checkList(o.children); } } screens.forEach(s => checkList(s.objects)); return !found; }
-        function getUniqueName(base) { let count = 1; let n = `${base}_${count}`; while (!isNameUnique(n)) { count++; n = `${base}_${count}`; } return n; }
+        
+        // Membatasi base string jadi 7 huruf max, dan total max 10 chars.
+        function getUniqueName(base) { 
+            let count = 1; 
+            let shortBase = base.substring(0, 7);
+            let n = `${shortBase}_${count}`; 
+            while (!isNameUnique(n) && count < 100) { count++; n = `${shortBase}_${count}`; } 
+            return n.substring(0, 10); 
+        }
         
         class PixelObject {
             constructor(name, type, gridX, gridY) {
@@ -573,6 +616,9 @@
                 this.text = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah' || type === 'group' || type === 'line') ? "" : "TEXT"; 
                 this.format = ""; 
                 
+                this.editable = false;
+                this.title = name;
+
                 let defaultFont = (typeof PixelFonts !== 'undefined' && Object.keys(PixelFonts).length > 0) ? Object.keys(PixelFonts)[0] : "monospace"; 
                 this.font = lastUsedFont || defaultFont; 
                 
@@ -586,27 +632,38 @@
                 this.anim = 'none'; this.speed = 1.0; this.animDelay = 0;
                 this.anim2 = 'none'; this.speed2 = 1.0; this.animDelay2 = 0; 
                 
-                this.isAnimPlaying = true;
+                this.isAnimPlaying = false; 
                 this.animState = 1; 
                 this.delayTimer = 0;
                 this.currentOffsetX = 0;
                 this.currentOffsetY = 0;
-                
-                this.nextAction = ""; this.nextTarget = "";
+
+                this.onShowAction = ""; this.onShowTarget = "";
+                this.onDoneAction = ""; this.onDoneTarget = "";
+                this.hasFiredOnShow = false;
+
                 this.sholatType = 'Subuh';
                 this.pixels = []; this.customPixels = []; this.children = []; this.textWidth = 0; this.textHeight = 7; 
                 if (type !== 'group' && type !== 'line') this.updateContent();
             }
 
+            getContentW() { return ['text', 'clock', 'cal_masehi', 'cal_hijri', 'sholat', 'iqomah'].includes(this.type) ? (this.textWidth || this.w) : this.w; }
+            getContentH() { return ['text', 'clock', 'cal_masehi', 'cal_hijri', 'sholat', 'iqomah'].includes(this.type) ? (this.textHeight || this.h) : this.h; }
+
             resetAnimation() {
                 this.animState = (this.anim !== 'none') ? 1 : ((this.anim2 !== 'none') ? 3 : 0);
                 this.delayTimer = 0;
+                this.hasFiredOnShow = false;
                 this._setupAnimStart(this.animState === 1 ? this.anim : (this.animState === 3 ? this.anim2 : 'none'));
                 if (this.children) this.children.forEach(c => c.resetAnimation());
             }
 
             _setupAnimStart(type) {
-                if(type === 'slide-left') { this.currentOffsetX = this.w; this.currentOffsetY = 0; }
+                if(type === 'slide-left') { 
+                    let align = this.calcAlign();
+                    this.currentOffsetX = this.w - align.aX; 
+                    this.currentOffsetY = 0; 
+                }
                 else if(type === 'slide-right') { this.currentOffsetX = -(this.textWidth || this.w); this.currentOffsetY = 0; }
                 else if(type === 'slide-up') { this.currentOffsetX = 0; this.currentOffsetY = this.h; }
                 else if(type === 'slide-down') { this.currentOffsetX = 0; this.currentOffsetY = 0; }
@@ -619,8 +676,10 @@
                 let step = 0.5 * speed * dtRatio; 
                 
                 if(type === 'slide-left') {
+                    let align = this.calcAlign();
+                    let cW = this.getContentW();
                     this.currentOffsetX -= step;
-                    if(this.currentOffsetX <= -(this.textWidth || this.w)) { this.currentOffsetX = -(this.textWidth || this.w); done = true; }
+                    if(this.currentOffsetX <= -(cW + align.aX)) { this.currentOffsetX = -(cW + align.aX); done = true; }
                 } else if(type === 'slide-right') {
                     this.currentOffsetX += step;
                     if(this.currentOffsetX >= this.w) { this.currentOffsetX = this.w; done = true; }
@@ -642,8 +701,20 @@
                 if (this.type === 'iqomah') { return this.format === 'SS' ? "300" : "05:00"; }
                 
                 const now = new Date();
+                
+                // Tambahan Format Date yg bisa digunakan di tipe clock & cal_masehi
+                const d = String(now.getDate()).padStart(2,'0');
+                const mNum = String(now.getMonth()+1).padStart(2,'0');
+                const y2 = String(now.getFullYear()).slice(-2);
+                const mShort = now.toLocaleDateString('id-ID', {month:'short'}).toUpperCase();
+                const mLong = now.toLocaleDateString('id-ID', {month:'long'}).toUpperCase();
+
+                if (this.format === 'DD-MM-YY') return `${d}-${mNum}-${y2}`;
+                if (this.format === 'DD-MON-YY') return `${d}-${mShort}-${y2}`;
+                if (this.format === 'DD-MONTH-YY') return `${d}-${mLong}-${y2}`;
+
                 if (this.type === 'clock') { const h = String(now.getHours()).padStart(2,'0'), m = String(now.getMinutes()).padStart(2,'0'), s = String(now.getSeconds()).padStart(2,'0'); if(this.format === 'HH:mm') return `${h}:${m}`; if(this.format === 'hh:mm A') return now.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}); return `${h}:${m}:${s}`; }
-                if (this.type === 'cal_masehi') { const d = String(now.getDate()).padStart(2,'0'), m = String(now.getMonth()+1).padStart(2,'0'), y = now.getFullYear(); if(this.format === 'DD-MM-YYYY') return `${d}-${m}-${y}`; if(this.format === 'DD MMM YYYY') return now.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'}); return `${d}/${m}/${y}`; }
+                if (this.type === 'cal_masehi') { const y = now.getFullYear(); if(this.format === 'DD-MM-YYYY') return `${d}-${mNum}-${y}`; if(this.format === 'DD MMM YYYY') return now.toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'}); return `${d}/${mNum}/${y}`; }
                 if (this.type === 'cal_hijri') { if (this.format === 'DD/MM/YYYY (H)') return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'2-digit',month:'2-digit',year:'numeric'}).format(now); return new Intl.DateTimeFormat('id-u-ca-islamic', {day:'numeric',month:'long',year:'numeric'}).format(now); }
                 return this.text;
             }
@@ -737,9 +808,20 @@
 
                 let isBlinking = (this.animState === 1 && this.anim === 'blink') || (this.animState === 3 && this.anim2 === 'blink');
                 let blinkSpeed = (this.animState === 1) ? this.speed : this.speed2;
-                ctx.globalAlpha = (isBlinking && Math.floor(Date.now() / (500 / blinkSpeed)) % 2 === 0) ? 0 : 1;
+                
+                if (this.isAnimPlaying && isBlinking) {
+                    ctx.globalAlpha = (Math.floor(Date.now() / (500 / blinkSpeed)) % 2 === 0) ? 0 : 1;
+                } else {
+                    ctx.globalAlpha = 1;
+                }
 
                 if (this.isAnimPlaying) {
+
+                    if (!this.hasFiredOnShow) {
+                        this.hasFiredOnShow = true;
+                        triggerEvent(this.onShowAction, this.onShowTarget);
+                    }
+
                     if (this.animState === 1) { 
                         if (this._stepAnimation(this.anim, this.speed)) { this.animState = 2; this.delayTimer = this.animDelay * 1000; }
                     } else if (this.animState === 2) { 
@@ -747,7 +829,7 @@
                         if (this.delayTimer <= 0) {
                             if (this.anim2 !== 'none') { this.animState = 3; this._setupAnimStart(this.anim2); } 
                             else { 
-                                triggerObjectEvent(this); 
+                                triggerEvent(this.onDoneAction, this.onDoneTarget); 
                                 
                                 if (isSimulating) {
                                     let currentScr = screens[activeScreenIdx];
@@ -757,8 +839,8 @@
                                 if (isSimulating) {
                                     let lastAnim = this.anim;
                                     if (lastAnim.includes('slide')) {
-                                        this.visibleCanvas = false; 
                                         this.isAnimPlaying = false;
+                                        if (this._simOriginalVis !== undefined) this.visibleCanvas = this._simOriginalVis;
                                     } else if (lastAnim === 'none') {
                                         this.isAnimPlaying = false; 
                                     } else {
@@ -774,7 +856,7 @@
                     } else if (this.animState === 4) { 
                         this.delayTimer -= window.deltaTime;
                         if (this.delayTimer <= 0) {
-                            triggerObjectEvent(this);
+                            triggerEvent(this.onDoneAction, this.onDoneTarget);
 
                             if (isSimulating) {
                                 let currentScr = screens[activeScreenIdx];
@@ -784,8 +866,8 @@
                             if (isSimulating) {
                                 let lastAnim = this.anim2 !== 'none' ? this.anim2 : this.anim;
                                 if (lastAnim.includes('slide')) {
-                                    this.visibleCanvas = false; 
                                     this.isAnimPlaying = false;
+                                    if (this._simOriginalVis !== undefined) this.visibleCanvas = this._simOriginalVis;
                                 } else if (lastAnim === 'none') {
                                     this.isAnimPlaying = false; 
                                 } else {
@@ -872,14 +954,19 @@
                 let btn = document.getElementById('btnSimulate');
                 btn.innerHTML = "⏹️"; btn.className = "top-btn btn-red-icon"; btn.title = "Stop Simulation";
                 
+                playMode = (typeof forceStartIdx === 'number') ? 'screen' : 'all';
+
                 function buildBackup(list) {
-                    return list.map(o => ({ name: o.name, vis: o.visibleCanvas, children: o.children ? buildBackup(o.children) : null }));
+                    return list.map(o => {
+                        o._simOriginalVis = o.visibleCanvas; 
+                        return { name: o.name, vis: o.visibleCanvas, children: o.children ? buildBackup(o.children) : null };
+                    });
                 }
                 preSimState = JSON.stringify(screens.map(s => ({ id: s.id, objects: buildBackup(s.objects) })));
 
                 screens.forEach(s => {
                     function stopAllRec(list) {
-                        list.forEach(o => { o.isAnimPlaying = false; o.currentOffsetX = 0; o.currentOffsetY = 0; if(o.children) stopAllRec(o.children); });
+                        list.forEach(o => { o.isAnimPlaying = false; o.currentOffsetX = 0; o.currentOffsetY = 0; o.hasFiredOnShow = false; if(o.children) stopAllRec(o.children); });
                     }
                     stopAllRec(s.objects);
                 });
@@ -908,6 +995,7 @@
             btn.innerHTML = "▶️"; btn.className = "top-btn btn-green-icon"; btn.title = "Play All (Simulate)";
             
             document.getElementById('simOverlay').style.display = 'none';
+            setMode('select'); 
 
             if(preSimState) {
                 let backup = JSON.parse(preSimState);
@@ -918,7 +1006,7 @@
                             backupList.forEach(bObj => {
                                 let o = realList.find(x => x.name === bObj.name);
                                 if (o) {
-                                    o.visibleCanvas = bObj.vis; o.isAnimPlaying = true; o.resetAnimation();
+                                    o.visibleCanvas = bObj.vis; o.isAnimPlaying = false; o.resetAnimation(); 
                                     if (o.children && bObj.children) restoreRec(bObj.children, o.children);
                                 }
                             });
@@ -966,8 +1054,8 @@
             return false;
         }
 
-        function triggerObjectEvent(obj) {
-            if (!isSimulating || !obj.nextAction) return; let act = obj.nextAction; let tgt = obj.nextTarget;
+        function triggerEvent(act, tgt) {
+            if (!isSimulating || !act) return; 
             
             if(act === 'show_screen') { 
                 let idx = screens.findIndex(s => s.id === tgt && s.visibleLed); 
@@ -990,7 +1078,7 @@
         }
         function stopObjectAnim() { 
             if(selectedObj) { 
-                function stopRec(o) { o.isAnimPlaying = false; o.currentOffsetX = 0; o.currentOffsetY = 0; if(o.children) o.children.forEach(c=>stopRec(c)); }
+                function stopRec(o) { o.isAnimPlaying = false; o.currentOffsetX = 0; o.currentOffsetY = 0; o.hasFiredOnShow = false; if(o.children) o.children.forEach(c=>stopRec(c)); }
                 stopRec(selectedObj);
             } 
         }
@@ -1012,13 +1100,13 @@
                 sDiv.className = 'tree-item screen-item' + sClass + (sIdx === activeScreenIdx ? ' active-screen' : '');
                 
                 let scrIcon = scr.type === 'splash' ? '🚀' : 
-                              scr.type === 'main' ? '🏠' : 
-                              scr.type === 'iqomah' ? '🚨' : 
-                              scr.type === 'adzan' ? '🕌' : 
-                              scr.type === 'after_iqomah' ? '🤲' : 
-                              scr.type === 'adzan_jumat' ? '📢' : 
-                              scr.type === 'saat_sholat' ? '🧎' : '📺';
-                              
+                               scr.type === 'main' ? '🏠' : 
+                               scr.type === 'iqomah' ? '🚨' : 
+                               scr.type === 'adzan' ? '🕌' : 
+                               scr.type === 'after_iqomah' ? '🤲' : 
+                               scr.type === 'adzan_jumat' ? '📢' : 
+                               scr.type === 'saat_sholat' ? '🧎' : '📺';
+                               
                 sDiv.innerHTML = `<span style="${opacityStyle}">${ledIconScr}${scrIcon} ${scr.id}</span>
                                   <span style="font-size:12px; cursor:pointer; opacity:0.7; transition:0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'" onclick="previewScreen(${sIdx}, event)" title="Preview Screen Ini">▶️</span>`;
                 sDiv.onclick = () => { if(!isSimulating) switchScreen(sIdx); }; container.appendChild(sDiv);
@@ -1070,10 +1158,20 @@
                         type === 'main' ? "Screen_Main" : 
                         type === 'iqomah' ? "Screen_Iqomah" : 
                         type === 'adzan' ? "Screen_Adzan" : 
-                        type === 'after_iqomah' ? "Screen_Stlh_Iqomah" : 
-                        type === 'adzan_jumat' ? "Screen_Adzan_Jumat" : 
-                        type === 'saat_sholat' ? "Screen_Saat_Sholat" : 
+                        type === 'after_iqomah' ? "Scrn_A_Iqmh" : 
+                        type === 'adzan_jumat' ? "Scrn_A_Jmat" : 
+                        type === 'saat_sholat' ? "Scrn_Sholat" : 
                         "Screen_" + (screens.length + 1);
+            
+            // Verifikasi unik di auto-generate
+            let count = 1;
+            let origId = newId;
+            while (screens.some(s => s.id === newId)) {
+                newId = `${origId}_${count}`;
+                count++;
+            }
+            newId = newId.substring(0, 20); // Max screen name
+
             let durFixed = type === 'splash' ? '00:00:03' : '00:00:10';
             screens.push({ id: newId, type: type, visibleCanvas: true, visibleLed: true, objects: [], durationMode: 'fixed', durationFixed: durFixed, durationAnimObj: '', nextAction: '', nextTarget: '' });
             switchScreen(screens.length - 1);
@@ -1083,7 +1181,7 @@
             if(isSimulating && idx !== activeScreenIdx) { } else { saveState(); }
             activeScreenIdx = idx; objects = screens[idx].objects; selectedObjs = [];
             
-            function resetRec(list) { list.forEach(o => { o.resetAnimation(); if (o.children) resetRec(o.children); }); }
+            function resetRec(list) { list.forEach(o => { o.isAnimPlaying = false; o.currentOffsetX = 0; o.currentOffsetY = 0; o.hasFiredOnShow = false; o.resetAnimation(); if (o.children) resetRec(o.children); }); }
             resetRec(objects);
             
             resizeCanvas(); updateSidebarButtons(); syncPropPanel(); renderTree();
@@ -1214,8 +1312,11 @@
             if (!selectedObj) return;
             const bF = document.getElementById('boxFormat'), bT = document.getElementById('boxText'), bFont = document.getElementById('boxFont'), bAlign = document.getElementById('boxAlign'), bImg = document.getElementById('boxImage');
             const bSholat = document.getElementById('boxSholat'), bAnim = document.getElementById('boxAnim'), bColors = document.getElementById('boxColors'), bCoords = document.getElementById('boxObjCoords'), bLine = document.getElementById('boxLine');
+            const bTextExtra = document.getElementById('boxTextExtra');
+
             bF.classList.add('hidden'); bT.classList.add('hidden'); bFont.classList.add('hidden'); bAlign.classList.add('hidden'); bImg.classList.add('hidden'); bSholat.classList.add('hidden');
             bLine.classList.add('hidden'); bColors.classList.remove('hidden'); bCoords.classList.remove('hidden');
+            if(bTextExtra) bTextExtra.classList.add('hidden');
 
             if (selectedObj.type === 'iqomah' || selectedObj.type === 'line') { bAnim.classList.add('hidden'); selectedObj.anim = 'none'; selectedObj.anim2 = 'none'; } else { bAnim.classList.remove('hidden'); }
             if (selectedObj.type === 'group') { bColors.classList.add('hidden'); bCoords.classList.add('hidden'); 
@@ -1226,7 +1327,9 @@
                 bF.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden'); 
                 let sF = document.getElementById('propFormat'); sF.innerHTML = ""; FORMATS[selectedObj.type].forEach(f => { let o = document.createElement('option'); o.value = f; o.innerText = f; sF.appendChild(o); }); 
                 if (!selectedObj.format || !FORMATS[selectedObj.type].includes(selectedObj.format)) { selectedObj.format = sF.options[0].value; } sF.value = selectedObj.format;
-            } else if (selectedObj.type === 'text') { bT.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden');
+            } else if (selectedObj.type === 'text') { 
+                bT.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden');
+                if(bTextExtra) bTextExtra.classList.remove('hidden');
             } else if (selectedObj.type !== 'drawing') { 
                 bF.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden');
                 let sF = document.getElementById('propFormat'); sF.innerHTML = ""; FORMATS[selectedObj.type].forEach(f => { let o = document.createElement('option'); o.value = f; o.innerText = f; sF.appendChild(o); }); 
@@ -1248,8 +1351,12 @@
         }
         
         function updateNextTargets(context) {
-            let actionVal = context === 'obj' ? document.getElementById('propNextActionObj').value : document.getElementById('propNextActionScr').value;
-            let targetSel = context === 'obj' ? document.getElementById('propNextTargetObj') : document.getElementById('propNextTargetScr');
+            let actionVal = context === 'objDone' ? document.getElementById('propOnDoneActionObj').value : 
+                            context === 'objShow' ? document.getElementById('propOnShowActionObj').value : 
+                            document.getElementById('propNextActionScr').value;
+            let targetSel = context === 'objDone' ? document.getElementById('propOnDoneTargetObj') : 
+                            context === 'objShow' ? document.getElementById('propOnShowTargetObj') : 
+                            document.getElementById('propNextTargetScr');
 
             if (!actionVal) { targetSel.classList.add('hidden'); targetSel.innerHTML = ''; return; }
             targetSel.classList.remove('hidden'); targetSel.innerHTML = '<option value="">-- Pilih Target --</option>';
@@ -1284,7 +1391,20 @@
 
         function updateScreenProp() {
             let scr = screens[activeScreenIdx];
-            let nameVal = document.getElementById('propScreenName').value || `Screen_${activeScreenIdx+1}`; scr.id = nameVal.substring(0, 20);
+            let nameInput = document.getElementById('propScreenName');
+            let nameVal = nameInput.value.trim().substring(0, 20) || `Screen_${activeScreenIdx+1}`; 
+            
+            // Check Unique Screen Name
+            let isUnique = !screens.some((s, idx) => idx !== activeScreenIdx && s.id === nameVal);
+            if (!isUnique) {
+                alert("Nama Screen harus unik! Nama tersebut sudah digunakan.");
+                nameInput.value = scr.id; // revert
+                return;
+            }
+            
+            scr.id = nameVal;
+            nameInput.value = scr.id;
+
             scr.visibleCanvas = document.getElementById('propScrVisibleCanvas').checked;
             scr.visibleLed = document.getElementById('propScrVisibleLed').checked;
             scr.durationMode = document.getElementById('propScreenDurMode').value; 
@@ -1311,6 +1431,16 @@
                 syncGeometryUI(); 
                 document.getElementById('propType').value = selectedObj.type; document.getElementById('propFont').value = selectedObj.font; 
                 document.getElementById('propText').value = selectedObj.text; 
+
+                if (selectedObj.type === 'text') {
+                    document.getElementById('propEditable').checked = selectedObj.editable || false;
+                    document.getElementById('propTitle').value = selectedObj.title || selectedObj.name;
+                    if (selectedObj.editable) {
+                        document.getElementById('boxTitle').classList.remove('hidden');
+                    } else {
+                        document.getElementById('boxTitle').classList.add('hidden');
+                    }
+                }
                 
                 document.getElementById('propColor').value = selectedObj.color; document.getElementById('propColorNone').checked = selectedObj.colorNone; 
                 document.getElementById('propFColor').value = selectedObj.fColor; document.getElementById('propFColorNone').checked = selectedObj.fColorNone;
@@ -1334,14 +1464,30 @@
                 document.getElementById('propSpeed2').value = selectedObj.speed2; document.getElementById('speedVal2').innerText = selectedObj.speed2.toFixed(1) + 'x';
                 document.getElementById('propAnimDelay2').value = selectedObj.animDelay2 || 0;
                 
-                document.getElementById('propNextActionObj').value = selectedObj.nextAction || ""; 
-                updateNextTargets('obj');
-                if (selectedObj.nextAction) document.getElementById('propNextTargetObj').value = selectedObj.nextTarget || "";
+                // SHOW EVENT
+                document.getElementById('propOnShowActionObj').value = selectedObj.onShowAction || ""; 
+                updateNextTargets('objShow');
+                if (selectedObj.onShowAction) document.getElementById('propOnShowTargetObj').value = selectedObj.onShowTarget || "";
+
+                // DONE EVENT
+                document.getElementById('propOnDoneActionObj').value = selectedObj.onDoneAction || ""; 
+                updateNextTargets('objDone');
+                if (selectedObj.onDoneAction) document.getElementById('propOnDoneTargetObj').value = selectedObj.onDoneTarget || "";
                 
                 setupFormatDropdown(); if(!['text', 'drawing', 'image', 'sholat', 'iqomah', 'group', 'line'].includes(selectedObj.type)) document.getElementById('propFormat').value = selectedObj.format; 
             } else {
                 selectedObj = null; panelScreen.classList.remove('hidden'); let scr = screens[activeScreenIdx];
-                document.getElementById('propScreenName').value = scr.id;
+                let propScrName = document.getElementById('propScreenName');
+                propScrName.value = scr.id;
+                
+                if(scr.type === 'generic') {
+                    propScrName.readOnly = false;
+                    propScrName.style.cursor = "text";
+                } else {
+                    propScrName.readOnly = true;
+                    propScrName.style.cursor = "not-allowed";
+                }
+
                 document.getElementById('propScrVisibleCanvas').checked = scr.visibleCanvas !== false;
                 document.getElementById('propScrVisibleLed').checked = scr.visibleLed !== false;
                 
@@ -1379,7 +1525,7 @@
                 newName = "Group_" + newName.replace(/^Group_/, ''); 
             }
             
-            newName = newName.substring(0, 20);
+            newName = newName.substring(0, 10);
             if(newName === selectedObj.name || newName === "" || newName === "Group_") return;
             
             if(isNameUnique(newName)) { 
@@ -1404,6 +1550,17 @@
                 let rawText = document.getElementById('propText').value; selectedObj.text = rawText.substring(0, 20);
                 if (rawText.length > 20) document.getElementById('propText').value = selectedObj.text;
 
+                if (selectedObj.type === 'text') {
+                    selectedObj.editable = document.getElementById('propEditable').checked;
+                    let rawTitle = document.getElementById('propTitle').value;
+                    selectedObj.title = rawTitle.substring(0, 20);
+                    if (selectedObj.editable) {
+                        document.getElementById('boxTitle').classList.remove('hidden');
+                    } else {
+                        document.getElementById('boxTitle').classList.add('hidden');
+                    }
+                }
+
                 selectedObj.color = document.getElementById('propColor').value; selectedObj.colorNone = document.getElementById('propColorNone').checked;
                 selectedObj.fColor = document.getElementById('propFColor').value; selectedObj.fColorNone = document.getElementById('propFColorNone').checked;
                 selectedObj.bgColor = document.getElementById('propBgColor').value; selectedObj.bgColorNone = document.getElementById('propBgColorNone').checked;
@@ -1417,14 +1574,26 @@
 
                 selectedObj.radius = parseInt(document.getElementById('propRadius').value); document.getElementById('radiusVal').innerText = selectedObj.radius;
                 
-                let newAnim1 = document.getElementById('propAnim').value; let newAnim2 = document.getElementById('propAnim2').value;
-                if (newAnim1 !== 'none' && newAnim1 === newAnim2) { alert("Animasi Engine 1 dan Engine 2 tidak boleh menggunakan jenis yang sama!"); document.getElementById('propAnim2').value = 'none'; newAnim2 = 'none'; }
-                
+                let newAnim1 = document.getElementById('propAnim').value; 
+                let newAnim2 = document.getElementById('propAnim2').value;
+
+                let isSlide1 = (newAnim1 === 'slide-left' || newAnim1 === 'slide-right');
+                let isSlide2 = (newAnim2 === 'slide-left' || newAnim2 === 'slide-right');
+
+                if (isSlide1 && isSlide2) {
+                    alert("Animasi Slide (Left/Right) hanya boleh digunakan di salah satu Animasi saja!");
+                    newAnim2 = 'none';
+                    document.getElementById('propAnim2').value = 'none';
+                }
+
                 selectedObj.anim = newAnim1; selectedObj.speed = parseFloat(document.getElementById('propSpeed').value); selectedObj.animDelay = parseFloat(document.getElementById('propAnimDelay').value) || 0;
                 selectedObj.anim2 = newAnim2; selectedObj.speed2 = parseFloat(document.getElementById('propSpeed2').value); selectedObj.animDelay2 = parseFloat(document.getElementById('propAnimDelay2').value) || 0;
                 
-                selectedObj.nextAction = document.getElementById('propNextActionObj').value; 
-                selectedObj.nextTarget = document.getElementById('propNextTargetObj').value;
+                selectedObj.onShowAction = document.getElementById('propOnShowActionObj').value; 
+                selectedObj.onShowTarget = document.getElementById('propOnShowTargetObj').value;
+
+                selectedObj.onDoneAction = document.getElementById('propOnDoneActionObj').value; 
+                selectedObj.onDoneTarget = document.getElementById('propOnDoneTargetObj').value;
                 
                 if (selectedObj.type === 'sholat') selectedObj.sholatType = document.getElementById('propSholatType').value; 
                 else if (selectedObj.type === 'iqomah') { selectedObj.format = document.getElementById('propFormat').value; selectedObj.anim = 'none'; selectedObj.anim2 = 'none'; } 
@@ -1502,7 +1671,6 @@
 
         window.onmouseup = () => { isDrawing = isDragging = isResizing = false; dragOffsets = []; if (selectedObjs.length === 1) { delete selectedObjs[0]._preResizePixels; delete selectedObjs[0]._preResizeW; delete selectedObjs[0]._preResizeH; } };
 
-        // FIX BUG: Tooltip nyangkut saat kursor keluar layar
         canvas.onmouseleave = () => {
             tooltip.style.display = 'none';
             isDrawing = isDragging = isResizing = false;
@@ -1522,7 +1690,11 @@
             let n = new PixelObject(oData.id || oData.name, oData.type, oData.frameX ?? oData.x, oData.frameY ?? oData.y); 
             n.visibleCanvas = (oData.visible_canvas !== false && oData.visible !== false); 
             n.visibleLed = oData.visible_led !== false; 
+            n.isAnimPlaying = false; 
             
+            n.editable = oData.editable || false;
+            n.title = (oData.title !== undefined) ? oData.title : (oData.name || "");
+
             n.w = oData.w; n.h = oData.h; n.text = oData.text || ""; n.font = oData.font || "monospace"; n.format = oData.format || "";
             n.colorNone = oData.color === "transparent" || oData.colorNone === true; n.color = n.colorNone ? "#ffffff" : (oData.color || "#ffffff");
             n.bgColorNone = oData.bgColor === "transparent" || oData.bgColorNone === true; n.bgColor = n.bgColorNone ? "#000000" : (oData.bgColor || "#000000");
@@ -1532,7 +1704,10 @@
             if (oData.anim2) { n.anim2 = oData.anim2.type; n.speed2 = oData.anim2.speed; n.animDelay2 = oData.anim2.delay || 0; } else { n.anim2 = oData.anim2 || 'none'; n.speed2 = oData.speed2 || 1; n.animDelay2 = oData.animDelay2 || 0; }
             
             n.radius = oData.radius || 0;
-            if (oData.nextEvent) { n.nextAction = oData.nextEvent.action; n.nextTarget = oData.nextEvent.target; } else { n.nextAction = oData.nextAction || ""; n.nextTarget = oData.nextTarget || ""; }
+            
+            if (oData.onShowEvent) { n.onShowAction = oData.onShowEvent.action; n.onShowTarget = oData.onShowEvent.target; }
+            if (oData.onDoneEvent) { n.onDoneAction = oData.onDoneEvent.action; n.onDoneTarget = oData.onDoneEvent.target; } 
+            else if (oData.nextEvent) { n.onDoneAction = oData.nextEvent.action; n.onDoneTarget = oData.nextEvent.target; }
             
             if (n.type === 'sholat') n.sholatType = oData.sholatType || 'Subuh';
             if (n.type === 'line') { n.lineDir = oData.lineDir || 'h'; n.lineThick = oData.lineThick || 1; n.lineLength = oData.lineLength || 32; n.lineColor = oData.lineColor || '#8e44ad'; }
@@ -1567,23 +1742,48 @@
                 visible_led: o.visibleLed, 
                 frameX: o.x, frameY: o.y, w: o.w, h: o.h, 
                 contentX: o.x + align.aX, contentY: o.y + align.aY, 
-                text: o.text, font: o.font, format: o.format, 
+                
+                text: (o.type === 'text' && o.editable) ? o.title : o.text, 
+                editable: o.editable,
+                title: o.title,
+
+                font: o.font, format: o.format, 
                 color: o.colorNone ? "transparent" : o.color, 
                 bgColor: o.bgColorNone ? "transparent" : o.bgColor, 
                 frameColor: o.fColorNone ? "transparent" : o.fColor, 
                 anim1: { type: o.anim, speed: o.speed, delay: o.animDelay }, 
                 anim2: { type: o.anim2, speed: o.speed2, delay: o.animDelay2 }, 
                 radius: o.radius, 
-                nextEvent: { action: o.nextAction, target: o.nextTarget } 
+                onShowEvent: { action: o.onShowAction, target: o.onShowTarget },
+                onDoneEvent: { action: o.onDoneAction, target: o.onDoneTarget } 
             };
+
+            if (o.type === 'line') { 
+                objData.lineDir = o.lineDir; 
+                objData.lineThick = o.lineThick; 
+                objData.lineLength = o.lineLength; 
+                objData.lineColor = o.lineColor; 
+                
+                objData.x1 = o.x;
+                objData.y1 = o.y;
+                objData.x2 = o.lineDir === 'h' ? o.x + o.lineLength - 1 : o.x;
+                objData.y2 = o.lineDir === 'v' ? o.y + o.lineLength - 1 : o.y;
+            }
             
             if (o.anim !== 'none' || o.anim2 !== 'none') {
                 let lastType = o.anim2 !== 'none' ? o.anim2 : o.anim;
                 let finX = 0, finY = 0;
-                if(lastType === 'slide-left') finX = -(o.textWidth || o.w);
-                if(lastType === 'slide-right') finX = o.w;
-                if(lastType === 'slide-up') finY = 0;
-                if(lastType === 'slide-down') finY = o.h;
+                
+                if(lastType === 'slide-left') {
+                    let cW = o.getContentW();
+                    finX = -(cW + align.aX);
+                } else if(lastType === 'slide-right') {
+                    finX = o.w;
+                } else if(lastType === 'slide-up') {
+                    finY = 0;
+                } else if(lastType === 'slide-down') {
+                    finY = o.h;
+                }
                 
                 objData.e_anim_x = Math.round(align.aX + finX);
                 objData.e_anim_y = Math.round(align.aY + finY);
@@ -1595,16 +1795,43 @@
                 objData.last_millis = 0;
             }
 
-            if (o.type === 'drawing' || o.type === 'image') { objData.pixels = o.pixels; objData.customPixels = o.customPixels; }
+            if (o.type === 'drawing' || o.type === 'image') { 
+                objData.image_file = o.name + ".gif"; 
+            }
+            
             if (o.type === 'sholat') { objData.sholatType = o.sholatType; }
-            if (o.type === 'line') { objData.lineDir = o.lineDir; objData.lineThick = o.lineThick; objData.lineLength = o.lineLength; objData.lineColor = o.lineColor; }
             if (o.type === 'group') objData.children = o.children.map(c => serializeObj(c));
             return objData;
         }
 
+        function generateImageForObject(o) {
+            let tempCanvas = document.createElement('canvas');
+            // Ukuran tepat 1:1 sesuai resolusi pixel
+            tempCanvas.width = o.w;
+            tempCanvas.height = o.h;
+            let tCtx = tempCanvas.getContext('2d');
+            
+            // Draw Background
+            if (!o.bgColorNone) {
+                tCtx.fillStyle = o.bgColor;
+                tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            }
+            
+            // Draw Pixels persis di koordinat 1x1 pixel
+            if (!o.colorNone && o.pixels) {
+                o.pixels.forEach(p => {
+                    tCtx.fillStyle = p.c ? p.c : o.color;
+                    tCtx.fillRect(p.x, p.y, 1, 1);
+                });
+            }
+            
+            return tempCanvas.toDataURL('image/png');
+        }
+
         function exportToJerryScript() {
+            let projNameInput = document.getElementById('projectName').value.trim() || "Project_1";
             const out = { 
-                project: "Pixel Pro Screens", 
+                project: projNameInput, 
                 resolution: { w: PROJECT_W, h: PROJECT_H }, 
                 screens: screens.map(scr => ({ 
                     id: scr.id, type: scr.type, 
@@ -1615,7 +1842,74 @@
                     objects: scr.objects.map(serializeObj) 
                 })) 
             };
-            document.getElementById('outputArea').value = "var sceneData = " + JSON.stringify(out, null, 2) + ";"; document.getElementById('exportModal').style.display = 'block';
+            
+            const imagesArea = document.getElementById('exportImagesArea');
+            const btnDownload = document.getElementById('btnDownloadImages');
+            imagesArea.innerHTML = '';
+            window.generatedExportImages = [];
+            let hasImages = false;
+
+            screens.forEach(scr => {
+                function extractImages(list) {
+                    list.forEach(o => {
+                        if (o.type === 'drawing' || o.type === 'image') {
+                            hasImages = true;
+                            let dataUrl = generateImageForObject(o);
+                            window.generatedExportImages.push({ name: o.name + '.gif', data: dataUrl });
+                            
+                            let wrapper = document.createElement('div');
+                            wrapper.style.textAlign = 'center';
+                            wrapper.style.background = '#222';
+                            wrapper.style.padding = '5px';
+                            wrapper.style.borderRadius = '4px';
+                            wrapper.style.border = '1px solid #444';
+                            
+                            let img = document.createElement('img');
+                            img.src = dataUrl;
+                            img.style.height = '60px'; // Paksa tampil lebih besar agar terlihat jelas
+                            img.style.width = 'auto';
+                            img.style.imageRendering = 'pixelated'; // Tetap crispy
+                            img.style.display = 'block';
+                            img.style.margin = '0 auto';
+                            
+                            let label = document.createElement('div');
+                            label.innerText = o.name + '.gif';
+                            label.style.fontSize = '10px';
+                            label.style.color = '#ccc';
+                            label.style.marginTop = '4px';
+                            
+                            wrapper.appendChild(img);
+                            wrapper.appendChild(label);
+                            imagesArea.appendChild(wrapper);
+                        }
+                        if (o.type === 'group' && o.children) extractImages(o.children);
+                    });
+                }
+                extractImages(scr.objects);
+            });
+
+            if (hasImages) {
+                imagesArea.classList.remove('hidden');
+                btnDownload.classList.remove('hidden');
+            } else {
+                imagesArea.classList.add('hidden');
+                btnDownload.classList.add('hidden');
+            }
+
+            document.getElementById('outputArea').value = "var sceneData = " + JSON.stringify(out, null, 2) + ";"; 
+            document.getElementById('exportModal').style.display = 'block';
+        }
+
+        function downloadAllImages() {
+            if(!window.generatedExportImages) return;
+            window.generatedExportImages.forEach(img => {
+                let a = document.createElement('a');
+                a.href = img.data;
+                a.download = img.name; 
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            });
         }
 
         function copyToClipboard() { const copyText = document.getElementById("outputArea"); copyText.select(); copyText.setSelectionRange(0, 99999); navigator.clipboard.writeText(copyText.value).then(() => { alert("Kode JSON berhasil di-copy ke Clipboard!"); }); }
@@ -1624,6 +1918,9 @@
         function importFromJson() {
             try {
                 const str = document.getElementById('importArea').value; let jsonStr = str.replace(/var sceneData = /g, '').replace(/;$/g, '').trim(); const data = JSON.parse(jsonStr);
+                
+                if(data.project) document.getElementById('projectName').value = data.project;
+
                 PROJECT_W = data.resolution.w; PROJECT_H = data.resolution.h; document.getElementById('globalW').value = PROJECT_W; document.getElementById('globalH').value = PROJECT_H;
                 screens = data.screens.map(scrData => { 
                     let scr = { id: scrData.id, type: scrData.type, visibleCanvas: scrData.visible_canvas !== false, visibleLed: scrData.visible_led !== false, objects: [], nextAction: scrData.nextEvent?.action || '', nextTarget: scrData.nextEvent?.target || '' }; 
@@ -1655,7 +1952,6 @@
             
             if (isSimulating) {
                 
-                // --- HUD UPDATE OVERLAY ---
                 if (scr.durationMode === 'fixed') {
                     document.getElementById('simOverlay').style.display = 'block';
                     let s = Math.max(0, Math.ceil(simTimer / 1000));
@@ -1673,30 +1969,53 @@
                     document.getElementById('simOverlayAction').innerHTML = `TRIGGER: <span style="color:#fff;">${scr.durationAnimObj || "NONE"}</span>`;
                 }
 
-                // --- TIMER ENGINE ---
                 simTimer -= window.deltaTime; 
                 
                 if (simTimer <= 0) {
-                    let act = scr.nextAction; let tgt = scr.nextTarget;
                     
-                    if (act === 'show_screen') {
-                        let idx = screens.findIndex(s => s.id === tgt && s.visibleLed);
-                        if (idx !== -1) startScreenSim(idx); 
-                        else stopSimulation();
-                    } else if (act === 'show_object' || act === 'show_group') {
-                        if(findAndToggleVisibilityRecursive(scr.objects, tgt, true)) {
-                            simTimer = scr.durationMode === 'fixed' ? parseDuration(scr.durationFixed) : 999999;
-                        } else stopSimulation();
-                    } else if (act === 'hide_object' || act === 'hide_group') {
-                        if(findAndToggleVisibilityRecursive(scr.objects, tgt, false)) {
-                            simTimer = scr.durationMode === 'fixed' ? parseDuration(scr.durationFixed) : 999999;
-                        } else stopSimulation();
+                    if (preSimState) {
+                        let backup = JSON.parse(preSimState);
+                        let bScr = backup.find(x => x.id === screens[activeScreenIdx].id);
+                        if (bScr) {
+                            function restoreRec(backupList, realList) {
+                                backupList.forEach(bObj => {
+                                    let o = realList.find(x => x.name === bObj.name);
+                                    if (o) {
+                                        o.visibleCanvas = bObj.vis; 
+                                        o.isAnimPlaying = false; 
+                                        o.currentOffsetX = 0; o.currentOffsetY = 0; o.hasFiredOnShow = false;
+                                        if (o.children && bObj.children) restoreRec(bObj.children, o.children);
+                                    }
+                                });
+                            }
+                            restoreRec(bScr.objects, screens[activeScreenIdx].objects);
+                        }
+                    }
+
+                    if (playMode === 'screen') {
+                        stopSimulation();
                     } else {
-                        if (scr.type === 'splash') {
-                            let mIdx = screens.findIndex(s=>s.type==='main' && s.visibleLed);
-                            if(mIdx !== -1) startScreenSim(mIdx); else stopSimulation();
+                        let act = scr.nextAction; let tgt = scr.nextTarget;
+                        
+                        if (act === 'show_screen') {
+                            let idx = screens.findIndex(s => s.id === tgt && s.visibleLed);
+                            if (idx !== -1) startScreenSim(idx); 
+                            else stopSimulation();
+                        } else if (act === 'show_object' || act === 'show_group') {
+                            if(findAndToggleVisibilityRecursive(scr.objects, tgt, true)) {
+                                simTimer = scr.durationMode === 'fixed' ? parseDuration(scr.durationFixed) : 999999;
+                            } else stopSimulation();
+                        } else if (act === 'hide_object' || act === 'hide_group') {
+                            if(findAndToggleVisibilityRecursive(scr.objects, tgt, false)) {
+                                simTimer = scr.durationMode === 'fixed' ? parseDuration(scr.durationFixed) : 999999;
+                            } else stopSimulation();
                         } else {
-                            stopSimulation();
+                            if (scr.type === 'splash') {
+                                let mIdx = screens.findIndex(s=>s.type==='main' && s.visibleLed);
+                                if(mIdx !== -1) startScreenSim(mIdx); else stopSimulation();
+                            } else {
+                                stopSimulation();
+                            }
                         }
                     }
                 }
