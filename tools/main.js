@@ -1,4 +1,5 @@
 window.currentPrayerTimes = { Imsak: '04:15', Subuh: '04:25', Terbit: '05:40', Dzuhur: '11:50', Ashar: '15:00', Maghrib: '17:55', Isya: '19:05' };
+window.activePrayerName = "SUBUH"; // Menyimpan nama sholat aktif yang berjalan
 
 function fetchPrayerTimes() {
     const updateTimes = (data) => {
@@ -303,7 +304,7 @@ function animate(timestamp) {
     }
 
     requestAnimationFrame(animate);
-    if(selectedObj && selectedObjs.length === 1 && (selectedObj.anim !== 'none' || selectedObj.anim2 !== 'none' || !['text','drawing','image','sholat','iqomah','group', 'line'].includes(selectedObj.type))) syncGeometryUI();
+    if(selectedObj && selectedObjs.length === 1 && (selectedObj.anim !== 'none' || selectedObj.anim2 !== 'none' || !['text','drawing','image','sholat','sholat_name','iqomah','group', 'line'].includes(selectedObj.type))) syncGeometryUI();
 }
 
 // INITIAL RUN

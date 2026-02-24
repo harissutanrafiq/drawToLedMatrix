@@ -53,6 +53,7 @@
                 <button onclick="addPixelObject('drawing')" class="btn-blue top-btn" style="background:#f39c12; color:#000;" title="+ Draw Object">🎨</button>
                 <button onclick="addPixelObject('image')" class="btn-blue top-btn" style="background:#e67e22;" title="+ Image Object">🖼️</button>
                 <button id="btnAddSholat" onclick="addPixelObject('sholat')" class="btn-blue top-btn" style="background:#16a085;" title="+ Waktu Sholat">🕌</button>
+                <button onclick="addPixelObject('sholat_name')" class="btn-blue top-btn" style="background:#2980b9;" title="+ Nama Sholat Aktif">📿</button>
                 <button id="btnAddIqomah" onclick="addPixelObject('iqomah')" class="btn-blue top-btn" style="background:#e74c3c;" title="+ Count Down Object">⏱️</button>
             </div>
 
@@ -64,25 +65,6 @@
                 <button class="top-btn" onclick="openImportModal()" title="Open / Paste JSON">📂</button>
                 <button class="top-btn" onclick="exportToJerryScript()" title="Save / Generate JSON">💾</button>
             </div>
-
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <label style="color:#aaa; font-size:11px; margin:0;">Project Name:</label>
-                <input type="text" id="projectName" maxlength="20" value="Project_1" placeholder="Project Name" style="width: 120px; font-weight: bold; color: var(--accent); background: #252526; border: 1px solid var(--border); text-align: center;">
-            </div>
-
-            <div style="display: flex; align-items: center; gap: 8px; background: #252526; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); height: 32px; box-sizing: border-box; margin-left:10px;">
-                <span style="font-size: 11px; color: var(--accent); font-weight: bold;">CANVAS:</span>
-                <label style="margin:0; color:#aaa;">W</label>
-                <input type="number" id="globalW" value="64" onchange="updateProjectRes()" style="width: 45px; padding: 2px 4px; height: 24px; text-align: center;">
-                <label style="margin:0; color:#aaa;">H</label>
-                <input type="number" id="globalH" value="32" onchange="updateProjectRes()" style="width: 45px; padding: 2px 4px; height: 24px; text-align: center;">
-            </div>
-
-            <div style="display: flex; align-items: center; gap: 6px; background: #333; padding: 3px 8px; border-radius: 6px; border: 1px solid #444; height: 32px; box-sizing: border-box; margin-left:10px;">
-                <button onclick="changeZoom(-2)" class="zoom-btn" title="Zoom Out">➖</button>
-                <span id="zoomLabel" style="font-size: 12px; font-family: monospace; width: 40px; text-align: center; color: var(--accent); font-weight: bold;">100%</span>
-                <button onclick="changeZoom(2)" class="zoom-btn" title="Zoom In">➕</button>
-            </div>
         </div>
         
         <div class="canvas-container" id="canvasWrapper">
@@ -92,6 +74,27 @@
             </div>
             <div id="hoverTooltip"></div>
             <canvas id="editorCanvas"></canvas>
+        </div>
+
+        <div class="bottom-bar">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="color:#aaa; font-size:11px; margin:0;">Project Name:</label>
+                <input type="text" id="projectName" maxlength="20" value="Project_1" placeholder="Project Name" style="width: 120px; font-weight: bold; color: var(--accent); background: #252526; border: 1px solid var(--border); text-align: center;">
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; background: #252526; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); height: 32px; box-sizing: border-box;">
+                <span style="font-size: 11px; color: var(--accent); font-weight: bold;">CANVAS:</span>
+                <label style="margin:0; color:#aaa;">W</label>
+                <input type="number" id="globalW" value="64" onchange="updateProjectRes()" style="width: 45px; padding: 2px 4px; height: 24px; text-align: center;">
+                <label style="margin:0; color:#aaa;">H</label>
+                <input type="number" id="globalH" value="32" onchange="updateProjectRes()" style="width: 45px; padding: 2px 4px; height: 24px; text-align: center;">
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 6px; background: #333; padding: 3px 8px; border-radius: 6px; border: 1px solid #444; height: 32px; box-sizing: border-box;">
+                <button onclick="changeZoom(-2)" class="zoom-btn" title="Zoom Out">➖</button>
+                <span id="zoomLabel" style="font-size: 12px; font-family: monospace; width: 40px; text-align: center; color: var(--accent); font-weight: bold;">100%</span>
+                <button onclick="changeZoom(2)" class="zoom-btn" title="Zoom In">➕</button>
+            </div>
         </div>
     </div>
 
@@ -208,6 +211,7 @@
                     <option value="drawing">Custom Drawing</option>
                     <option value="image">Image (Pixel Art)</option>
                     <option value="sholat">Waktu Sholat (JWS)</option>
+                    <option value="sholat_name" style="color:#2980b9;">Nama Sholat Aktif</option>
                     <option value="iqomah" id="optIqomahType" style="color:#e74c3c;">Count Down Object</option>
                 </select>
 
@@ -386,6 +390,10 @@
                     <option value="slide-down">Slide Down</option>
                     <option value="blink">Berkedip (Blink)</option>
                 </select>
+                <div id="boxAnimStopX" class="hidden" style="margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; background: #222; padding: 4px; border-radius: 4px;">
+                    <label style="color:#f39c12; font-size: 11px; margin: 0;">Step (Jeda Tiap Pixel) =</label>
+                    <input type="number" id="propAnimStopX" value="5" min="1" oninput="updateFromProp()" style="width: 50px; text-align: center; height: 24px;">
+                </div>
                 <div class="grid-2">
                     <div>
                         <label>Speed <span id="speedVal" style="color:var(--accent); font-family:monospace; margin-left:2px;">1.0x</span></label>
@@ -410,6 +418,10 @@
                     <option value="slide-down">Slide Down</option>
                     <option value="blink">Berkedip (Blink)</option>
                 </select>
+                <div id="boxAnim2StopX" class="hidden" style="margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; background: #222; padding: 4px; border-radius: 4px;">
+                    <label style="color:#f39c12; font-size: 11px; margin: 0;">Step (Jeda Tiap Pixel) =</label>
+                    <input type="number" id="propAnim2StopX" value="5" min="1" oninput="updateFromProp()" style="width: 50px; text-align: center; height: 24px;">
+                </div>
                 <div class="grid-2">
                     <div>
                         <label>Speed <span id="speedVal2" style="color:var(--accent); font-family:monospace; margin-left:2px;">1.0x</span></label>

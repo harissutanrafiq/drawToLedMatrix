@@ -14,6 +14,14 @@ function forceRunTrigger(triggerName) {
         return;
     }
     
+    // Set active prayer name dynamically based on trigger
+    window.activePrayerName = triggerName.replace('when', '').toUpperCase();
+    if(window.activePrayerName === 'JUMAT') window.activePrayerName = 'DZUHUR';
+    if(window.activePrayerName === 'MAGRIB') window.activePrayerName = 'MAGHRIB';
+    
+    // Update content of existing sholat_name objects immediately for preview
+    objects.forEach(o => { if (o.type === 'sholat_name') o.updateContent(); });
+
     let targetKey = triggerName.replace('when', '');
     if(triggerName === 'whenJumat') targetKey = 'Dzuhur';
     if(triggerName === 'whenMagrib') targetKey = 'Maghrib'; 
@@ -175,7 +183,12 @@ function setupFormatDropdown() {
         iqNotice.innerText = "⚠️ Animasi 1 dijalankan saat Sisa Waktu menyentuh batas Trigger & berjalan terus sampai waktu habis, lalu disusul Animasi 2.";
     }
 
-    if (selectedObj.type === 'group') { bColors.classList.add('hidden'); bCoords.classList.add('hidden'); } else if (selectedObj.type === 'line') { bLine.classList.remove('hidden'); } else if (selectedObj.type === 'image') { bImg.classList.remove('hidden'); } else if (selectedObj.type === 'sholat') { bSholat.classList.remove('hidden'); bFont.classList.remove('hidden'); document.getElementById('propSholatType').value = selectedObj.sholatType; } else if (selectedObj.type === 'iqomah') { 
+    if (selectedObj.type === 'group') { bColors.classList.add('hidden'); bCoords.classList.add('hidden'); } 
+    else if (selectedObj.type === 'line') { bLine.classList.remove('hidden'); } 
+    else if (selectedObj.type === 'image') { bImg.classList.remove('hidden'); } 
+    else if (selectedObj.type === 'sholat_name') { bFont.classList.remove('hidden'); bAlign.classList.remove('hidden'); }
+    else if (selectedObj.type === 'sholat') { bSholat.classList.remove('hidden'); bFont.classList.remove('hidden'); document.getElementById('propSholatType').value = selectedObj.sholatType; } 
+    else if (selectedObj.type === 'iqomah') { 
         bF.classList.remove('hidden'); bFont.classList.remove('hidden'); bAlign.classList.remove('hidden'); 
         if(bIqomah) bIqomah.classList.remove('hidden');
         let sF = document.getElementById('propFormat'); sF.innerHTML = ""; FORMATS[selectedObj.type].forEach(f => { let o = document.createElement('option'); o.value = f; o.innerText = f; sF.appendChild(o); }); 
@@ -241,11 +254,19 @@ function syncPropPanel() {
         } else { ['propColor', 'propColorNone', 'propFColor', 'propFColorNone', 'propBgColor', 'propBgColorNone'].forEach(id => { document.getElementById(id).disabled = false; document.getElementById(id).parentElement.style.opacity = '1'; }); }
 
         document.getElementById('propAnim').value = selectedObj.anim; document.getElementById('propSpeed').value = selectedObj.speed; document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x'; document.getElementById('propAnimDelay').value = selectedObj.animDelay || 0;
-        document.getElementById('propAnim2').value = selectedObj.anim2; document.getElementById('propSpeed2').value = selectedObj.speed2; document.getElementById('speedVal2').innerText = selectedObj.speed2.toFixed(1) + 'x'; document.getElementById('propAnimDelay2').value = selectedObj.animDelay2 || 0;
+        document.getElementById('propAnimStopX').value = selectedObj.animStopX !== undefined ? selectedObj.animStopX : 5;
         
+        document.getElementById('propAnim2').value = selectedObj.anim2; document.getElementById('propSpeed2').value = selectedObj.speed2; document.getElementById('speedVal2').innerText = selectedObj.speed2.toFixed(1) + 'x'; document.getElementById('propAnimDelay2').value = selectedObj.animDelay2 || 0;
+        document.getElementById('propAnim2StopX').value = selectedObj.anim2StopX !== undefined ? selectedObj.anim2StopX : 5;
+        
+        let bAnimStopX = document.getElementById('boxAnimStopX');
+        if (bAnimStopX) bAnimStopX.classList.toggle('hidden', !selectedObj.anim.includes('stop-current'));
+        let bAnim2StopX = document.getElementById('boxAnim2StopX');
+        if (bAnim2StopX) bAnim2StopX.classList.toggle('hidden', !selectedObj.anim2.includes('stop-current'));
+
         document.getElementById('propOnShowActionObj').value = selectedObj.onShowAction || ""; updateNextTargets('objShow'); if (selectedObj.onShowAction) document.getElementById('propOnShowTargetObj').value = selectedObj.onShowTarget || "";
         document.getElementById('propOnDoneActionObj').value = selectedObj.onDoneAction || ""; updateNextTargets('objDone'); if (selectedObj.onDoneAction) document.getElementById('propOnDoneTargetObj').value = selectedObj.onDoneTarget || "";
-        setupFormatDropdown(); if(!['text', 'drawing', 'image', 'sholat', 'iqomah', 'group', 'line'].includes(selectedObj.type)) document.getElementById('propFormat').value = selectedObj.format; 
+        setupFormatDropdown(); if(!['text', 'drawing', 'image', 'sholat', 'sholat_name', 'iqomah', 'group', 'line'].includes(selectedObj.type)) document.getElementById('propFormat').value = selectedObj.format; 
     } else {
         selectedObj = null; panelScreen.classList.remove('hidden'); let scr = screens[activeScreenIdx];
         let propScrName = document.getElementById('propScreenName'); propScrName.value = scr.id;
@@ -295,7 +316,15 @@ function updateFromProp(autoSize = false) {
         selectedObj.radius = parseInt(document.getElementById('propRadius').value); document.getElementById('radiusVal').innerText = selectedObj.radius;
         
         selectedObj.anim = document.getElementById('propAnim').value; selectedObj.speed = parseFloat(document.getElementById('propSpeed').value); selectedObj.animDelay = parseFloat(document.getElementById('propAnimDelay').value) || 0;
+        selectedObj.animStopX = parseInt(document.getElementById('propAnimStopX').value) || 0;
+        
         selectedObj.anim2 = document.getElementById('propAnim2').value; selectedObj.speed2 = parseFloat(document.getElementById('propSpeed2').value); selectedObj.animDelay2 = parseFloat(document.getElementById('propAnimDelay2').value) || 0;
+        selectedObj.anim2StopX = parseInt(document.getElementById('propAnim2StopX').value) || 0;
+
+        let bAnimStopX = document.getElementById('boxAnimStopX');
+        if (bAnimStopX) bAnimStopX.classList.toggle('hidden', !selectedObj.anim.includes('stop-current'));
+        let bAnim2StopX = document.getElementById('boxAnim2StopX');
+        if (bAnim2StopX) bAnim2StopX.classList.toggle('hidden', !selectedObj.anim2.includes('stop-current'));
 
         selectedObj.onShowAction = document.getElementById('propOnShowActionObj').value; selectedObj.onShowTarget = document.getElementById('propOnShowTargetObj').value;
         selectedObj.onDoneAction = document.getElementById('propOnDoneActionObj').value; selectedObj.onDoneTarget = document.getElementById('propOnDoneTargetObj').value;
@@ -309,7 +338,7 @@ function updateFromProp(autoSize = false) {
             selectedObj.iqomahAnimTriggerSec = parseFloat(document.getElementById('propIqomahAnimTriggerSec').value) || 3;
             selectedObj.iqomahTriggerUnit = document.getElementById('propIqomahTriggerUnit').value;
         } 
-        else if (!['text', 'drawing', 'image', 'group', 'line'].includes(selectedObj.type)) selectedObj.format = document.getElementById('propFormat').value;
+        else if (!['text', 'drawing', 'image', 'group', 'line', 'sholat_name'].includes(selectedObj.type)) selectedObj.format = document.getElementById('propFormat').value;
         
         document.getElementById('speedVal').innerText = selectedObj.speed.toFixed(1) + 'x'; document.getElementById('speedVal2').innerText = selectedObj.speed2.toFixed(1) + 'x'; selectedObj.updateContent(); 
         
@@ -401,7 +430,7 @@ function renderTree() {
             const buildNodes = (list, parentIsGroup = false) => {
                 list.forEach(o => {
                     let oDiv = document.createElement('div'); oDiv.className = 'tree-item obj-item ' + (selectedObjs.includes(o) ? ' selected ' : '') + (!o.visibleCanvas ? ' hidden-obj ' : '') + (parentIsGroup ? ' child-item' : '');
-                    let icon = o.type === 'group' ? '📁' : o.type === 'sholat' ? '🕌' : o.type === 'iqomah' ? '⏱️' : o.type === 'image' ? '🖼️' : o.type === 'line' ? '➖' : o.type === 'drawing' ? '🎨' : '📄';
+                    let icon = o.type === 'group' ? '📁' : o.type === 'sholat' ? '🕌' : o.type === 'sholat_name' ? '📿' : o.type === 'iqomah' ? '⏱️' : o.type === 'image' ? '🖼️' : o.type === 'line' ? '➖' : o.type === 'drawing' ? '🎨' : '📄';
                     let ledIcon = !o.visibleLed ? '<span style="color:#e74c3c; margin-right:4px;" title="Hidden on LED JSON">💡🚫</span>' : '';
                     oDiv.innerHTML = `<span>${ledIcon}<span class="tree-icon">${icon}</span> ${o.name}</span><span style="font-size:10px; cursor:pointer;" onclick="event.stopPropagation(); toggleVisibility('${o.name}')">${o.visibleCanvas ? '👁️' : '🕶️'}</span>`;
                     oDiv.onclick = (e) => { if(isSimulating) return; e.stopPropagation(); if (e.shiftKey) { if(selectedObjs.includes(o)) selectedObjs = selectedObjs.filter(x=>x!==o); else selectedObjs.push(o); } else { selectedObjs = [o]; } setMode('select'); syncPropPanel(); renderTree(); }; container.appendChild(oDiv);

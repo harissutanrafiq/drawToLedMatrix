@@ -83,9 +83,9 @@ class PixelObject {
     constructor(name, type, gridX, gridY) {
         this.name = name; this.type = type; this.x = gridX; this.y = gridY; 
         this.visibleCanvas = true; this.visibleLed = true;
-        this.w = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah') ? 25 : (type === 'line' ? 32 : 32); 
-        this.h = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah') ? 10 : (type === 'line' ? 1 : 10);  
-        this.text = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'iqomah' || type === 'group' || type === 'line') ? "" : "TEXT"; 
+        this.w = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'sholat_name' || type === 'iqomah') ? 25 : (type === 'line' ? 32 : 32); 
+        this.h = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'sholat_name' || type === 'iqomah') ? 10 : (type === 'line' ? 1 : 10);  
+        this.text = (type === 'drawing' || type === 'image' || type === 'sholat' || type === 'sholat_name' || type === 'iqomah' || type === 'group' || type === 'line') ? "" : "TEXT"; 
         this.format = ""; 
         this.editable = false; this.title = name;
 
@@ -99,11 +99,13 @@ class PixelObject {
         this.lineDir = 'h'; this.lineThick = 1; this.lineLength = 32; this.lineColor = "#8e44ad";
         this.radius = 0; this.alignH = 'center'; this.alignV = 'middle'; 
         
-        this.anim = 'none'; this.speed = 1.0; this.animDelay = 0;
-        this.anim2 = 'none'; this.speed2 = 1.0; this.animDelay2 = 0; 
+        this.anim = 'none'; this.speed = 1.0; this.animDelay = 0; this.animStopX = 5;
+        this.anim2 = 'none'; this.speed2 = 1.0; this.animDelay2 = 0; this.anim2StopX = 5;
         
         this.isAnimPlaying = false; 
         this.animState = 1; 
+        this._nextStepX1 = 0;
+        this._nextStepX2 = 0;
         this.delayTimer = 0;
         this.blinkTimer = 0;
         this.currentOffsetX = 0; this.currentOffsetY = 0;
@@ -126,8 +128,8 @@ class PixelObject {
         if (type !== 'group' && type !== 'line') this.updateContent();
     }
 
-    getContentW() { return ['text', 'clock', 'cal_masehi', 'cal_hijri', 'sholat', 'iqomah'].includes(this.type) ? (this.textWidth || this.w) : this.w; }
-    getContentH() { return ['text', 'clock', 'cal_masehi', 'cal_hijri', 'sholat', 'iqomah'].includes(this.type) ? (this.textHeight || this.h) : this.h; }
+    getContentW() { return ['text', 'clock', 'cal_masehi', 'cal_hijri', 'sholat', 'sholat_name', 'iqomah'].includes(this.type) ? (this.textWidth || this.w) : this.w; }
+    getContentH() { return ['text', 'clock', 'cal_masehi', 'cal_hijri', 'sholat', 'sholat_name', 'iqomah'].includes(this.type) ? (this.textHeight || this.h) : this.h; }
 
     resetAnimation() {
         if (this.type === 'iqomah' && isSimulating && !this._iqomahDone) {
@@ -143,11 +145,11 @@ class PixelObject {
         if (this.animState === 1) aStart = this.anim;
         else if (this.animState === 3) aStart = this.anim2;
         
-        this._setupAnimStart(aStart);
+        this._setupAnimStart(aStart, this.animState === 3);
         if (this.children) this.children.forEach(c => c.resetAnimation());
     }
 
-    _setupAnimStart(type) {
+    _setupAnimStart(type, isAnim2 = false) {
         if(type === 'slide-left' || type === 'slide-left-stop') { 
             let align = this.calcAlign();
             this.currentOffsetX = this.w - align.aX; 
@@ -158,8 +160,19 @@ class PixelObject {
             this.currentOffsetX = -(this.getContentW() + align.aX); 
             this.currentOffsetY = 0; 
         }
-        else if(type === 'slide-left-stop-current' || type === 'slide-right-stop-current') {
-            // Posisi dipertahankan, melanjut dari titik X saat ini
+        else if(type === 'slide-left-stop-current') {
+            let stopVal = isAnim2 ? this.anim2StopX : this.animStopX;
+            let stepDist = Math.max(1, Math.abs(stopVal || 0));
+            if (stopVal == 0) stepDist = 9999;
+            if (isAnim2) this._nextStepX2 = this.currentOffsetX - stepDist;
+            else this._nextStepX1 = this.currentOffsetX - stepDist;
+        }
+        else if(type === 'slide-right-stop-current') {
+            let stopVal = isAnim2 ? this.anim2StopX : this.animStopX;
+            let stepDist = Math.max(1, Math.abs(stopVal || 0));
+            if (stopVal == 0) stepDist = 9999;
+            if (isAnim2) this._nextStepX2 = this.currentOffsetX + stepDist;
+            else this._nextStepX1 = this.currentOffsetX + stepDist;
         }
         else if(type === 'slide-up') { this.currentOffsetX = 0; this.currentOffsetY = this.h; }
         else if(type === 'slide-down') { this.currentOffsetX = 0; this.currentOffsetY = 0; }
@@ -167,45 +180,109 @@ class PixelObject {
         this.blinkTimer = 0;
     }
 
-    _stepAnimation(type, speed) {
-        let done = false;
+    _stepAnimation(type, speed, isAnim2 = false) {
         let dtRatio = window.deltaTime / 16.6; 
         
         if (type === 'blink') {
             this.blinkTimer += window.deltaTime;
             let cycle = 1000 / speed;
-            if (this.blinkTimer >= cycle) { this.blinkTimer = 0; done = true; }
-            return done;
+            if (this.blinkTimer >= cycle) { this.blinkTimer = 0; return true; }
+            return false;
         }
 
         let step = 0.5 * speed * dtRatio; 
+        
         if(type === 'slide-left') {
             let align = this.calcAlign(); let cW = this.getContentW();
             this.currentOffsetX -= step;
-            if(this.currentOffsetX <= -(cW + align.aX)) { this.currentOffsetX = -(cW + align.aX); done = true; }
-        } else if(type === 'slide-left-stop' || type === 'slide-left-stop-current') {
+            if(this.currentOffsetX <= -(cW + align.aX)) { this.currentOffsetX = -(cW + align.aX); return true; }
+            return false;
+        } 
+        else if(type === 'slide-left-stop') {
             this.currentOffsetX -= step;
-            if(this.currentOffsetX <= 0) { this.currentOffsetX = 0; done = true; } 
-        } else if(type === 'slide-right') {
+            if(this.currentOffsetX <= 0) { this.currentOffsetX = 0; return true; } 
+            return false;
+        } 
+        else if(type === 'slide-left-stop-current') {
+            let stopVal = isAnim2 ? this.anim2StopX : this.animStopX;
+            let stepDist = Math.max(1, Math.abs(stopVal || 0));
+            if(stopVal == 0) stepDist = 9999;
+
+            let align = this.calcAlign();
+            let cW = this.getContentW();
+            let endBoundary = -(cW + align.aX);
+
+            this.currentOffsetX -= step;
+            let targetStepX = isAnim2 ? this._nextStepX2 : this._nextStepX1;
+
+            if (this.currentOffsetX <= endBoundary) {
+                this.currentOffsetX = endBoundary;
+                return true; 
+            }
+
+            if (this.currentOffsetX <= targetStepX) {
+                this.currentOffsetX = targetStepX;
+                if (isAnim2) this._nextStepX2 = this.currentOffsetX - stepDist;
+                else this._nextStepX1 = this.currentOffsetX - stepDist;
+                return 'pause';
+            }
+            return false;
+        } 
+        else if(type === 'slide-right') {
             this.currentOffsetX += step;
-            if(this.currentOffsetX >= this.w) { this.currentOffsetX = this.w; done = true; }
-        } else if(type === 'slide-right-stop' || type === 'slide-right-stop-current') {
+            if(this.currentOffsetX >= this.w) { this.currentOffsetX = this.w; return true; }
+            return false;
+        } 
+        else if(type === 'slide-right-stop') {
             this.currentOffsetX += step;
-            if(this.currentOffsetX >= 0) { this.currentOffsetX = 0; done = true; } 
-        } else if(type === 'slide-up') {
+            if(this.currentOffsetX >= 0) { this.currentOffsetX = 0; return true; } 
+            return false;
+        } 
+        else if(type === 'slide-right-stop-current') {
+            let stopVal = isAnim2 ? this.anim2StopX : this.animStopX;
+            let stepDist = Math.max(1, Math.abs(stopVal || 0));
+            if(stopVal == 0) stepDist = 9999;
+
+            let endBoundary = this.w;
+
+            this.currentOffsetX += step;
+            let targetStepX = isAnim2 ? this._nextStepX2 : this._nextStepX1;
+
+            if (this.currentOffsetX >= endBoundary) {
+                this.currentOffsetX = endBoundary;
+                return true; 
+            }
+
+            if (this.currentOffsetX >= targetStepX) {
+                this.currentOffsetX = targetStepX;
+                if (isAnim2) this._nextStepX2 = this.currentOffsetX + stepDist;
+                else this._nextStepX1 = this.currentOffsetX + stepDist;
+                return 'pause';
+            }
+            return false;
+        } 
+        else if(type === 'slide-up') {
             this.currentOffsetY -= step;
-            if(this.currentOffsetY <= 0) { this.currentOffsetY = 0; done = true; } 
-        } else if(type === 'slide-down') {
+            if(this.currentOffsetY <= 0) { this.currentOffsetY = 0; return true; } 
+            return false;
+        } 
+        else if(type === 'slide-down') {
             this.currentOffsetY += step;
-            if(this.currentOffsetY >= this.h) { this.currentOffsetY = this.h; done = true; } 
-        } else { done = true; }
-        return done;
+            if(this.currentOffsetY >= this.h) { this.currentOffsetY = this.h; return true; } 
+            return false;
+        } 
+        
+        return true; 
     }
 
     getDisplayString() {
         if (this.type === 'drawing' || this.type === 'image' || this.type === 'group' || this.type === 'line') return "";
         if (this.type === 'sholat') { 
             return window.currentPrayerTimes ? (window.currentPrayerTimes[this.sholatType] || '00:00') : '00:00'; 
+        }
+        if (this.type === 'sholat_name') {
+            // Mengambil nama sholat aktif dari variabel global
+            return window.activePrayerName || 'SUBUH';
         }
         
         if (this.type === 'iqomah') { 
@@ -337,7 +414,7 @@ class PixelObject {
                         this._iqomahDone = true;
                         if (this.anim2 !== 'none') {
                             this.animState = 3;
-                            this._setupAnimStart(this.anim2);
+                            this._setupAnimStart(this.anim2, true);
                             this.isAnimPlaying = true;
                         } else {
                             this.isAnimPlaying = false;
@@ -370,24 +447,31 @@ class PixelObject {
             if (!this.hasFiredOnShow) { this.hasFiredOnShow = true; triggerEvent(this.onShowAction, this.onShowTarget); }
 
             if (this.animState === 1) { 
-                if (this._stepAnimation(this.anim, this.speed)) { 
+                let res = this._stepAnimation(this.anim, this.speed, false);
+                if (res === 'pause') { 
+                    this.animState = 1.5; this.delayTimer = this.animDelay * 1000;
+                } else if (res === true) {
                     this.animState = 2; this.delayTimer = this.animDelay * 1000;
+                }
+            } else if (this.animState === 1.5) {
+                this.delayTimer -= window.deltaTime;
+                if (this.delayTimer <= 0) {
+                    this.animState = 1; 
                 }
             } else if (this.animState === 2) { 
                 this.delayTimer -= window.deltaTime;
                 if (this.delayTimer <= 0) {
                     if (this.type === 'iqomah' && !this._iqomahDone) {
-                        // Terus looping Animasi 1 selama timer count down belum habis
                         if (this.anim.includes('stop')) {
-                            this.delayTimer = 100; // Hold menunggu waktu habis
+                            this.delayTimer = 100; 
                         } else if (this.anim === 'none') {
-                            this.delayTimer = 100; // Hold menunggu waktu habis
+                            this.delayTimer = 100; 
                         } else {
-                            this.animState = 1; this._setupAnimStart(this.anim); 
+                            this.animState = 1; this._setupAnimStart(this.anim, false); 
                         }
                     } else {
                         if (this.anim2 !== 'none') { 
-                            this.animState = 3; this._setupAnimStart(this.anim2); 
+                            this.animState = 3; this._setupAnimStart(this.anim2, true); 
                         } else { 
                             triggerEvent(this.onDoneAction, this.onDoneTarget); 
                             if (isSimulating) { let currentScr = screens[activeScreenIdx]; if (currentScr && currentScr.durationMode === 'anim' && currentScr.durationAnimObj === this.name) simTimer = 0; }
@@ -395,13 +479,23 @@ class PixelObject {
                             if (this.anim.includes('stop')) {
                                 this.isAnimPlaying = false; 
                             } else {
-                                this.animState = 1; this._setupAnimStart(this.anim); 
+                                this.animState = 1; this._setupAnimStart(this.anim, false); 
                             }
                         }
                     }
                 }
             } else if (this.animState === 3) { 
-                if (this._stepAnimation(this.anim2, this.speed2)) { this.animState = 4; this.delayTimer = this.animDelay2 * 1000; }
+                let res = this._stepAnimation(this.anim2, this.speed2, true);
+                if (res === 'pause') { 
+                    this.animState = 3.5; this.delayTimer = this.animDelay2 * 1000;
+                } else if (res === true) {
+                    this.animState = 4; this.delayTimer = this.animDelay2 * 1000;
+                }
+            } else if (this.animState === 3.5) {
+                this.delayTimer -= window.deltaTime;
+                if (this.delayTimer <= 0) {
+                    this.animState = 3; 
+                }
             } else if (this.animState === 4) { 
                 this.delayTimer -= window.deltaTime;
                 if (this.delayTimer <= 0) {
@@ -412,9 +506,9 @@ class PixelObject {
                         this.isAnimPlaying = false; 
                     } else {
                         if (this.anim !== 'none') { 
-                            this.animState = 1; this._setupAnimStart(this.anim); 
+                            this.animState = 1; this._setupAnimStart(this.anim, false); 
                         } else { 
-                            this.animState = 3; this._setupAnimStart(this.anim2); 
+                            this.animState = 3; this._setupAnimStart(this.anim2, true); 
                         }
                     }
                 }
@@ -473,8 +567,8 @@ function restoreObject(oData) {
     n.bgColorNone = oData.bgColor === "transparent" || oData.bgColorNone === true; n.bgColor = n.bgColorNone ? "#000000" : (oData.bgColor || "#000000");
     n.fColorNone = oData.frameColor === "transparent" || oData.fColor === "transparent" || oData.fColorNone === true; n.fColor = n.fColorNone ? "#00ff00" : (oData.frameColor || oData.fColor || "#00ff00");
     
-    if (oData.anim1) { n.anim = oData.anim1.type; n.speed = oData.anim1.speed; n.animDelay = oData.anim1.delay; } else { n.anim = oData.anim || 'none'; n.speed = oData.speed || 1; n.animDelay = oData.animDelay || 0; }
-    if (oData.anim2) { n.anim2 = oData.anim2.type; n.speed2 = oData.anim2.speed; n.animDelay2 = oData.anim2.delay || 0; } else { n.anim2 = oData.anim2 || 'none'; n.speed2 = oData.speed2 || 1; n.animDelay2 = oData.animDelay2 || 0; }
+    if (oData.anim1) { n.anim = oData.anim1.type; n.speed = oData.anim1.speed; n.animDelay = oData.anim1.delay; n.animStopX = oData.anim1.stopX || 5; } else { n.anim = oData.anim || 'none'; n.speed = oData.speed || 1; n.animDelay = oData.animDelay || 0; n.animStopX = oData.animStopX || 5; }
+    if (oData.anim2) { n.anim2 = oData.anim2.type; n.speed2 = oData.anim2.speed; n.animDelay2 = oData.anim2.delay || 0; n.anim2StopX = oData.anim2.stopX || 5; } else { n.anim2 = oData.anim2 || 'none'; n.speed2 = oData.speed2 || 1; n.animDelay2 = oData.animDelay2 || 0; n.anim2StopX = oData.anim2StopX || 5; }
     
     n.radius = oData.radius || 0;
     
@@ -504,7 +598,7 @@ function serializeObj(o) {
         id: o.name, type: o.type, visible_canvas: o.visibleCanvas, visible_led: o.visibleLed, frameX: o.x, frameY: o.y, w: o.w, h: o.h, contentX: o.x + align.aX, contentY: o.y + align.aY, 
         text: (o.type === 'text' && o.editable) ? o.title : o.text, editable: o.editable, title: o.title,
         font: o.font, format: o.format, color: o.colorNone ? "transparent" : o.color, bgColor: o.bgColorNone ? "transparent" : o.bgColor, frameColor: o.fColorNone ? "transparent" : o.fColor, 
-        anim1: { type: o.anim, speed: o.speed, delay: o.animDelay }, anim2: { type: o.anim2, speed: o.speed2, delay: o.animDelay2 }, radius: o.radius, 
+        anim1: { type: o.anim, speed: o.speed, delay: o.animDelay, stopX: o.animStopX }, anim2: { type: o.anim2, speed: o.speed2, delay: o.animDelay2, stopX: o.anim2StopX }, radius: o.radius, 
         onShowEvent: { action: o.onShowAction, target: o.onShowTarget }, onDoneEvent: { action: o.onDoneAction, target: o.onDoneTarget } 
     };
 
@@ -550,9 +644,9 @@ function pasteObjects() {
 }
 
 function addPixelObject(type) { 
-    saveState(); let base = type === 'drawing' ? "Draw" : type === 'image' ? "Img" : type === 'line' ? "Line" : type === 'sholat' ? "Jadwal" : type === 'iqomah' ? "Count" : type === 'text' ? "Text" : "Layer";
+    saveState(); let base = type === 'drawing' ? "Draw" : type === 'image' ? "Img" : type === 'line' ? "Line" : type === 'sholat' ? "Jadwal" : type === 'sholat_name' ? "NamaSholat" : type === 'iqomah' ? "Count" : type === 'text' ? "Text" : "Layer";
     let o = new PixelObject(getUniqueName(base), type, Math.max(0, Math.floor(PROJECT_W/2) - 8), Math.max(0, Math.floor(PROJECT_H/2) - 4)); 
-    if (type === 'sholat') { o.updateContent(); o.w = Math.max(1, o.textWidth); o.h = Math.max(1, o.textHeight); }
+    if (type === 'sholat' || type === 'sholat_name') { o.updateContent(); o.w = Math.max(1, o.textWidth); o.h = Math.max(1, o.textHeight); }
     objects.push(o); selectedObjs = [o]; setMode('select'); syncPropPanel(); renderTree();
 }
 
