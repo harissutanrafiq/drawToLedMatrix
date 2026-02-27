@@ -360,20 +360,12 @@ function addPixelObject(type) { saveState(); let base = type === 'drawing' ? "Dr
 function deleteSelected(skipConfirm = false) { if(selectedObjs.length > 0) { if(!skipConfirm) { if(!confirm(`Hapus ${selectedObjs.length} objek terpilih dari Screen ini?`)) return; } saveState(); objects = objects.filter(o => !selectedObjs.includes(o)); screens[activeScreenIdx].objects = objects; selectedObjs = []; syncPropPanel(); renderTree(); } }
 
 // ==========================================
-// FITUR EXPORT & IMPORT TXT UNTUK ESP32
-// ==========================================
-
-// ==========================================
-// FITUR EXPORT KE TXT UNTUK ESP32 (FIXED GROUP)
-// ==========================================
-// ==========================================
-// FITUR EXPORT KE TXT UNTUK ESP32 (FIXED 100%)
+// FITUR EXPORT KE TXT UNTUK ESP32 (COORDINATE FIX)
 // ==========================================
 function exportToTXT() {
     let output = [];
     output.push("// === AUTO GENERATED LAYOUT TXT ===");
 
-    // 1. Export Triggers
     output.push("\n// --- TRIGGERS ---");
     let prayerKeys = {
         "Imsak": "whenImsak", "Subuh": "whenSubuh", "Terbit": "whenTerbit",
@@ -386,31 +378,23 @@ function exportToTXT() {
         }
     }
 
-    // 2. Export Screens dan Objek
     screens.forEach(scr => {
-        let scrId = scr.id || scr.name; // Aman jika object pakai .name
+        let scrId = scr.id || scr.name; 
         output.push(`\n// --- SCREEN: ${scrId} ---`);
         let vis = scr.visibleLed ? "1" : "0";
         let dMode = scr.durationMode || "fixed";
         let dVal = dMode === "fixed" ? (parseDuration(scr.durationFixed) || 10000) : scr.durationAnimObj;
-        let nxA = scr.nextAction || "";
-        let nxT = scr.nextTarget || "";
+        let nxA = scr.nextAction || ""; let nxT = scr.nextTarget || "";
         output.push(`SCR~${scrId}~${vis}~${dMode}~${dVal}~${nxA}~${nxT}`);
 
-        // Set untuk menyimpan ID/Name objek untuk mencegah loop ganda
         let exportedIds = new Set(); 
 
         function parseObj(o, fallbackParentId = "root") {
             if (!o) return;
-
-            // PERBAIKAN 1: Dukungan untuk web yang memakai properti 'name' sebagai id
             let objId = o.id || o.name; 
-            
-            // Lewati jika objek ini sudah diproses sebelumnya
             if (exportedIds.has(objId)) return; 
             exportedIds.add(objId);
 
-            // Tentukan Parent
             let parentId = o.parentId || fallbackParentId;
             if (parentId === "null" || parentId === "") parentId = "root";
 
@@ -421,69 +405,40 @@ function exportToTXT() {
             if (o.type === "auto_sholat") { text = o.autoDir || "h"; fmt = o.fontTime || ""; }
             if (o.type === "line") { text = o.lineX1 || 0; font = o.lineY1 || 0; fmt = o.lineX2 || 0; }
             
-            let fX = o.type === "line" ? (o.lineY2 || 0) : (o.frameX !== undefined ? o.frameX : o.x);
-            let fY = o.frameY !== undefined ? o.frameY : o.y;
+            let fX = o.type === "line" ? (o.lineY2 || 0) : (o.frameX !== undefined ? o.frameX : (o.x || 0));
+            let fY = o.frameY !== undefined ? o.frameY : (o.y || 0);
             
-            // Koordinat Konten aktual
-            let cX = o.contentX !== undefined ? o.contentX : (o.x || 0); 
-            let cY = o.contentY !== undefined ? o.contentY : (o.y || 0);
+            // Jaminan koordinat utama (Absolut)
+            let cX = o.x !== undefined ? o.x : (o.contentX || 0); 
+            let cY = o.y !== undefined ? o.y : (o.contentY || 0);
             
             let w = o.w || 0; let h = o.h || 0;
-            
             let col = o.type === "line" ? o.lineColor : (o.color || "transparent");
-            let fCol = o.frameColor || "transparent";
-            let bCol = o.bgColor || "transparent";
-            let rad = o.radius || 0;
+            let fCol = o.frameColor || "transparent"; let bCol = o.bgColor || "transparent"; let rad = o.radius || 0;
 
             let row = `OBJ~${objId}~${o.type}~${visObj}~${parentId}~${text}~${font}~${fmt}~${fX}~${fY}~${cX}~${cY}~${w}~${h}~${col}~${fCol}~${bCol}~${rad}~${o.anim || 'none'}~${o.animSpeed || 0}~${o.animDelay || 0}~${o.animStop || 0}~${o.anim2 || 'none'}~${o.animSpeed2 || 0}~${o.animDelay2 || 0}~${o.animStop2 || 0}~${o.onShowAction || ''}~${o.onShowTarget || ''}~${o.onDoneAction || ''}~${o.onDoneTarget || ''}`;
             output.push(row);
 
-            // Export List Auto Sholat
-            if (o.type === "auto_sholat" && o.autoList) {
-                output.push(`ALIST~${objId}~${o.autoCount || 1}~${o.autoList.join("~")}`);
-            }
+            if (o.type === "auto_sholat" && o.autoList) output.push(`ALIST~${objId}~${o.autoCount || 1}~${o.autoList.join("~")}`);
 
-            // PERBAIKAN 2: Deteksi universal untuk properti array pixel
             let pixelDataArray = o.customPixels || o.pixels || o.data;
             if ((o.type === "drawing" || o.type === "image") && pixelDataArray && pixelDataArray.length > 0) {
-                let pixData = pixelDataArray.map(p => {
-                    // Cek properti warna (bisa p.c, p.color, atau p.hex)
-                    let hexColor = (p.c || p.color || p.hex || "#FFFFFF").replace('#', '');
-                    return `${p.x},${p.y},${hexColor}`;
-                }).join("~");
+                let pixData = pixelDataArray.map(p => `${p.x},${p.y},${(p.c || p.color || p.hex || "#FFFFFF").replace('#', '')}`).join("~");
                 output.push(`PIX~${objId}~${pixData}`);
             }
 
-            // Ekspor anak-anak jika objek adalah Group
-            if (o.children && Array.isArray(o.children)) {
-                o.children.forEach(child => parseObj(child, objId));
-            }
+            if (o.children && Array.isArray(o.children)) o.children.forEach(child => parseObj(child, objId));
         }
 
-        // Mulai parse semua objek dari root screen
-        if (scr.objects && Array.isArray(scr.objects)) {
-            scr.objects.forEach(obj => parseObj(obj, "root"));
-        }
+        if (scr.objects && Array.isArray(scr.objects)) scr.objects.forEach(obj => parseObj(obj, "root"));
     });
 
-    // Download Otomatis
     let blob = new Blob([output.join("\n")], { type: "text/plain" });
-    let link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "layout.txt";
-    link.click();
+    let link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "layout.txt"; link.click();
 }
 
 // ==========================================
-// FITUR IMPORT DARI TXT (FIXED GROUP)
-// ==========================================
-function formatDur(ms) {
-    let s = Math.floor(ms / 1000); let m = Math.floor(s / 60); s = s % 60; let h = Math.floor(m / 60); m = m % 60;
-    return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
-}
-
-// ==========================================
-// FITUR IMPORT DARI TXT (FIXED DUPLIKASI GROUP)
+// FITUR IMPORT DARI TXT (POSISI & UNDO FIX)
 // ==========================================
 function formatDur(ms) {
     let s = Math.floor(ms / 1000); let m = Math.floor(s / 60); s = s % 60; let h = Math.floor(m / 60); m = m % 60;
@@ -532,14 +487,16 @@ function importFromTXT(file) {
                 
                 if (o.type === 'sholat') o.sholatType = o.text;
                 if (o.type === 'auto_sholat') { o.autoDir = o.text; o.fontTime = o.format; }
-                if (o.type === 'line') {
-                    o.lineX1 = parseInt(o.text)||0; o.lineY1 = parseInt(o.font)||0; o.lineX2 = parseInt(o.format)||0; o.lineY2 = parseInt(tk[8])||0;
-                } else { 
-                    o.frameX = parseInt(tk[8]) || 0; 
-                }
+                if (o.type === 'line') { o.lineX1 = parseInt(o.text)||0; o.lineY1 = parseInt(o.font)||0; o.lineX2 = parseInt(o.format)||0; o.lineY2 = parseInt(tk[8])||0; } 
+                else { o.frameX = parseInt(tk[8]) || 0; }
                 
                 o.frameY = parseInt(tk[9]) || 0; 
-                o.contentX = cX; o.contentY = cY;
+                
+                // --- PAKSAKAN KOORDINAT SECARA EKSPLISIT AGAR TIDAK DIGESER OLEH CONSTRUCTOR ---
+                o.x = cX; 
+                o.y = cY;
+                o.contentX = cX; 
+                o.contentY = cY;
                 
                 o.w = parseInt(tk[12]) || 1; o.h = parseInt(tk[13]) || 1;
                 o.color = tk[14] !== "transparent" ? tk[14] : "#ffffff"; o.lineColor = o.type === 'line' ? o.color : "#ffffff";
@@ -550,20 +507,17 @@ function importFromTXT(file) {
                 o.anim2 = tk[22] || 'none'; o.animSpeed2 = parseFloat(tk[23]) || 50; o.animDelay2 = parseFloat(tk[24]) || 0; o.animStop2 = parseInt(tk[25]) || 0;
                 o.onShowAction = tk[26] || ""; o.onShowTarget = tk[27] || ""; o.onDoneAction = tk[28] || ""; o.onDoneTarget = tk[29] || "";
                 
-                if (o.type !== 'group' && o.type !== 'line') o.updateContent();
+                if (o.type !== 'group' && o.type !== 'line' && o.type !== 'image' && o.type !== 'drawing') o.updateContent();
                 objMap[o.id] = o;
                 
-                // --- PERBAIKAN LOGIKA HIERARKI MURNI ---
-                // Hanya masukkan ke array utama JIKA objek BUKAN anak grup (tidak punya parent)
                 if (!o.parentId) {
                     currentScreen.objects.push(o);
                 } else {
                     let pObj = objMap[o.parentId];
                     if (pObj) {
                         if (!pObj.children) pObj.children = [];
-                        pObj.children.push(o); // Masukkan murni ke dalam wadah grupnya
+                        pObj.children.push(o);
                     } else {
-                        // Failsafe: Jika parent ID ada tapi objeknya belum ter-load/hilang, letakkan di luar
                         currentScreen.objects.push(o);
                     }
                 }
@@ -578,7 +532,7 @@ function importFromTXT(file) {
             else if (cmd === 'PIX') {
                 let o = objMap[tk[1]];
                 if (o && (o.type === 'image' || o.type === 'drawing')) {
-                    o.customPixels = [];
+                    o.customPixels = []; o.pixels = []; o.data = []; // Reset array pixel target
                     for(let i=2; i<tk.length; i++) {
                         let pData = tk[i].split(',');
                         if(pData.length === 3) o.customPixels.push({ x: parseInt(pData[0]), y: parseInt(pData[1]), c: '#' + pData[2] });
@@ -588,8 +542,26 @@ function importFromTXT(file) {
             }
         });
         
-        activeScreenIdx = 0; selectedObjs = []; selectedObj = null;
-        switchScreen(0); renderTree(); syncPropPanel();
+        // --- PERBAIKAN UNDO & REFERENSI ARRAY GLOBAL ---
+        activeScreenIdx = 0; 
+        selectedObjs = []; 
+        selectedObj = null;
+        
+        // Sinkronisasi array object global ke object milik screen yang baru di-load
+        objects = screens[activeScreenIdx].objects; 
+        
+        // Bersihkan stack Undo/Redo lama yang merujuk pada memory screen sebelum di-import
+        undoStack = []; 
+        redoStack = [];
+        
+        // Render UI
+        if(typeof switchScreen === 'function') switchScreen(0); 
+        if(typeof renderTree === 'function') renderTree(); 
+        if(typeof syncPropPanel === 'function') syncPropPanel();
+        
+        // Simpan titik awal layout baru agar Undo/CTRL+Z bisa berjalan normal dari sini
+        if(typeof saveState === 'function') saveState(); 
+        
         alert("✅ Layout TXT berhasil di-import!");
     };
     reader.readAsText(file);
