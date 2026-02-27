@@ -5,16 +5,15 @@
     <title>JWS Designer Pro v20.17</title>
     <link rel="stylesheet" href="style.css">
     <script src="fonts.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.3/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({ startOnLoad: false, theme: 'dark' });</script>
 </head>
 <body>
-
     <div class="sidebar-left">
-        <h2 style="font-size: 22px; color: var(--accent); margin: 0; text-align: center; letter-spacing: 2px;">JWS DESIGNER PRO</h2>
+        <h2 style="font-size: 22px; color: var(--accent); margin: 0; text-align: center; letter-spacing: 2px;">JWS DESIGNER</h2>
         
         <div class="group">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <h3>Object Browser</h3>
-            </div>
+            <h3 style="margin-bottom: 5px;">Object Browser</h3>
             <div style="display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap;">
                 <button onclick="addScreen('splash')" style="flex:1 1 45%; padding: 4px; font-size: 10px; background: #f1c40f; color:#000; font-weight:bold;">+ Splash</button>
                 <button onclick="addScreen('main')" style="flex:1 1 45%; padding: 4px; font-size: 10px; background: #27ae60; font-weight:bold;">+ Main</button>
@@ -24,53 +23,50 @@
         </div>
 
         <div class="group" style="flex-grow: 1;">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <h3>Trigger Browser</h3>
-            </div>
-            <p style="font-size:10px; color:#aaa; margin: 0 0 8px 0; line-height: 1.2;">Pilih aksi <b>Show Screen</b> saat waktu masuk:</p>
-            <div id="triggerBrowserList" style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto;">
-            </div>
+            <h3 style="margin-bottom: 5px;">Trigger Browser</h3>
+            <div id="triggerBrowserList" style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto;"></div>
         </div>
     </div>
 
     <div class="main-workspace">
         <div class="top-bar">
             <button class="top-btn btn-green-icon" id="btnSimulate" onclick="toggleSimulation()" title="Play All (Simulate)">▶️</button>
-
+            <button class="top-btn" onclick="showFlowchart()" style="font-weight:bold; color:#f39c12; width: auto; padding: 0 10px;" title="Lihat Flowchart">🔀 Flow</button>
             <div class="divider"></div>
-
-            <div style="display: flex; gap: 6px; align-items: center;">
-                <button class="top-btn active" id="selectBtn" onclick="setMode('select')" title="🖱️ Select / Move">🖱️</button>
-                <button class="top-btn" id="penBtn" onclick="setMode('pen')" title="✏️ Pen Tool">✏️</button>
-                <button class="top-btn" id="eraserBtn" onclick="setMode('eraser')" title="🧽 Eraser Tool">🧽</button>
+            <div style="display: flex; gap: 6px;">
+                <button class="top-btn active" id="selectBtn" onclick="setMode('select')" title="Select">🖱️</button>
+                <button class="top-btn" id="penBtn" onclick="setMode('pen')" title="Pen">✏️</button>
+                <button class="top-btn" id="eraserBtn" onclick="setMode('eraser')" title="Eraser">🧽</button>
             </div>
-
             <div class="divider"></div>
-
-            <div style="display: flex; gap: 6px; align-items: center;">
-                <button onclick="addPixelObject('text')" class="btn-blue top-btn" title="+ Text Object">🔤</button>
-                <button onclick="addPixelObject('line')" class="btn-blue top-btn" style="background:#8e44ad;" title="+ Line Object">➖</button>
-                <button onclick="addPixelObject('drawing')" class="btn-blue top-btn" style="background:#f39c12; color:#000;" title="+ Draw Object">🎨</button>
-                <button onclick="addPixelObject('image')" class="btn-blue top-btn" style="background:#e67e22;" title="+ Image Object">🖼️</button>
-                <button id="btnAddSholat" onclick="addPixelObject('sholat')" class="btn-blue top-btn" style="background:#16a085;" title="+ Waktu Sholat">🕌</button>
-                <button onclick="addPixelObject('sholat_name')" class="btn-blue top-btn" style="background:#2980b9;" title="+ Nama Sholat Aktif">📿</button>
-                <button id="btnAddIqomah" onclick="addPixelObject('iqomah')" class="btn-blue top-btn" style="background:#e74c3c;" title="+ Count Down Object">⏱️</button>
+            <div style="display: flex; gap: 6px;">
+                <button onclick="addPixelObject('text')" class="btn-blue top-btn" title="Text Object">🔤</button>
+                <button onclick="addPixelObject('line')" class="btn-blue top-btn" style="background:#8e44ad;" title="Line Object">➖</button>
+                <button onclick="addPixelObject('drawing')" class="btn-blue top-btn" style="background:#f39c12;" title="Draw Object">🎨</button>
+                <button onclick="addPixelObject('image')" class="btn-blue top-btn" style="background:#e67e22;" title="Image Object">🖼️</button>
+                <button onclick="addPixelObject('sholat')" class="btn-blue top-btn" style="background:#16a085;" title="Waktu Sholat">🕌</button>
+                <button onclick="addPixelObject('sholat_name')" class="btn-blue top-btn" style="background:#2980b9;" title="Nama Sholat Aktif">📿</button>
+                <button onclick="addPixelObject('auto_sholat')" class="btn-blue top-btn" style="background:#8e44ad;" title="Auto Jadwal Sholat (Looping)">🗓️</button>
+                <button id="btnAddIqomah" onclick="addPixelObject('iqomah')" class="btn-blue top-btn" style="background:#e74c3c;" title="Count Down Object">⏱️</button>
             </div>
-
             <div class="divider"></div>
-
             <div style="display: flex; align-items: center; gap: 6px; margin-right: auto;">
-                <button class="top-btn" onclick="undo()" title="Undo (Ctrl+Z)">↩️</button>
-                <button class="top-btn" onclick="redo()" title="Redo (Ctrl+Y)">↪️</button>
-                <button class="top-btn" onclick="openImportModal()" title="Open / Paste JSON">📂</button>
-                <button class="top-btn" onclick="exportToJerryScript()" title="Save / Generate JSON">💾</button>
+                <button class="top-btn" onclick="undo()" title="Undo">↩️</button>
+                <button class="top-btn" onclick="redo()" title="Redo">↪️</button>
+                <button class="top-btn" onclick="openImportModal()" title="Open JSON">📂</button>
+                <button class="top-btn" onclick="exportToJerryScript()" title="Save JSON">💾</button>
+				<button class="top-btn" onclick="exportToTXT()" style="color:#27ae60; font-weight:bold;" title="Export desain ke file TXT untuk ESP32">💾 Export TXT</button>
+
+<button class="top-btn" onclick="document.getElementById('importFile').click()" style="color:#f39c12; font-weight:bold;" title="Import desain dari file TXT">📂 Import TXT</button>
+<input type="file" id="importFile" accept=".txt" style="display:none" onchange="importFromTXT(this.files[0])">
+
             </div>
         </div>
         
         <div class="canvas-container" id="canvasWrapper">
             <div id="simOverlay">
                 <div id="simOverlayTime">⏱️ 00:00:10</div>
-                <div id="simOverlayAction">NEXT: <span style="color:#fff;">SHOW_SCREEN ➡️ Screen_2</span></div>
+                <div id="simOverlayAction">NEXT: ➡️ Screen</div>
             </div>
             <div id="hoverTooltip"></div>
             <canvas id="editorCanvas"></canvas>
@@ -79,21 +75,17 @@
         <div class="bottom-bar">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <label style="color:#aaa; font-size:11px; margin:0;">Project Name:</label>
-                <input type="text" id="projectName" maxlength="20" value="Project_1" placeholder="Project Name" style="width: 120px; font-weight: bold; color: var(--accent); background: #252526; border: 1px solid var(--border); text-align: center;">
+                <input type="text" id="projectName" maxlength="20" value="Project_1" style="width: 120px; font-weight: bold; text-align: center;">
             </div>
-
-            <div style="display: flex; align-items: center; gap: 8px; background: #252526; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); height: 32px; box-sizing: border-box;">
+            <div style="display: flex; align-items: center; gap: 8px; background: #252526; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);">
                 <span style="font-size: 11px; color: var(--accent); font-weight: bold;">CANVAS:</span>
-                <label style="margin:0; color:#aaa;">W</label>
-                <input type="number" id="globalW" value="64" onchange="updateProjectRes()" style="width: 45px; padding: 2px 4px; height: 24px; text-align: center;">
-                <label style="margin:0; color:#aaa;">H</label>
-                <input type="number" id="globalH" value="32" onchange="updateProjectRes()" style="width: 45px; padding: 2px 4px; height: 24px; text-align: center;">
+                <label style="margin:0;">W</label><input type="number" id="globalW" value="64" onchange="updateProjectRes()" style="width: 45px; height: 24px; text-align: center;">
+                <label style="margin:0;">H</label><input type="number" id="globalH" value="32" onchange="updateProjectRes()" style="width: 45px; height: 24px; text-align: center;">
             </div>
-
-            <div style="display: flex; align-items: center; gap: 6px; background: #333; padding: 3px 8px; border-radius: 6px; border: 1px solid #444; height: 32px; box-sizing: border-box;">
-                <button onclick="changeZoom(-2)" class="zoom-btn" title="Zoom Out">➖</button>
+            <div style="display: flex; align-items: center; gap: 6px; background: #333; padding: 3px 8px; border-radius: 6px;">
+                <button onclick="changeZoom(-2)" class="zoom-btn">➖</button>
                 <span id="zoomLabel" style="font-size: 12px; font-family: monospace; width: 40px; text-align: center; color: var(--accent); font-weight: bold;">100%</span>
-                <button onclick="changeZoom(2)" class="zoom-btn" title="Zoom In">➕</button>
+                <button onclick="changeZoom(2)" class="zoom-btn">➕</button>
             </div>
         </div>
     </div>
@@ -107,48 +99,36 @@
     <div class="sidebar-right" id="propPanel">
         <div id="noSelectionMsg" style="text-align:center; color:#666; margin-top:80px; padding:20px; display:none;">
             <div style="font-size: 40px; margin-bottom: 10px;">📦</div>
-            <p style="margin-bottom:8px;"><b>Multiple Objects Selected</b><br>Klik kanan di kanvas untuk opsi Grouping / Hapus.</p>
-            <p style="font-size:10px; color:#e67e22; margin:0; line-height: 1.3;">⚠️ Objek yang bisa digabung harus <b>TIDAK</b> memiliki animasi.</p>
+            <p><b>Multiple Objects Selected</b></p>
         </div>
 
         <div id="screenPropContent" class="hidden">
-            <h3 style="color:#f39c12; font-size: 14px; margin-bottom:10px;">📺 Screen Properties</h3>
-            
+            <h3 style="color:#f39c12;">📺 Screen Properties</h3>
             <div class="group">
                 <label>Screen Name (ID)</label>
-                <input type="text" id="propScreenName" maxlength="20" onchange="updateScreenProp()" placeholder="Screen_1">
-                <p id="splashScreenTag" style="color:#f1c40f; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🚀 DEDICATED SPLASH SCREEN</p>
-                <p id="mainScreenTag" style="color:#2ecc71; font-size: 10px; font-weight: bold; margin: 5px 0 0 0; display:none;">🏠 DEDICATED MAIN SCREEN</p>
-                
+                <input type="text" id="propScreenName" maxlength="20" onchange="updateScreenProp()">
                 <div style="display:flex; align-items:center; gap:6px; margin-top:12px;">
                     <input type="checkbox" id="propScrVisibleCanvas" onchange="updateScreenProp()">
-                    <label style="margin:0; text-transform:none; font-weight:bold; font-size:11px; cursor:pointer;" for="propScrVisibleCanvas">👁️ Visible on Canvas</label>
+                    <label style="margin:0; font-size:11px;">👁️ Visible on Canvas</label>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px; margin-top:6px;">
                     <input type="checkbox" id="propScrVisibleLed" onchange="updateScreenProp()">
-                    <label style="margin:0; text-transform:none; font-weight:bold; font-size:11px; cursor:pointer; color:#f39c12;" for="propScrVisibleLed">💡 Visible on LED</label>
+                    <label style="margin:0; font-size:11px; color:#f39c12;">💡 Visible on LED</label>
                 </div>
             </div>
-
             <div class="group">
                 <label>Durasi Tampil Screen</label>
                 <select id="propScreenDurMode" onchange="updateScreenPropUI()" style="margin-bottom: 6px;">
                     <option value="fixed">Fixed Time (HH:MM:SS)</option>
                     <option value="anim">Wait For Object Anim</option>
                 </select>
-
-                <div id="boxDurFixed">
-                    <input type="text" id="propScreenDurFixed" placeholder="00:00:10" oninput="updateScreenProp()">
-                    <p style="font-size:9px; color:#888; margin: 4px 0 0 0;">Format: Jam:Menit:Detik</p>
-                </div>
-
+                <div id="boxDurFixed"><input type="text" id="propScreenDurFixed" oninput="updateScreenProp()"></div>
                 <div id="boxDurAnim" class="hidden">
-                    <label style="color:#e67e22; margin-top:5px; display:block;">Select Trigger Object</label>
+                    <label style="color:#e67e22; margin-top:5px;">Select Trigger Object</label>
                     <select id="propScreenDurAnim" onchange="updateScreenProp()"></select>
                 </div>
             </div>
-            
-            <div class="group" id="boxNextEventScr" style="margin-top: 5px; border-top:1px solid #444; padding-top:10px;">
+            <div class="group" style="margin-top: 5px; border-top:1px solid #444; padding-top:10px;">
                 <label style="color:#3498db;">Screen Next Event</label>
                 <select id="propNextActionScr" onchange="updateNextTargets('scr'); updateScreenProp()">
                     <option value="">-- No Action --</option>
@@ -161,26 +141,21 @@
                 </select>
                 <select id="propNextTargetScr" onchange="updateScreenProp()" style="margin-top:6px;" class="hidden"></select>
             </div>
-
-            <div style="margin-top:15px; padding-top:15px; border-top:1px solid #444;">
-                <button onclick="deleteCurrentScreen()" class="btn-red" style="padding: 10px;">🗑️ Delete This Screen</button>
-            </div>
+            <button onclick="deleteCurrentScreen()" class="btn-red" style="width:100%; margin-top:15px; padding: 10px;">🗑️ Delete Screen</button>
         </div>
         
         <div id="propContent" class="hidden">
-            <h3 style="color:var(--accent); font-size: 14px; margin-bottom:10px;">Properties Manager</h3>
-            
+            <h3 style="color:var(--accent);">Properties Manager</h3>
             <div class="group">
-                <label>Object/Frame Name (Max 10 Char)</label>
-                <input type="text" id="propName" maxlength="10" onchange="updateName()" placeholder="Obj">
-                
+                <label>Object Name</label>
+                <input type="text" id="propName" maxlength="10" onchange="updateName()">
                 <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
                     <input type="checkbox" id="propVisibleCanvas" onchange="updateFromProp()">
-                    <label style="margin:0; text-transform:none; font-weight:bold; font-size:11px; cursor:pointer;" for="propVisibleCanvas">👁️ Visible on Canvas</label>
+                    <label style="margin:0; font-size:11px;">👁️ Visible on Canvas</label>
                 </div>
                 <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
                     <input type="checkbox" id="propVisibleLed" onchange="updateFromProp()">
-                    <label style="margin:0; text-transform:none; font-weight:bold; font-size:11px; cursor:pointer; color:#f39c12;" for="propVisibleLed">💡 Visible on LED</label>
+                    <label style="margin:0; font-size:11px; color:#f39c12;">💡 Visible on LED</label>
                 </div>
             </div>
 
@@ -195,8 +170,8 @@
                     <div><label>H (Height)</label><input type="text" id="propH" readonly style="text-align: center;"></div>
                 </div>
                 <div class="grid-2" id="boxObjCoords">
-                    <div><label style="color:var(--accent)">Content X</label><input type="text" id="propObjX" readonly style="color:var(--accent); font-weight:bold; text-align: center;"></div>
-                    <div><label style="color:var(--accent)">Content Y</label><input type="text" id="propObjY" readonly style="color:var(--accent); font-weight:bold; text-align: center;"></div>
+                    <div><label style="color:var(--accent)">Content X</label><input type="text" id="propObjX" readonly style="text-align: center;"></div>
+                    <div><label style="color:var(--accent)">Content Y</label><input type="text" id="propObjY" readonly style="text-align: center;"></div>
                 </div>
             </div>
 
@@ -204,293 +179,224 @@
                 <label>Data Provider</label>
                 <select id="propType" onchange="changeObjType()">
                     <option value="text">Standard Text</option>
-                    <option value="line" style="color:#8e44ad; font-weight:bold;">Line (Baris)</option>
+                    <option value="line" style="color:#8e44ad;">Line (Baris)</option>
                     <option value="clock">Clock (Real-time)</option>
                     <option value="cal_masehi">Masehi Calendar</option>
                     <option value="cal_hijri">Hijriah Calendar</option>
                     <option value="drawing">Custom Drawing</option>
                     <option value="image">Image (Pixel Art)</option>
-                    <option value="sholat">Waktu Sholat (JWS)</option>
+                    <option value="sholat">Waktu Sholat</option>
                     <option value="sholat_name" style="color:#2980b9;">Nama Sholat Aktif</option>
+                    <option value="auto_sholat" style="color:#8e44ad; font-weight:bold;">Auto Jadwal Sholat</option>
                     <option value="iqomah" id="optIqomahType" style="color:#e74c3c;">Count Down Object</option>
                 </select>
 
                 <div id="boxLine" class="hidden" style="margin-top:10px;">
-                    <label style="color:#8e44ad;">Line Properties</label>
                     <div class="grid-2">
-                        <div>
-                            <label>Direction</label>
-                            <select id="propLineDir" onchange="updateFromProp()">
-                                <option value="h">Horizontal</option>
-                                <option value="v">Vertical</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label>Ketebalan</label>
-                            <input type="number" id="propLineThick" min="1" max="64" onchange="updateFromProp()">
-                        </div>
+                        <div><label>Direction</label><select id="propLineDir" onchange="updateFromProp()"><option value="h">Horizontal</option><option value="v">Vertical</option></select></div>
+                        <div><label>Ketebalan</label><input type="number" id="propLineThick" min="1" onchange="updateFromProp()"></div>
                     </div>
                     <div class="grid-2" style="margin-top:6px;">
-                        <div>
-                            <label>Panjang (Length)</label>
-                            <input type="number" id="propLineLength" min="1" max="256" onchange="updateFromProp()">
-                        </div>
-                        <div>
-                            <label>Warna Garis</label>
-                            <input type="color" id="propLineColor" oninput="updateFromProp()">
-                        </div>
+                        <div><label>Panjang</label><input type="number" id="propLineLength" min="1" onchange="updateFromProp()"></div>
+                        <div><label>Warna</label><input type="color" id="propLineColor" oninput="updateFromProp()"></div>
                     </div>
                 </div>
 
                 <div id="boxSholat" class="hidden" style="margin-top:10px;">
                     <label style="color:#16a085;">Pilih Waktu Sholat</label>
                     <select id="propSholatType" onchange="updateFromProp()">
-                        <option value="Imsak">Imsak</option>
-                        <option value="Subuh">Subuh</option>
-                        <option value="Terbit">Terbit</option>
-                        <option value="Dzuhur">Dzuhur</option>
-                        <option value="Ashar">Ashar</option>
-                        <option value="Maghrib">Maghrib</option>
-                        <option value="Isya">Isya</option>
+                        <option value="Imsak">Imsak</option><option value="Subuh">Subuh</option><option value="Terbit">Terbit</option>
+                        <option value="Dzuhur">Dzuhur</option><option value="Ashar">Ashar</option><option value="Maghrib">Maghrib</option><option value="Isya">Isya</option>
                     </select>
                 </div>
                 
+                <div id="boxAutoSholat" class="hidden" style="margin-top:10px; border:1px solid #444; padding:8px; border-radius:4px; background:#1e1e1e;">
+                    <label style="color:#8e44ad; font-weight:bold; margin-bottom:8px;">Pilih Jadwal (Gap = Auto/Angka)</label>
+                    <div id="propAutoList" style="display:grid; grid-template-columns: 1fr 1fr; gap:4px; margin-bottom:10px; font-size:11px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:#111; padding:2px 4px; border-radius:3px;"><label style="margin:0;"><input type="checkbox" value="Imsak"> Imsak</label><input type="text" class="gap-input" data-prayer="Imsak" placeholder="auto" onchange="updateFromProp(true)" style="width:28px; height:18px; font-size:9px; text-align:center; padding:0; background:#333; color:#fff; border:1px solid #555;"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:#111; padding:2px 4px; border-radius:3px;"><label style="margin:0;"><input type="checkbox" value="Subuh"> Subuh</label><input type="text" class="gap-input" data-prayer="Subuh" placeholder="auto" onchange="updateFromProp(true)" style="width:28px; height:18px; font-size:9px; text-align:center; padding:0; background:#333; color:#fff; border:1px solid #555;"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:#111; padding:2px 4px; border-radius:3px;"><label style="margin:0;"><input type="checkbox" value="Terbit"> Terbit</label><input type="text" class="gap-input" data-prayer="Terbit" placeholder="auto" onchange="updateFromProp(true)" style="width:28px; height:18px; font-size:9px; text-align:center; padding:0; background:#333; color:#fff; border:1px solid #555;"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:#111; padding:2px 4px; border-radius:3px;"><label style="margin:0;"><input type="checkbox" value="Dhuha"> Dhuha</label><input type="text" class="gap-input" data-prayer="Dhuha" placeholder="auto" onchange="updateFromProp(true)" style="width:28px; height:18px; font-size:9px; text-align:center; padding:0; background:#333; color:#fff; border:1px solid #555;"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:#111; padding:2px 4px; border-radius:3px;"><label style="margin:0;"><input type="checkbox" value="Dzuhur"> Dzuhur</label><input type="text" class="gap-input" data-prayer="Dzuhur" placeholder="auto" onchange="updateFromProp(true)" style="width:28px; height:18px; font-size:9px; text-align:center; padding:0; background:#333; color:#fff; border:1px solid #555;"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:#111; padding:2px 4px; border-radius:3px;"><label style="margin:0;"><input type="checkbox" value="Ashar"> Ashar</label><input type="text" class="gap-input" data-prayer="Ashar" placeholder="auto" onchange="updateFromProp(true)" style="width:28px; height:18px; font-size:9px; text-align:center; padding:0; background:#333; color:#fff; border:1px solid #555;"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:#111; padding:2px 4px; border-radius:3px;"><label style="margin:0;"><input type="checkbox" value="Maghrib"> Maghrib</label><input type="text" class="gap-input" data-prayer="Maghrib" placeholder="auto" onchange="updateFromProp(true)" style="width:28px; height:18px; font-size:9px; text-align:center; padding:0; background:#333; color:#fff; border:1px solid #555;"></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:#111; padding:2px 4px; border-radius:3px;"><label style="margin:0;"><input type="checkbox" value="Isya"> Isya</label><input type="text" class="gap-input" data-prayer="Isya" placeholder="auto" onchange="updateFromProp(true)" style="width:28px; height:18px; font-size:9px; text-align:center; padding:0; background:#333; color:#fff; border:1px solid #555;"></div>
+                    </div>
+                    <div class="grid-2" style="margin-bottom:6px;">
+                        <div><label>Tampil Per Layar</label><input type="number" id="propAutoCount" min="1" max="8" value="2" onchange="updateFromProp(true)"></div>
+                        <div><label>Layout Arah</label><select id="propAutoDir" onchange="updateFromProp(true)"><option value="h">Horizontal (Kanan)</option><option value="v">Vertical (Bawah)</option></select></div>
+                    </div>
+                    <div class="grid-2" style="margin-bottom:6px;">
+                        <div><label>Posisi Nama</label><select id="propAutoPos" onchange="updateFromProp(true)"><option value="left">Kiri</option><option value="top">Atas</option><option value="right">Kanan</option><option value="bottom">Bawah</option></select></div>
+                        <div><label>Font Nama</label><select id="propAutoFontName" onchange="updateFromProp(true)"></select></div>
+                    </div>
+                    <div class="grid-2" style="margin-bottom:6px;">
+                        <div><label>Gap Antar Jadwal</label><input type="number" id="propAutoGapItems" min="0" onchange="updateFromProp(true)"></div>
+                        <div><label>Font Waktu</label><select id="propAutoFontTime" onchange="updateFromProp(true)"></select></div>
+                    </div>
+                </div>
+
                 <div id="boxIqomah" class="hidden" style="margin-top:10px;">
                     <label style="color:#e74c3c;">Default Timer Count Down</label>
                     <div style="display:flex; gap:6px; margin-bottom:6px;">
-                        <input type="number" id="propIqomahTime" min="1" value="5" onchange="updateFromProp(true)">
-                        <select id="propIqomahUnit" onchange="updateFromProp(true)">
-                            <option value="menit">Menit</option>
-                            <option value="detik">Detik</option>
-                        </select>
+                        <input type="number" id="propIqomahTime" min="1" onchange="updateFromProp(true)">
+                        <select id="propIqomahUnit" onchange="updateFromProp(true)"><option value="menit">Menit</option><option value="detik">Detik</option></select>
                     </div>
-
                     <label style="color:#e74c3c;">Pengurangan Timer (Detik)</label>
                     <input type="number" id="propIqomahOffset" placeholder="0" onchange="updateFromProp(true)" style="margin-bottom:6px;">
-
                     <label style="color:#e74c3c; margin-top:6px;">Trigger Animasi (Sisa Waktu)</label>
                     <div style="display:flex; gap:6px;">
-                        <input type="number" id="propIqomahAnimTriggerSec" min="1" value="3" onchange="updateFromProp(true)">
-                        <select id="propIqomahTriggerUnit" onchange="updateFromProp(true)">
-                            <option value="menit">Menit</option>
-                            <option value="detik">Detik</option>
-                        </select>
+                        <input type="number" id="propIqomahAnimTriggerSec" min="1" onchange="updateFromProp(true)">
+                        <select id="propIqomahTriggerUnit" onchange="updateFromProp(true)"><option value="menit">Menit</option><option value="detik">Detik</option></select>
                     </div>
                 </div>
 
                 <div id="boxImage" class="hidden" style="margin-top:10px;">
-                    <label style="color:#e67e22;">Source Image</label>
                     <input type="file" id="imageUploader" accept="image/png, image/jpeg, image/gif, image/webp" style="display:none;" onchange="handleImageUpload(event)">
-                    <button onclick="document.getElementById('imageUploader').click()" style="background:#444; margin-top:4px;">📂 Import Image File...</button>
+                    <button onclick="document.getElementById('imageUploader').click()" style="background:#444;">📂 Import Image File...</button>
                 </div>
 
-                <div id="boxFont" style="margin-top:5px;">
-                    <label>Font Style</label>
-                    <select id="propFont" onchange="updateFromProp(true)"></select>
-                </div>
-
-                <div id="boxText" style="margin-top:5px;">
-                    <label>Content (Max 20 Karakter)</label>
-                    <input type="text" id="propText" maxlength="20" oninput="updateFromProp(true)">
-                </div>
-
+                <div id="boxFont" style="margin-top:5px;"><label>Font Style</label><select id="propFont" onchange="updateFromProp(true)"></select></div>
+                <div id="boxText" style="margin-top:5px;"><label>Content</label><input type="text" id="propText" maxlength="20" oninput="updateFromProp(true)"></div>
+                
                 <div id="boxTextExtra" class="hidden" style="margin-top:5px;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <input type="checkbox" id="propEditable" onchange="updateFromProp(true)">
-                        <label style="margin:0; text-transform:none; font-weight:bold; font-size:11px; cursor:pointer;" for="propEditable">Text Editable <span style="font-size:9px; color:#aaa; font-weight:normal;">(Nantinya user bisa edit)</span></label>
-                    </div>
-                    <div id="boxTitle" class="hidden" style="margin-top:5px;">
-                        <label>Title</label>
-                        <input type="text" id="propTitle" maxlength="20" oninput="updateFromProp(true)">
-                    </div>
+                    <div style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="propEditable" onchange="updateFromProp(true)"><label style="margin:0;">Text Editable</label></div>
+                    <div id="boxTitle" class="hidden" style="margin-top:5px;"><label>Title</label><input type="text" id="propTitle" maxlength="20" oninput="updateFromProp(true)"></div>
                 </div>
-
-                <div id="boxFormat" class="hidden" style="margin-top:5px;">
-                    <label>Display Format</label>
-                    <select id="propFormat" onchange="updateFromProp(true)"></select>
-                </div>
+                <div id="boxFormat" class="hidden" style="margin-top:5px;"><label>Display Format</label><select id="propFormat" onchange="updateFromProp(true)"></select></div>
             </div>
 
             <div class="group" id="boxColors">
                 <label>Colors Styling</label>
-                <div class="grid-3" style="margin-bottom: 8px;">
-                    <div style="background:#222; padding:6px; border-radius:4px; text-align:center;">
-                        <label style="color:var(--accent);">Text / Pen</label>
-                        <div style="display:flex; justify-content:center; margin-top:4px;">
-                            <input type="color" id="propColor" oninput="updateFromProp()" style="width:100%; height:26px; padding:0;">
-                        </div>
-                        <div style="display:flex; align-items:center; justify-content:center; gap:4px; margin-top:6px;">
-                            <input type="checkbox" id="propColorNone" onchange="updateFromProp()"> <span style="font-size:10px; color:#aaa;">None</span>
-                        </div>
+                <div style="display:flex; gap:6px; margin-bottom: 8px; flex-wrap: wrap;">
+                    <div style="flex:1; background:#222; padding:6px; border-radius:4px; text-align:center;">
+                        <label style="color:var(--accent);">Text / Name</label>
+                        <input type="color" id="propColor" oninput="updateFromProp()"><br>
+                        <input type="checkbox" id="propColorNone" onchange="updateFromProp()"> <span style="font-size:10px;">None</span>
                     </div>
-                    
-                    <div style="background:#222; padding:6px; border-radius:4px; text-align:center;">
+                    <div id="boxColorTime" class="hidden" style="flex:1; background:#222; padding:6px; border-radius:4px; text-align:center;">
+                        <label style="color:#e74c3c;">Waktu</label>
+                        <input type="color" id="propColorTime" oninput="updateFromProp()"><br>
+                    </div>
+                    <div style="flex:1; background:#222; padding:6px; border-radius:4px; text-align:center;">
                         <label style="color:#f39c12;">Frame</label>
-                        <div style="display:flex; justify-content:center; margin-top:4px;">
-                            <input type="color" id="propFColor" oninput="updateFromProp()" style="width:100%; height:26px; padding:0;">
-                        </div>
-                        <div style="display:flex; align-items:center; justify-content:center; gap:4px; margin-top:6px;">
-                            <input type="checkbox" id="propFColorNone" onchange="updateFromProp()"> <span style="font-size:10px; color:#aaa;">None</span>
-                        </div>
+                        <input type="color" id="propFColor" oninput="updateFromProp()"><br>
+                        <input type="checkbox" id="propFColorNone" onchange="updateFromProp()"> <span style="font-size:10px;">None</span>
                     </div>
-
-                    <div style="background:#222; padding:6px; border-radius:4px; text-align:center;">
-                        <label style="color:#3498db;">Background</label>
-                        <div style="display:flex; justify-content:center; margin-top:4px;">
-                            <input type="color" id="propBgColor" oninput="updateFromProp()" style="width:100%; height:26px; padding:0;">
-                        </div>
-                        <div style="display:flex; align-items:center; justify-content:center; gap:4px; margin-top:6px;">
-                            <input type="checkbox" id="propBgColorNone" onchange="updateFromProp()"> <span style="font-size:10px; color:#aaa;">None</span>
-                        </div>
+                    <div style="flex:1; background:#222; padding:6px; border-radius:4px; text-align:center;">
+                        <label style="color:#3498db;">Bg</label>
+                        <input type="color" id="propBgColor" oninput="updateFromProp()"><br>
+                        <input type="checkbox" id="propBgColorNone" onchange="updateFromProp()"> <span style="font-size:10px;">None</span>
                     </div>
                 </div>
-
-                <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+                <div style="display:flex; align-items:center; gap:6px;">
                     <label style="margin:0; width:90px; color:#f39c12;">Frame Radius</label>
-                    <input type="range" id="propRadius" min="0" max="16" value="0" oninput="updateFromProp()" style="padding:0;">
-                    <span id="radiusVal" style="font-size:11px; color:var(--accent); font-family:monospace; width:20px; text-align:right;">0</span>
+                    <input type="range" id="propRadius" min="0" max="16" value="0" oninput="updateFromProp()">
+                    <span id="radiusVal" style="font-size:11px; width:20px;">0</span>
                 </div>
-                
                 <div id="boxAlign">
                     <label style="margin-top:8px;">Horizontal Align</label>
-                    <div class="grid-3">
-                        <button onclick="setAlign('h','left')">Left</button>
-                        <button onclick="setAlign('h','center')">Center</button>
-                        <button onclick="setAlign('h','right')">Right</button>
-                    </div>
-                    
+                    <div class="grid-3"><button onclick="setAlign('h','left')">Left</button><button onclick="setAlign('h','center')">Center</button><button onclick="setAlign('h','right')">Right</button></div>
                     <label style="margin-top:8px;">Vertical Align</label>
-                    <div class="grid-3">
-                        <button onclick="setAlign('v','top')">Top</button>
-                        <button onclick="setAlign('v','middle')">Mid</button>
-                        <button onclick="setAlign('v','bottom')">Bot</button>
-                    </div>
+                    <div class="grid-3"><button onclick="setAlign('v','top')">Top</button><button onclick="setAlign('v','middle')">Mid</button><button onclick="setAlign('v','bottom')">Bot</button></div>
                 </div>
             </div>
 
             <div class="group" id="boxAnim">
-                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                    <label style="color:var(--accent); font-size: 11px;">Animation Sequences</label>
-                </div>
-                
-                <p style="font-size:9px; color:#e74c3c; line-height: 1.3; font-style:italic; margin-top: 0; display: none;" id="iqomahAnimNotice">
-                    ⚠️ Animasi 1 dijalankan saat Sisa Waktu menyentuh batas Trigger & berjalan terus sampai waktu habis, lalu disusul Animasi 2.
-                </p>
-
+                <label style="color:var(--accent);">Animation Sequences</label>
                 <label style="color:#ddd;">Animasi 1</label>
                 <select id="propAnim" onchange="updateFromProp()" style="margin-bottom: 4px;">
                     <option value="none">Static</option>
-                    <option value="slide-left">Slide Left (Loop)</option>
-                    <option value="slide-left-stop">Slide Left & Stop</option>
-                    <option value="slide-left-stop-current">Slide Left & Stop (From Current X)</option>
-                    <option value="slide-right">Slide Right (Loop)</option>
-                    <option value="slide-right-stop">Slide Right & Stop</option>
-                    <option value="slide-right-stop-current">Slide Right & Stop (From Current X)</option>
-                    <option value="slide-up">Slide Up</option>
-                    <option value="slide-down">Slide Down</option>
+                    <option value="slide-left">Slide Left (Loop)</option><option value="slide-left-stop">Slide Left & Stop</option><option value="slide-left-stop-current">Slide Left & Stop (Steps)</option>
+                    <option value="slide-right">Slide Right (Loop)</option><option value="slide-right-stop">Slide Right & Stop</option><option value="slide-right-stop-current">Slide Right & Stop (Steps)</option>
+                    <option value="slide-up">Slide Up</option><option value="slide-down">Slide Down</option>
+                    <option value="scroll-up">Scrolling Up (Pause Center)</option><option value="scroll-down">Scrolling Down (Pause Center)</option>
                     <option value="blink">Berkedip (Blink)</option>
                 </select>
                 <div id="boxAnimStopX" class="hidden" style="margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; background: #222; padding: 4px; border-radius: 4px;">
-                    <label style="color:#f39c12; font-size: 11px; margin: 0;">Step (Jeda Tiap Pixel) =</label>
-                    <input type="number" id="propAnimStopX" value="5" min="1" oninput="updateFromProp()" style="width: 50px; text-align: center; height: 24px;">
+                    <label style="color:#f39c12; margin: 0;">Step (Jeda Tiap Pixel) =</label><input type="number" id="propAnimStopX" value="5" min="1" oninput="updateFromProp()" style="width: 50px; text-align: center;">
                 </div>
                 <div class="grid-2">
-                    <div>
-                        <label>Speed <span id="speedVal" style="color:var(--accent); font-family:monospace; margin-left:2px;">1.0x</span></label>
-                        <input type="range" id="propSpeed" min="0.1" max="5" step="0.1" value="1" oninput="updateFromProp()" style="margin-top:4px;">
-                    </div>
-                    <div>
-                        <label>Jeda (Detik)</label>
-                        <input type="number" id="propAnimDelay" min="0" step="0.1" value="0" oninput="updateFromProp()" style="margin-top:4px; height: 28px; text-align:center;">
-                    </div>
+                    <div><label>Speed <span id="speedVal">1.0x</span></label><input type="range" id="propSpeed" min="0.1" max="5" step="0.1" value="1" oninput="updateFromProp()"></div>
+                    <div><label>Jeda (Detik)</label><input type="number" id="propAnimDelay" min="0" step="0.1" value="0" oninput="updateFromProp()"></div>
                 </div>
                 
                 <label style="color:#ddd; margin-top:8px;">Animasi 2</label>
                 <select id="propAnim2" onchange="updateFromProp()" style="margin-bottom: 4px;">
                     <option value="none">None</option>
-                    <option value="slide-left">Slide Left (Loop)</option>
-                    <option value="slide-left-stop">Slide Left & Stop</option>
-                    <option value="slide-left-stop-current">Slide Left & Stop (From Current X)</option>
-                    <option value="slide-right">Slide Right (Loop)</option>
-                    <option value="slide-right-stop">Slide Right & Stop</option>
-                    <option value="slide-right-stop-current">Slide Right & Stop (From Current X)</option>
-                    <option value="slide-up">Slide Up</option>
-                    <option value="slide-down">Slide Down</option>
+                    <option value="slide-left">Slide Left (Loop)</option><option value="slide-left-stop">Slide Left & Stop</option><option value="slide-left-stop-current">Slide Left & Stop (Steps)</option>
+                    <option value="slide-right">Slide Right (Loop)</option><option value="slide-right-stop">Slide Right & Stop</option><option value="slide-right-stop-current">Slide Right & Stop (Steps)</option>
+                    <option value="slide-up">Slide Up</option><option value="slide-down">Slide Down</option>
+                    <option value="scroll-up">Scrolling Up (Pause Center)</option><option value="scroll-down">Scrolling Down (Pause Center)</option>
                     <option value="blink">Berkedip (Blink)</option>
                 </select>
                 <div id="boxAnim2StopX" class="hidden" style="margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; background: #222; padding: 4px; border-radius: 4px;">
-                    <label style="color:#f39c12; font-size: 11px; margin: 0;">Step (Jeda Tiap Pixel) =</label>
-                    <input type="number" id="propAnim2StopX" value="5" min="1" oninput="updateFromProp()" style="width: 50px; text-align: center; height: 24px;">
+                    <label style="color:#f39c12; margin: 0;">Step (Jeda Tiap Pixel) =</label><input type="number" id="propAnim2StopX" value="5" min="1" oninput="updateFromProp()" style="width: 50px; text-align: center;">
                 </div>
                 <div class="grid-2">
-                    <div>
-                        <label>Speed <span id="speedVal2" style="color:var(--accent); font-family:monospace; margin-left:2px;">1.0x</span></label>
-                        <input type="range" id="propSpeed2" min="0.1" max="5" step="0.1" value="1" oninput="updateFromProp()" style="margin-top:4px;">
-                    </div>
-                    <div>
-                        <label>Jeda (Detik)</label>
-                        <input type="number" id="propAnimDelay2" min="0" step="0.1" value="0" oninput="updateFromProp()" style="margin-top:4px; height: 28px; text-align:center;">
-                    </div>
+                    <div><label>Speed <span id="speedVal2">1.0x</span></label><input type="range" id="propSpeed2" min="0.1" max="5" step="0.1" value="1" oninput="updateFromProp()"></div>
+                    <div><label>Jeda (Detik)</label><input type="number" id="propAnimDelay2" min="0" step="0.1" value="0" oninput="updateFromProp()"></div>
                 </div>
 
                 <div style="display:flex; gap:6px; margin-top:10px;">
-                    <button onclick="playObjectAnim()" class="btn-green" style="padding:6px 8px; flex:1;">▶️ Play</button>
-                    <button onclick="stopObjectAnim()" class="btn-red" style="padding:6px 8px; flex:1;">⏹️ Stop</button>
+                    <button onclick="playObjectAnim()" class="btn-green" style="flex:1;">▶️ Play</button>
+                    <button onclick="stopObjectAnim()" class="btn-red" style="flex:1;">⏹️ Stop</button>
                 </div>
             </div>
 
-            <div class="group" id="boxOnShowObj" style="margin-top: 5px; border-top:1px solid #444; padding-top:10px;">
+            <div class="group" style="margin-top: 5px; border-top:1px solid #444; padding-top:10px;">
                 <label style="color:#2ecc71;">When Object Show</label>
                 <select id="propOnShowActionObj" onchange="updateNextTargets('objShow'); updateFromProp()">
-                    <option value="">-- No Action --</option>
-                    <option value="show_screen">Show Screen</option>
-                    <option value="show_object">Show Object</option>
-                    <option value="show_group">Show Group</option>
-                    <option value="hide_screen">Hide Screen</option>
-                    <option value="hide_object">Hide Object</option>
-                    <option value="hide_group">Hide Group</option>
+                    <option value="">-- No Action --</option> <option value="show_screen">Show Screen</option> <option value="show_object">Show Object</option> <option value="show_group">Show Group</option> <option value="hide_screen">Hide Screen</option> <option value="hide_object">Hide Object</option> <option value="hide_group">Hide Group</option>
                 </select>
                 <select id="propOnShowTargetObj" onchange="updateFromProp()" style="margin-top:6px;" class="hidden"></select>
             </div>
-
-            <div class="group" id="boxOnDoneObj" style="margin-top: 5px; border-top:1px solid #444; padding-top:10px;">
+            <div class="group" style="margin-top: 5px; border-top:1px solid #444; padding-top:10px;">
                 <label style="color:#3498db;">When Animation Done</label>
                 <select id="propOnDoneActionObj" onchange="updateNextTargets('objDone'); updateFromProp()">
-                    <option value="">-- No Action --</option>
-                    <option value="show_screen">Show Screen</option>
-                    <option value="show_object">Show Object</option>
-                    <option value="show_group">Show Group</option>
-                    <option value="hide_screen">Hide Screen</option>
-                    <option value="hide_object">Hide Object</option>
-                    <option value="hide_group">Hide Group</option>
+                    <option value="">-- No Action --</option> <option value="show_screen">Show Screen</option> <option value="show_object">Show Object</option> <option value="show_group">Show Group</option> <option value="hide_screen">Hide Screen</option> <option value="hide_object">Hide Object</option> <option value="hide_group">Hide Group</option>
                 </select>
                 <select id="propOnDoneTargetObj" onchange="updateFromProp()" style="margin-top:6px;" class="hidden"></select>
             </div>
-
-            <button onclick="deleteSelected()" class="btn-red" style="margin-top: 5px; padding: 10px;">🗑️ Delete Selected</button>
+            <button onclick="deleteSelected()" class="btn-red" style="width:100%; margin-top: 5px; padding: 10px;">🗑️ Delete Selected</button>
         </div>
     </div>
 
     <div id="exportModal" class="modal">
-        <h2 style="color:var(--accent); margin-top:0;">💾 SAVE PROJECT (JERRYSCRIPT EXPORT)</h2>
+        <h2 style="color:var(--accent); margin-top:0;">💾 SAVE PROJECT</h2>
         <textarea id="outputArea" readonly></textarea>
-        
-        <div id="exportImagesArea" class="hidden" style="margin-top: 15px; max-height: 140px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 10px; background: #111; padding: 10px; border-radius: 4px; border: 1px solid #444;">
-        </div>
-
+        <div id="exportImagesArea" class="hidden" style="margin-top: 15px; max-height: 140px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 10px; background: #111; padding: 10px; border-radius: 4px;"></div>
         <div style="display:flex; gap:10px; margin-top:15px;">
-            <button onclick="copyToClipboard()" class="btn-blue" style="padding:10px 20px; font-size:14px; flex: 1;">📋 COPY JSON</button>
-            <button onclick="downloadAllImages()" id="btnDownloadImages" class="btn-green hidden" style="padding:10px 20px; font-size:14px; flex: 1;">⬇️ DOWNLOAD GIFS</button>
-            <button onclick="document.getElementById('exportModal').style.display='none'" class="btn-red" style="padding:10px 20px; font-size:14px; flex: 1;">CLOSE WINDOW</button>
+            <button onclick="copyToClipboard()" class="btn-blue" style="padding:10px; flex: 1;">📋 COPY JSON</button>
+            <button onclick="downloadAllImages()" id="btnDownloadImages" class="btn-green hidden" style="padding:10px; flex: 1;">⬇️ DOWNLOAD GIFS</button>
+            <button onclick="document.getElementById('exportModal').style.display='none'" class="btn-red" style="padding:10px; flex: 1;">CLOSE</button>
         </div>
     </div>
 
     <div id="importModal" class="modal">
-        <h2 style="color:#3498db; margin-top:0;">📂 OPEN PROJECT (PASTE JSON)</h2>
-        <textarea id="importArea" placeholder="Paste kode JSON (var sceneData = {...}) di sini..."></textarea>
+        <h2 style="color:#3498db; margin-top:0;">📂 OPEN PROJECT</h2>
+        <textarea id="importArea" placeholder="Paste kode JSON..."></textarea>
         <div style="display:flex; gap:10px; margin-top:15px;">
-            <button onclick="importFromJson()" class="btn-green" style="padding:10px 20px; font-size:14px; width: 150px;">LOAD PROJECT</button>
-            <button onclick="document.getElementById('importModal').style.display='none'" class="btn-red" style="padding:10px 20px; font-size:14px; width: 150px;">CANCEL</button>
+            <button onclick="importFromJson()" class="btn-green" style="padding:10px; flex: 1;">LOAD PROJECT</button>
+            <button onclick="document.getElementById('importModal').style.display='none'" class="btn-red" style="padding:10px; flex: 1;">CANCEL</button>
+        </div>
+    </div>
+
+    <div id="flowchartModal" class="modal" style="max-width: 900px; width: 95%;">
+        <div style="display:flex; justify-content:space-between;">
+            <div>
+                <h2 style="color:#f39c12; margin:0;">🔀 DYNAMIC PROJECT FLOWCHART</h2>
+                <p style="font-size:11px; color:#aaa; margin:0 0 15px 0;">Pemetaan cerdas dari logika Event, Animasi, Trigger, dan Screen.</p>
+            </div>
+            <button onclick="document.getElementById('flowchartModal').style.display='none'" class="btn-red" style="padding:6px 15px;">✖ CLOSE</button>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; background: #1a1a1b; padding: 10px; border-radius: 6px; border: 1px solid #333;">
+            <button onclick="zoomFlowchart(-0.2)" class="btn-blue" style="padding: 6px 15px; font-weight: bold;">➖ Zoom Out</button>
+            <button onclick="zoomFlowchart(0)" style="background:#555; color:#fff; border:none; border-radius:4px; padding: 6px 15px; font-weight: bold; cursor:pointer;">Reset Zoom</button>
+            <button onclick="zoomFlowchart(0.2)" class="btn-blue" style="padding: 6px 15px; font-weight: bold;">➕ Zoom In</button>
+        </div>
+        <div id="flowchartContent" style="background:#1e1e1e; padding:20px; border-radius:6px; border:1px solid var(--border); max-height: 55vh; overflow:auto; display:flex; justify-content:center; align-items:flex-start;">
+            <div id="mermaidDiagram" class="mermaid" style="transform-origin: top center; transition: transform 0.2s ease-in-out;"></div>
         </div>
     </div>
 

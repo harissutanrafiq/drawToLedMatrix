@@ -1,0 +1,1314 @@
+var sceneData = {
+  "project": "Project_1",
+  "resolution": {
+    "w": 64,
+    "h": 32
+  },
+  "triggers": {
+    "whenImsak": {
+      "action": "show_screen",
+      "target": "scr_imsak"
+    },
+    "whenSubuh": {
+      "action": "show_screen",
+      "target": ""
+    },
+    "whenTerbit": {
+      "action": "show_screen",
+      "target": ""
+    },
+    "whenDzuhur": {
+      "action": "show_screen",
+      "target": ""
+    },
+    "whenAshar": {
+      "action": "show_screen",
+      "target": ""
+    },
+    "whenMagrib": {
+      "action": "show_screen",
+      "target": ""
+    },
+    "whenIsya": {
+      "action": "show_screen",
+      "target": ""
+    },
+    "whenJumat": {
+      "action": "show_screen",
+      "target": ""
+    }
+  },
+  "screens": [
+    {
+      "id": "Screen_Splash",
+      "type": "splash",
+      "visible_canvas": true,
+      "visible_led": true,
+      "duration": "00:00:7",
+      "nextEvent": {
+        "action": "show_screen",
+        "target": "Screen_Main"
+      },
+      "objects": [
+        {
+          "id": "Text_1",
+          "type": "text",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 3,
+          "frameY": 2,
+          "w": 59,
+          "h": 8,
+          "contentX": 3,
+          "contentY": 2,
+          "text": "JWS Designer",
+          "editable": false,
+          "title": "Text_1",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#5b46fb",
+          "colorTime": "#5b46fb",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "slide-left-stop",
+            "speed": 1,
+            "delay": 3,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "slide-down",
+            "speed": 1,
+            "delay": 3,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "",
+            "target": ""
+          },
+          "onDoneEvent": {
+            "action": "show_screen",
+            "target": "Screen_Main"
+          }
+        },
+        {
+          "id": "Text_2",
+          "type": "text",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 19,
+          "frameY": 15,
+          "w": 26,
+          "h": 8,
+          "contentX": 19,
+          "contentY": 15,
+          "text": "V1.0.0",
+          "editable": false,
+          "title": "Text_2",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#af0d0d",
+          "colorTime": "#af0d0d",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "slide-right-stop",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "",
+            "target": ""
+          },
+          "onDoneEvent": {
+            "action": "",
+            "target": ""
+          }
+        },
+        {
+          "id": "Line_1",
+          "type": "line",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 8,
+          "frameY": 11,
+          "w": 51,
+          "h": 1,
+          "contentX": 8,
+          "contentY": 11,
+          "text": "",
+          "editable": false,
+          "title": "Line_1",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#ffffff",
+          "colorTime": "#ffffff",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "",
+            "target": ""
+          },
+          "onDoneEvent": {
+            "action": "",
+            "target": ""
+          },
+          "lineDir": "h",
+          "lineThick": 1,
+          "lineLength": 51,
+          "lineColor": "#e2ff0a",
+          "x1": 8,
+          "y1": 11,
+          "x2": 58,
+          "y2": 11
+        }
+      ]
+    },
+    {
+      "id": "Screen_Main",
+      "type": "main",
+      "visible_canvas": true,
+      "visible_led": true,
+      "duration": "00:00:30",
+      "nextEvent": {
+        "action": "show_screen",
+        "target": "Screen_4"
+      },
+      "objects": [
+        {
+          "id": "Text_3",
+          "type": "clock",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 13,
+          "frameY": 0,
+          "w": 35,
+          "h": 8,
+          "contentX": 13,
+          "contentY": 0,
+          "text": "TEXT",
+          "editable": false,
+          "title": "Text_3",
+          "font": "system_4x7",
+          "format": "HH:mm:ss",
+          "color": "#06f9f5",
+          "colorTime": "#06f9f5",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "",
+            "target": ""
+          },
+          "onDoneEvent": {
+            "action": "",
+            "target": ""
+          }
+        },
+        {
+          "id": "Text_4",
+          "type": "cal_masehi",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 6,
+          "frameY": 8,
+          "w": 51,
+          "h": 8,
+          "contentX": 6,
+          "contentY": 8,
+          "text": "TEXT",
+          "editable": false,
+          "title": "Text_4",
+          "font": "system_4x7",
+          "format": "DD/MM/YYYY",
+          "color": "#99e5a2",
+          "colorTime": "#99e5a2",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "",
+            "target": ""
+          },
+          "onDoneEvent": {
+            "action": "",
+            "target": ""
+          }
+        },
+        {
+          "id": "info_1",
+          "type": "text",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 0,
+          "frameY": 16,
+          "w": 64,
+          "h": 8,
+          "contentX": -12,
+          "contentY": 16,
+          "text": "contoh informasi 1",
+          "editable": false,
+          "title": "Text_5",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#d71919",
+          "colorTime": "#d71919",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "slide-left",
+            "speed": 1,
+            "delay": 1,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "hide_object",
+            "target": "info_4"
+          },
+          "onDoneEvent": {
+            "action": "show_object",
+            "target": "info_2"
+          }
+        },
+        {
+          "id": "info_2",
+          "type": "text",
+          "visible_canvas": false,
+          "visible_led": true,
+          "frameX": 0,
+          "frameY": 16,
+          "w": 64,
+          "h": 8,
+          "contentX": -12,
+          "contentY": 16,
+          "text": "contoh informasi 2",
+          "editable": false,
+          "title": "Text_5",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#00ccff",
+          "colorTime": "#00ccff",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "slide-left",
+            "speed": 1,
+            "delay": 1,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "hide_object",
+            "target": "info_1"
+          },
+          "onDoneEvent": {
+            "action": "show_object",
+            "target": "info_3"
+          }
+        },
+        {
+          "id": "info_3",
+          "type": "text",
+          "visible_canvas": false,
+          "visible_led": true,
+          "frameX": 0,
+          "frameY": 16,
+          "w": 64,
+          "h": 8,
+          "contentX": -12,
+          "contentY": 16,
+          "text": "contoh informasi 3",
+          "editable": false,
+          "title": "Text_5",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#1cd719",
+          "colorTime": "#1cd719",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "slide-left",
+            "speed": 1,
+            "delay": 1,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "hide_object",
+            "target": "info_2"
+          },
+          "onDoneEvent": {
+            "action": "show_object",
+            "target": "info_4"
+          }
+        },
+        {
+          "id": "info_4",
+          "type": "text",
+          "visible_canvas": false,
+          "visible_led": true,
+          "frameX": 0,
+          "frameY": 16,
+          "w": 64,
+          "h": 8,
+          "contentX": 5,
+          "contentY": 16,
+          "text": "informasi 4",
+          "editable": false,
+          "title": "Text_5",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#ffe01a",
+          "colorTime": "#ffe01a",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "slide-left-stop",
+            "speed": 2.8,
+            "delay": 3,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "slide-left-stop-current",
+            "speed": 5,
+            "delay": 0,
+            "stopX": 1
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "hide_object",
+            "target": "info_3"
+          },
+          "onDoneEvent": {
+            "action": "show_object",
+            "target": "info_1"
+          }
+        },
+        {
+          "id": "imsak",
+          "type": "group",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 1,
+          "frameY": 24,
+          "w": 62,
+          "h": 8,
+          "contentX": 1,
+          "contentY": 24,
+          "text": "",
+          "editable": false,
+          "title": "Group_1",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#ffffff",
+          "colorTime": "#ffffff",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "slide-up",
+            "speed": 1,
+            "delay": 3,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "slide-down",
+            "speed": 1,
+            "delay": 1,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "hide_group",
+            "target": "Terbit"
+          },
+          "onDoneEvent": {
+            "action": "show_group",
+            "target": "subuh"
+          },
+          "children": [
+            {
+              "id": "Text_6",
+              "type": "text",
+              "visible_canvas": true,
+              "visible_led": true,
+              "frameX": 0,
+              "frameY": 0,
+              "w": 24,
+              "h": 8,
+              "contentX": 0,
+              "contentY": 0,
+              "text": "Imsak",
+              "editable": false,
+              "title": "Text_6",
+              "font": "system_4x7",
+              "format": "",
+              "color": "#c21aff",
+              "colorTime": "#c21aff",
+              "bgColor": "transparent",
+              "frameColor": "transparent",
+              "anim1": {
+                "type": "none",
+                "speed": 1,
+                "delay": 0,
+                "stopX": 5
+              },
+              "anim2": {
+                "type": "none",
+                "speed": 1,
+                "delay": 0,
+                "stopX": 5
+              },
+              "radius": 0,
+              "onShowEvent": {
+                "action": "",
+                "target": ""
+              },
+              "onDoneEvent": {
+                "action": "",
+                "target": ""
+              }
+            },
+            {
+              "id": "Jadwal_1",
+              "type": "sholat",
+              "visible_canvas": true,
+              "visible_led": true,
+              "frameX": 40,
+              "frameY": 0,
+              "w": 22,
+              "h": 8,
+              "contentX": 40,
+              "contentY": 0,
+              "text": "",
+              "editable": false,
+              "title": "Jadwal_1",
+              "font": "system_4x7",
+              "format": "",
+              "color": "#12bf5d",
+              "colorTime": "#12bf5d",
+              "bgColor": "transparent",
+              "frameColor": "transparent",
+              "anim1": {
+                "type": "none",
+                "speed": 1,
+                "delay": 0,
+                "stopX": 5
+              },
+              "anim2": {
+                "type": "none",
+                "speed": 1,
+                "delay": 0,
+                "stopX": 5
+              },
+              "radius": 0,
+              "onShowEvent": {
+                "action": "",
+                "target": ""
+              },
+              "onDoneEvent": {
+                "action": "",
+                "target": ""
+              },
+              "sholatType": "Imsak"
+            }
+          ]
+        },
+        {
+          "id": "subuh",
+          "type": "group",
+          "visible_canvas": false,
+          "visible_led": true,
+          "frameX": 1,
+          "frameY": 24,
+          "w": 62,
+          "h": 8,
+          "contentX": 1,
+          "contentY": 24,
+          "text": "",
+          "editable": false,
+          "title": "Group_1",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#ffffff",
+          "colorTime": "#ffffff",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "slide-left-stop",
+            "speed": 1,
+            "delay": 3,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "slide-down",
+            "speed": 1,
+            "delay": 2,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "hide_group",
+            "target": "imsak"
+          },
+          "onDoneEvent": {
+            "action": "show_group",
+            "target": "Terbit"
+          },
+          "children": [
+            {
+              "id": "Text_Co_1",
+              "type": "text",
+              "visible_canvas": true,
+              "visible_led": true,
+              "frameX": 0,
+              "frameY": 0,
+              "w": 24,
+              "h": 8,
+              "contentX": 0,
+              "contentY": 0,
+              "text": "Subuh",
+              "editable": false,
+              "title": "Text_6",
+              "font": "system_4x7",
+              "format": "",
+              "color": "#05ff50",
+              "colorTime": "#05ff50",
+              "bgColor": "transparent",
+              "frameColor": "transparent",
+              "anim1": {
+                "type": "none",
+                "speed": 1,
+                "delay": 0,
+                "stopX": 5
+              },
+              "anim2": {
+                "type": "none",
+                "speed": 1,
+                "delay": 0,
+                "stopX": 5
+              },
+              "radius": 0,
+              "onShowEvent": {
+                "action": "",
+                "target": ""
+              },
+              "onDoneEvent": {
+                "action": "",
+                "target": ""
+              }
+            },
+            {
+              "id": "Jadwal__1",
+              "type": "sholat",
+              "visible_canvas": true,
+              "visible_led": true,
+              "frameX": 40,
+              "frameY": 0,
+              "w": 22,
+              "h": 8,
+              "contentX": 40,
+              "contentY": 0,
+              "text": "",
+              "editable": false,
+              "title": "Jadwal_1",
+              "font": "system_4x7",
+              "format": "",
+              "color": "#def915",
+              "colorTime": "#def915",
+              "bgColor": "transparent",
+              "frameColor": "transparent",
+              "anim1": {
+                "type": "none",
+                "speed": 1,
+                "delay": 0,
+                "stopX": 5
+              },
+              "anim2": {
+                "type": "none",
+                "speed": 1,
+                "delay": 0,
+                "stopX": 5
+              },
+              "radius": 0,
+              "onShowEvent": {
+                "action": "",
+                "target": ""
+              },
+              "onDoneEvent": {
+                "action": "",
+                "target": ""
+              },
+              "sholatType": "Subuh"
+            }
+          ]
+        },
+        {
+          "id": "Terbit",
+          "type": "group",
+          "visible_canvas": false,
+          "visible_led": true,
+          "frameX": 1,
+          "frameY": 24,
+          "w": 62,
+          "h": 8,
+          "contentX": 1,
+          "contentY": 24,
+          "text": "",
+          "editable": false,
+          "title": "Group_1",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#ffffff",
+          "colorTime": "#ffffff",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "slide-right-stop",
+            "speed": 1.6,
+            "delay": 1,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "slide-right-stop-current",
+            "speed": 3.3,
+            "delay": 1,
+            "stopX": 10
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "hide_group",
+            "target": "subuh"
+          },
+          "onDoneEvent": {
+            "action": "show_group",
+            "target": "imsak"
+          },
+          "children": [
+            {
+              "id": "Text_Co_2",
+              "type": "text",
+              "visible_canvas": true,
+              "visible_led": true,
+              "frameX": 0,
+              "frameY": 0,
+              "w": 29,
+              "h": 8,
+              "contentX": 0,
+              "contentY": 0,
+              "text": "Terbit",
+              "editable": false,
+              "title": "Text_6",
+              "font": "system_4x7",
+              "format": "",
+              "color": "#c21aff",
+              "colorTime": "#c21aff",
+              "bgColor": "transparent",
+              "frameColor": "transparent",
+              "anim1": {
+                "type": "none",
+                "speed": 1,
+                "delay": 0,
+                "stopX": 5
+              },
+              "anim2": {
+                "type": "none",
+                "speed": 1,
+                "delay": 0,
+                "stopX": 5
+              },
+              "radius": 0,
+              "onShowEvent": {
+                "action": "",
+                "target": ""
+              },
+              "onDoneEvent": {
+                "action": "",
+                "target": ""
+              }
+            },
+            {
+              "id": "Jadwal__2",
+              "type": "sholat",
+              "visible_canvas": true,
+              "visible_led": true,
+              "frameX": 40,
+              "frameY": 0,
+              "w": 22,
+              "h": 8,
+              "contentX": 40,
+              "contentY": 0,
+              "text": "",
+              "editable": false,
+              "title": "Jadwal_1",
+              "font": "system_4x7",
+              "format": "",
+              "color": "#12bf5d",
+              "colorTime": "#12bf5d",
+              "bgColor": "transparent",
+              "frameColor": "transparent",
+              "anim1": {
+                "type": "none",
+                "speed": 1,
+                "delay": 0,
+                "stopX": 5
+              },
+              "anim2": {
+                "type": "none",
+                "speed": 1,
+                "delay": 0,
+                "stopX": 5
+              },
+              "radius": 0,
+              "onShowEvent": {
+                "action": "",
+                "target": ""
+              },
+              "onDoneEvent": {
+                "action": "",
+                "target": ""
+              },
+              "sholatType": "Terbit"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scr_imsak",
+      "type": "generic",
+      "visible_canvas": true,
+      "visible_led": true,
+      "duration": "00:00:10",
+      "nextEvent": {
+        "action": "show_screen",
+        "target": "Screen_Main"
+      },
+      "objects": [
+        {
+          "id": "NamaSho_1",
+          "type": "sholat_name",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 0,
+          "frameY": 16,
+          "w": 64,
+          "h": 7,
+          "contentX": 17,
+          "contentY": 16,
+          "text": "",
+          "editable": false,
+          "title": "NamaSho_1",
+          "font": "mono5x7",
+          "format": "",
+          "color": "#ffffff",
+          "colorTime": "#ffffff",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "blink",
+            "speed": 1,
+            "delay": 1,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "",
+            "target": ""
+          },
+          "onDoneEvent": {
+            "action": "",
+            "target": ""
+          }
+        },
+        {
+          "id": "NamaSho_2",
+          "type": "text",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 10,
+          "frameY": 6,
+          "w": 41,
+          "h": 7,
+          "contentX": 10,
+          "contentY": 6,
+          "text": "SAATNYA",
+          "editable": false,
+          "title": "Text_6",
+          "font": "mono5x7",
+          "format": "",
+          "color": "#ff0000",
+          "colorTime": "#ff0000",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "blink",
+            "speed": 1,
+            "delay": 1,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "",
+            "target": ""
+          },
+          "onDoneEvent": {
+            "action": "",
+            "target": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "Screen_4",
+      "type": "generic",
+      "visible_canvas": true,
+      "visible_led": true,
+      "duration": {
+        "waitForAnim": "AutoJad_1"
+      },
+      "nextEvent": {
+        "action": "show_screen",
+        "target": "Screen_5"
+      },
+      "objects": [
+        {
+          "id": "AutoJad_1",
+          "type": "auto_sholat",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 0,
+          "frameY": 25,
+          "w": 64,
+          "h": 8,
+          "contentX": 0,
+          "contentY": 25,
+          "text": "",
+          "editable": false,
+          "title": "AutoJad_1",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#3e5ae5",
+          "colorTime": "#ff0000",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "scroll-up",
+            "speed": 1,
+            "delay": 2,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "none",
+            "speed": 1,
+            "delay": 1,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "",
+            "target": ""
+          },
+          "onDoneEvent": {
+            "action": "",
+            "target": ""
+          },
+          "autoList": [
+            "Imsak",
+            "Subuh",
+            "Terbit",
+            "Dhuha",
+            "Dzuhur",
+            "Ashar",
+            "Maghrib",
+            "Isya"
+          ],
+          "autoCount": 1,
+          "autoPos": "left",
+          "autoDir": "h",
+          "autoGapItems": 5,
+          "autoGapNameTime": 2,
+          "autoGaps": {
+            "Imsak": "auto",
+            "Subuh": "auto",
+            "Terbit": "auto",
+            "Dhuha": "auto",
+            "Dzuhur": "auto",
+            "Ashar": "auto",
+            "Maghrib": "auto",
+            "Isya": "auto"
+          },
+          "fontTime": "system_4x7"
+        },
+        {
+          "id": "Text_5",
+          "type": "text",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 15,
+          "frameY": 6,
+          "w": 37,
+          "h": 8,
+          "contentX": 15,
+          "contentY": 6,
+          "text": "Jadwal 1",
+          "editable": false,
+          "title": "Text_5",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#4df038",
+          "colorTime": "#ff0000",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "",
+            "target": ""
+          },
+          "onDoneEvent": {
+            "action": "",
+            "target": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "Screen_5",
+      "type": "generic",
+      "visible_canvas": true,
+      "visible_led": true,
+      "duration": {
+        "waitForAnim": "AutoJad_2"
+      },
+      "nextEvent": {
+        "action": "show_screen",
+        "target": "Screen_6"
+      },
+      "objects": [
+        {
+          "id": "AutoJad_2",
+          "type": "auto_sholat",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 0,
+          "frameY": 12,
+          "w": 64,
+          "h": 21,
+          "contentX": 0,
+          "contentY": 12,
+          "text": "",
+          "editable": false,
+          "title": "AutoJad_2",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#286bd7",
+          "colorTime": "#00ff59",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "slide-up",
+            "speed": 1,
+            "delay": 3,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "slide-down",
+            "speed": 1,
+            "delay": 2,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "",
+            "target": ""
+          },
+          "onDoneEvent": {
+            "action": "",
+            "target": ""
+          },
+          "autoList": [
+            "Imsak",
+            "Subuh",
+            "Terbit",
+            "Dhuha",
+            "Dzuhur",
+            "Ashar",
+            "Maghrib",
+            "Isya"
+          ],
+          "autoCount": 2,
+          "autoPos": "left",
+          "autoDir": "v",
+          "autoGapItems": 5,
+          "autoGapNameTime": 2,
+          "autoGaps": {
+            "Imsak": "auto",
+            "Subuh": "auto",
+            "Terbit": "auto",
+            "Dhuha": "auto",
+            "Dzuhur": "auto",
+            "Ashar": "auto",
+            "Maghrib": "auto",
+            "Isya": "auto"
+          },
+          "fontTime": "system_4x7"
+        },
+        {
+          "id": "Text_7",
+          "type": "text",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 15,
+          "frameY": 2,
+          "w": 37,
+          "h": 8,
+          "contentX": 15,
+          "contentY": 2,
+          "text": "Jadwal 2",
+          "editable": false,
+          "title": "Text_7",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#eeff05",
+          "colorTime": "#ff0000",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "",
+            "target": ""
+          },
+          "onDoneEvent": {
+            "action": "",
+            "target": ""
+          }
+        }
+      ]
+    },
+    {
+      "id": "Screen_6",
+      "type": "generic",
+      "visible_canvas": true,
+      "visible_led": true,
+      "duration": {
+        "waitForAnim": "AutoJad_3"
+      },
+      "nextEvent": {
+        "action": "show_screen",
+        "target": "Screen_Main"
+      },
+      "objects": [
+        {
+          "id": "AutoJad_3",
+          "type": "auto_sholat",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 0,
+          "frameY": 25,
+          "w": 64,
+          "h": 8,
+          "contentX": 0,
+          "contentY": 25,
+          "text": "",
+          "editable": false,
+          "title": "AutoJad_3",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#eeff05",
+          "colorTime": "#dd1d1d",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "slide-left-stop",
+            "speed": 3,
+            "delay": 2,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "slide-left-stop-current",
+            "speed": 3,
+            "delay": 0,
+            "stopX": 1
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "",
+            "target": ""
+          },
+          "onDoneEvent": {
+            "action": "",
+            "target": ""
+          },
+          "autoList": [
+            "Imsak",
+            "Subuh",
+            "Terbit",
+            "Dhuha",
+            "Dzuhur",
+            "Ashar",
+            "Maghrib",
+            "Isya"
+          ],
+          "autoCount": 1,
+          "autoPos": "left",
+          "autoDir": "h",
+          "autoGapItems": 5,
+          "autoGapNameTime": 2,
+          "autoGaps": {
+            "Imsak": "auto",
+            "Subuh": "auto",
+            "Terbit": "auto",
+            "Dhuha": "auto",
+            "Dzuhur": "auto",
+            "Ashar": "auto",
+            "Maghrib": "auto",
+            "Isya": "auto"
+          },
+          "fontTime": "system_4x7"
+        },
+        {
+          "id": "Text_8",
+          "type": "text",
+          "visible_canvas": true,
+          "visible_led": true,
+          "frameX": 15,
+          "frameY": 5,
+          "w": 37,
+          "h": 8,
+          "contentX": 15,
+          "contentY": 5,
+          "text": "Jadwal 3",
+          "editable": false,
+          "title": "Text_8",
+          "font": "system_4x7",
+          "format": "",
+          "color": "#00d5ff",
+          "colorTime": "#ff0000",
+          "bgColor": "transparent",
+          "frameColor": "transparent",
+          "anim1": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "anim2": {
+            "type": "none",
+            "speed": 1,
+            "delay": 0,
+            "stopX": 5
+          },
+          "radius": 0,
+          "onShowEvent": {
+            "action": "",
+            "target": ""
+          },
+          "onDoneEvent": {
+            "action": "",
+            "target": ""
+          }
+        }
+      ]
+    }
+  ]
+};
