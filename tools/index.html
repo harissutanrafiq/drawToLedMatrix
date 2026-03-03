@@ -55,11 +55,9 @@
                 <button class="top-btn" onclick="redo()" title="Redo">↪️</button>
                 <button class="top-btn" onclick="openImportModal()" title="Open JSON">📂</button>
                 <button class="top-btn" onclick="exportToJerryScript()" title="Save JSON">💾</button>
-				<button class="top-btn" onclick="exportToTXT()" style="color:#27ae60; font-weight:bold;" title="Export desain ke file TXT untuk ESP32">💾 Export TXT</button>
-
-<button class="top-btn" onclick="document.getElementById('importFile').click()" style="color:#f39c12; font-weight:bold;" title="Import desain dari file TXT">📂 Import TXT</button>
-<input type="file" id="importFile" accept=".txt" style="display:none" onchange="importFromTXT(this.files[0])">
-
+                <button class="top-btn" onclick="exportToTXT()" style="color:#27ae60; font-weight:bold;" title="Export desain ke file TXT untuk ESP32">💾 Export TXT</button>
+                <button class="top-btn" onclick="document.getElementById('importFile').click()" style="color:#f39c12; font-weight:bold;" title="Import desain dari file TXT">📂 Import TXT</button>
+                <input type="file" id="importFile" accept=".txt" style="display:none" onchange="importFromTXT(this.files[0])">
             </div>
         </div>
         
@@ -230,9 +228,15 @@
                         <div><label>Posisi Nama</label><select id="propAutoPos" onchange="updateFromProp(true)"><option value="left">Kiri</option><option value="top">Atas</option><option value="right">Kanan</option><option value="bottom">Bawah</option></select></div>
                         <div><label>Font Nama</label><select id="propAutoFontName" onchange="updateFromProp(true)"></select></div>
                     </div>
+
                     <div class="grid-2" style="margin-bottom:6px;">
                         <div><label>Gap Antar Jadwal</label><input type="number" id="propAutoGapItems" min="0" onchange="updateFromProp(true)"></div>
-                        <div><label>Font Waktu</label><select id="propAutoFontTime" onchange="updateFromProp(true)"></select></div>
+                        <div><label style="color:#ffcc00;">Gap Nama-Waktu</label><input type="number" id="propAutoGapNameTime" min="0" onchange="updateFromProp(true)"></div>
+                    </div>
+
+                    <div style="margin-bottom:6px;">
+                        <label>Font Waktu</label>
+                        <select id="propAutoFontTime" style="width: 100%;" onchange="updateFromProp(true)"></select>
                     </div>
                 </div>
 
@@ -403,5 +407,28 @@
     <script src="core.js"></script>
     <script src="ui.js"></script>
     <script src="main.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const originalSetAlign = window.setAlign;
+            window.setAlign = function(dir, val) {
+                if (window.selectedObj) {
+                    // Update langsung ke property objek
+                    if (dir === 'h') window.selectedObj.alignH = val;
+                    if (dir === 'v') window.selectedObj.alignV = val;
+                    
+                    // Paksa render ulang kontennya
+                    if (typeof window.selectedObj.updateContent === 'function') {
+                        window.selectedObj.updateContent();
+                    }
+                }
+                
+                // Panggil fungsi bawaan ui.js jika masih ada eksekusi lain
+                if (typeof originalSetAlign === 'function') {
+                    try { originalSetAlign(dir, val); } catch(e) {}
+                }
+            };
+        });
+    </script>
 </body>
 </html>

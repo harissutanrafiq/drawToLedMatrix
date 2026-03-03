@@ -30,7 +30,31 @@ window.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y') && !isInput) { e.preventDefault(); redo(); }
     if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C') && !isInput) { e.preventDefault(); copyObjects(); }
     if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V') && !isInput) { e.preventDefault(); pasteObjects(); }
-    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key) && !isInput && selectedObjs.length > 0) { e.preventDefault(); saveState(); selectedObjs.forEach(o => { if(e.key === 'ArrowUp') o.y -= 1; if(e.key === 'ArrowDown') o.y += 1; if(e.key === 'ArrowLeft') o.x -= 1; if(e.key === 'ArrowRight') o.x += 1; }); syncGeometryUI(); }
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key) && !isInput && selectedObjs.length > 0) { 
+        e.preventDefault(); saveState(); 
+        selectedObjs.forEach(o => { 
+            let dx = 0, dy = 0;
+            if(e.key === 'ArrowUp') dy = -1; 
+            if(e.key === 'ArrowDown') dy = 1; 
+            if(e.key === 'ArrowLeft') dx = -1; 
+            if(e.key === 'ArrowRight') dx = 1; 
+            
+            o.x += dx; 
+            o.y += dy;
+            
+            if (o.type === 'group' && o.children) {
+                const moveGroupChildren = (children, deltaX, deltaY) => {
+                    children.forEach(c => { 
+                        c.x += deltaX; 
+                        c.y += deltaY; 
+                        if(c.type === 'group' && c.children) moveGroupChildren(c.children, deltaX, deltaY); 
+                    });
+                };
+                moveGroupChildren(o.children, dx, dy);
+            }
+        }); 
+        syncGeometryUI(); 
+    }
 });
 
 window.addEventListener('contextmenu', (e) => {
@@ -56,7 +80,16 @@ function handleImageUpload(event) {
 
 function resizeCanvas() { canvas.width = PROJECT_W * GRID_SIZE; canvas.height = PROJECT_H * GRID_SIZE; }
 function setMode(m) { mode = m; document.querySelectorAll('.top-bar button:not(.zoom-btn):not(.btn-green-icon):not([title="Undo"]):not([title="Redo"]):not([title="Open JSON"]):not([title="Save JSON"]):not([title="Lihat Flowchart"])').forEach(b => { if(b.id==='selectBtn'||b.id==='penBtn'||b.id==='eraserBtn') b.classList.remove('active'); }); if(document.getElementById(m+'Btn')) document.getElementById(m+'Btn').classList.add('active'); canvas.style.cursor = m === 'select' ? 'default' : 'crosshair'; }
-function setAlign(type, val) { if(selectedObj && !['drawing','image','sholat','group', 'line', 'auto_sholat'].includes(selectedObj.type)) { if(type === 'h') selectedObj.alignH = val; else selectedObj.alignV = val; syncGeometryUI(); } }
+
+// ✅ FIX ALIGN UI.JS: Mengecualikan auto_sholat & sholat dari daftar blokir
+function setAlign(type, val) { 
+    if(selectedObj && !['drawing','image','group','line'].includes(selectedObj.type)) { 
+        if(type === 'h') selectedObj.alignH = val; else selectedObj.alignV = val; 
+        if (typeof selectedObj.updateContent === 'function') selectedObj.updateContent();
+        syncGeometryUI(); 
+    } 
+}
+
 function changeObjType() { if (!selectedObj) return; selectedObj.type = document.getElementById('propType').value; setupFormatDropdown(); updateFromProp(true); }
 
 function setupFormatDropdown() {
@@ -93,7 +126,11 @@ function updateScreenProp() {
     let scr = screens[activeScreenIdx]; let nameInput = document.getElementById('propScreenName'); let nameVal = nameInput.value.trim().substring(0, 20) || `Screen_${activeScreenIdx+1}`; 
     let isUnique = !screens.some((s, idx) => idx !== activeScreenIdx && s.id === nameVal);
     if (!isUnique) { alert("Nama Screen harus unik!"); nameInput.value = scr.id; return; }
-    scr.id = nameVal; nameInput.value = scr.id; scr.visibleCanvas = document.getElementById('propScrVisibleCanvas').checked; scr.visibleLed = document.getElementById('propScrVisibleLed').checked;
+    scr.id = nameVal; nameInput.value = scr.id; 
+    // Sync visibleCanvas and visibleLed - they must be the same
+    let visibleValue = document.getElementById('propScrVisibleCanvas').checked || document.getElementById('propScrVisibleLed').checked;
+    scr.visibleCanvas = visibleValue; 
+    scr.visibleLed = visibleValue;
     scr.durationMode = document.getElementById('propScreenDurMode').value; scr.durationFixed = document.getElementById('propScreenDurFixed').value; scr.durationAnimObj = document.getElementById('propScreenDurAnim').value;
     scr.nextAction = document.getElementById('propNextActionScr').value; scr.nextTarget = document.getElementById('propNextTargetScr').value; renderTree(); renderTriggerBrowser();
 }
@@ -103,7 +140,12 @@ function syncPropPanel() {
     panelScreen.classList.add('hidden'); panelObject.classList.add('hidden'); panelMsg.style.display = 'none';
 
     if (selectedObjs.length > 1) { panelMsg.style.display = 'block'; } else if (selectedObjs.length === 1) {
-        selectedObj = selectedObjs[0]; panelObject.classList.remove('hidden'); document.getElementById('propName').value = selectedObj.name; document.getElementById('propVisibleCanvas').checked = selectedObj.visibleCanvas; document.getElementById('propVisibleLed').checked = selectedObj.visibleLed; syncGeometryUI(); document.getElementById('propType').value = selectedObj.type; document.getElementById('propFont').value = selectedObj.font; document.getElementById('propText').value = selectedObj.text; 
+        selectedObj = selectedObjs[0]; panelObject.classList.remove('hidden'); document.getElementById('propName').value = selectedObj.name; 
+        // Sync both checkboxes to the same value
+        let objVisibleValue = selectedObj.visibleCanvas || selectedObj.visibleLed;
+        document.getElementById('propVisibleCanvas').checked = objVisibleValue; 
+        document.getElementById('propVisibleLed').checked = objVisibleValue; 
+        syncGeometryUI(); document.getElementById('propType').value = selectedObj.type; document.getElementById('propFont').value = selectedObj.font; document.getElementById('propText').value = selectedObj.text; 
         if (selectedObj.type === 'text') { document.getElementById('propEditable').checked = selectedObj.editable || false; document.getElementById('propTitle').value = selectedObj.title || selectedObj.name; if (selectedObj.editable) { document.getElementById('boxTitle').classList.remove('hidden'); } else { document.getElementById('boxTitle').classList.add('hidden'); } }
         document.getElementById('propColor').value = selectedObj.color; document.getElementById('propColorTime').value = selectedObj.colorTime || "#ff0000"; document.getElementById('propColorNone').checked = selectedObj.colorNone; document.getElementById('propFColor').value = selectedObj.fColor; document.getElementById('propFColorNone').checked = selectedObj.fColorNone; document.getElementById('propBgColor').value = selectedObj.bgColor; document.getElementById('propBgColorNone').checked = selectedObj.bgColorNone; document.getElementById('propRadius').value = selectedObj.radius; document.getElementById('radiusVal').innerText = selectedObj.radius;
         if (selectedObj.type === 'line') { document.getElementById('propLineDir').value = selectedObj.lineDir; document.getElementById('propLineThick').value = selectedObj.lineThick; document.getElementById('propLineLength').value = selectedObj.lineLength; document.getElementById('propLineColor').value = selectedObj.lineColor; ['propColor', 'propColorNone', 'propFColor', 'propFColorNone', 'propBgColor', 'propBgColorNone'].forEach(id => { document.getElementById(id).disabled = true; document.getElementById(id).parentElement.style.opacity = '0.4'; }); } else { ['propColor', 'propColorNone', 'propFColor', 'propFColorNone', 'propBgColor', 'propBgColorNone'].forEach(id => { document.getElementById(id).disabled = false; document.getElementById(id).parentElement.style.opacity = '1'; }); }
@@ -117,6 +159,12 @@ function syncPropPanel() {
         
         if (selectedObj.type === 'auto_sholat') {
             document.getElementById('propAutoCount').value = selectedObj.autoCount; document.getElementById('propAutoDir').value = selectedObj.autoDir; document.getElementById('propAutoPos').value = selectedObj.autoPos; document.getElementById('propAutoGapItems').value = selectedObj.autoGapItems; 
+            
+            // ✅ FIX UI.JS GAP: Mapping UI ke data objek untuk Gap Nama-Waktu
+            if (document.getElementById('propAutoGapNameTime')) {
+                document.getElementById('propAutoGapNameTime').value = selectedObj.autoGapNameTime !== undefined ? selectedObj.autoGapNameTime : 2;
+            }
+
             let fName = document.getElementById('propAutoFontName'); let fTime = document.getElementById('propAutoFontTime'); fName.innerHTML = document.getElementById('propFont').innerHTML; fTime.innerHTML = document.getElementById('propFont').innerHTML; fName.value = selectedObj.font; fTime.value = selectedObj.fontTime;
             let cbs = document.querySelectorAll('#propAutoList input[type="checkbox"]'); cbs.forEach(cb => { cb.checked = selectedObj.autoList.includes(cb.value); });
             document.querySelectorAll('.gap-input').forEach(inp => { let p = inp.getAttribute('data-prayer'); inp.value = selectedObj.autoGaps[p] !== undefined ? selectedObj.autoGaps[p] : 'auto'; });
@@ -124,7 +172,11 @@ function syncPropPanel() {
     } else {
         selectedObj = null; panelScreen.classList.remove('hidden'); let scr = screens[activeScreenIdx]; let propScrName = document.getElementById('propScreenName'); propScrName.value = scr.id;
         if(scr.type === 'generic') { propScrName.readOnly = false; propScrName.style.cursor = "text"; } else { propScrName.readOnly = true; propScrName.style.cursor = "not-allowed"; }
-        document.getElementById('propScrVisibleCanvas').checked = scr.visibleCanvas !== false; document.getElementById('propScrVisibleLed').checked = scr.visibleLed !== false; document.getElementById('propScreenDurMode').value = scr.durationMode || 'fixed'; document.getElementById('propScreenDurFixed').value = scr.durationFixed || '00:00:10';
+        // Sync both screen visibility checkboxes to the same value
+        let scrVisibleValue = (scr.visibleCanvas !== false) || (scr.visibleLed !== false);
+        document.getElementById('propScrVisibleCanvas').checked = scrVisibleValue; 
+        document.getElementById('propScrVisibleLed').checked = scrVisibleValue; 
+        document.getElementById('propScreenDurMode').value = scr.durationMode || 'fixed'; document.getElementById('propScreenDurFixed').value = scr.durationFixed || '00:00:10';
         let animSelect = document.getElementById('propScreenDurAnim'); animSelect.innerHTML = '<option value="">-- Pilih Objek --</option>'; let allObjNames = [];
         function getValidObjNames(list) { let arr = []; list.forEach(o => { if (o.type !== 'group') arr.push(o.name); if (o.type === 'group' && o.children) arr = arr.concat(getValidObjNames(o.children)); }); return arr; }
         allObjNames = getValidObjNames(scr.objects); allObjNames.forEach(n => { let opt = document.createElement('option'); opt.value = n; opt.innerText = n; if(scr.durationAnimObj === n) opt.selected = true; animSelect.appendChild(opt); }); updateScreenPropUI();
@@ -137,7 +189,11 @@ function updateName() { if(!selectedObj) return; let newName = document.getEleme
 function updateFromProp(autoSize = false) {
     if (selectedObj) {
         if(selectedObj.type !== 'group') selectedObj.type = document.getElementById('propType').value; 
-        selectedObj.visibleCanvas = document.getElementById('propVisibleCanvas').checked; selectedObj.visibleLed = document.getElementById('propVisibleLed').checked; selectedObj.font = document.getElementById('propFont').value; lastUsedFont = selectedObj.font; let rawText = document.getElementById('propText').value; selectedObj.text = rawText.substring(0, 20); if (rawText.length > 20) document.getElementById('propText').value = selectedObj.text;
+        // Sync visibleCanvas and visibleLed - they must be the same
+        let visibleValue = document.getElementById('propVisibleCanvas').checked || document.getElementById('propVisibleLed').checked;
+        selectedObj.visibleCanvas = visibleValue; 
+        selectedObj.visibleLed = visibleValue; 
+        selectedObj.font = document.getElementById('propFont').value; lastUsedFont = selectedObj.font; let rawText = document.getElementById('propText').value; selectedObj.text = rawText.substring(0, 20); if (rawText.length > 20) document.getElementById('propText').value = selectedObj.text;
         if (selectedObj.type === 'text') { selectedObj.editable = document.getElementById('propEditable').checked; let rawTitle = document.getElementById('propTitle').value; selectedObj.title = rawTitle.substring(0, 20); if (selectedObj.editable) { document.getElementById('boxTitle').classList.remove('hidden'); } else { document.getElementById('boxTitle').classList.add('hidden'); } }
         selectedObj.color = document.getElementById('propColor').value; selectedObj.colorTime = document.getElementById('propColorTime').value; selectedObj.colorNone = document.getElementById('propColorNone').checked; selectedObj.fColor = document.getElementById('propFColor').value; selectedObj.fColorNone = document.getElementById('propFColorNone').checked; selectedObj.bgColor = document.getElementById('propBgColor').value; selectedObj.bgColorNone = document.getElementById('propBgColorNone').checked;
         if (selectedObj.type === 'line') { selectedObj.lineDir = document.getElementById('propLineDir').value; selectedObj.lineThick = parseInt(document.getElementById('propLineThick').value) || 1; selectedObj.lineLength = parseInt(document.getElementById('propLineLength').value) || 10; selectedObj.lineColor = document.getElementById('propLineColor').value; if (selectedObj.lineDir === 'h') { selectedObj.w = Math.min(PROJECT_W, selectedObj.lineLength); selectedObj.h = Math.min(PROJECT_H, selectedObj.lineThick); } else { selectedObj.w = Math.min(PROJECT_W, selectedObj.lineThick); selectedObj.h = Math.min(PROJECT_H, selectedObj.lineLength); } }
@@ -148,7 +204,14 @@ function updateFromProp(autoSize = false) {
         selectedObj.onShowAction = document.getElementById('propOnShowActionObj').value; selectedObj.onShowTarget = document.getElementById('propOnShowTargetObj').value; selectedObj.onDoneAction = document.getElementById('propOnDoneActionObj').value; selectedObj.onDoneTarget = document.getElementById('propOnDoneTargetObj').value;
         if (selectedObj.type === 'sholat') selectedObj.sholatType = document.getElementById('propSholatType').value; 
         else if (selectedObj.type === 'auto_sholat') { 
-            selectedObj.autoCount = parseInt(document.getElementById('propAutoCount').value) || 1; selectedObj.autoDir = document.getElementById('propAutoDir').value; selectedObj.autoPos = document.getElementById('propAutoPos').value; selectedObj.autoGapItems = parseInt(document.getElementById('propAutoGapItems').value) || 0; selectedObj.font = document.getElementById('propAutoFontName').value; selectedObj.fontTime = document.getElementById('propAutoFontTime').value; let checked = []; document.querySelectorAll('#propAutoList input[type="checkbox"]:checked').forEach(cb => checked.push(cb.value)); selectedObj.autoList = checked; 
+            selectedObj.autoCount = parseInt(document.getElementById('propAutoCount').value) || 1; selectedObj.autoDir = document.getElementById('propAutoDir').value; selectedObj.autoPos = document.getElementById('propAutoPos').value; selectedObj.autoGapItems = parseInt(document.getElementById('propAutoGapItems').value) || 0; 
+            
+            // ✅ FIX UI.JS GAP: Menerima input Gap Nama Waktu dan melemparnya ke selectedObj
+            if (document.getElementById('propAutoGapNameTime')) {
+                selectedObj.autoGapNameTime = parseInt(document.getElementById('propAutoGapNameTime').value) || 0;
+            }
+
+            selectedObj.font = document.getElementById('propAutoFontName').value; selectedObj.fontTime = document.getElementById('propAutoFontTime').value; let checked = []; document.querySelectorAll('#propAutoList input[type="checkbox"]:checked').forEach(cb => checked.push(cb.value)); selectedObj.autoList = checked; 
             selectedObj.autoGaps = {}; document.querySelectorAll('.gap-input').forEach(inp => { let p = inp.getAttribute('data-prayer'); let val = inp.value.trim().toLowerCase(); selectedObj.autoGaps[p] = (val === 'auto' || val === '') ? 'auto' : (parseInt(val) || 0); });
         }
         else if (selectedObj.type === 'iqomah') { selectedObj.format = document.getElementById('propFormat').value; selectedObj.iqomahTime = parseFloat(document.getElementById('propIqomahTime').value) || 5; selectedObj.iqomahUnit = document.getElementById('propIqomahUnit').value; selectedObj.iqomahOffset = parseFloat(document.getElementById('propIqomahOffset').value) || 0; selectedObj.iqomahAnimTriggerSec = parseFloat(document.getElementById('propIqomahAnimTriggerSec').value) || 3; selectedObj.iqomahTriggerUnit = document.getElementById('propIqomahTriggerUnit').value; } 
@@ -195,7 +258,29 @@ canvas.onmousemove = (e) => {
     }
     let hovering = null; for(let o of objects) { if(!o.visibleCanvas) continue; const rX = o.x * GRID_SIZE, rY = o.y * GRID_SIZE; if(mx > rX && mx < rX+(o.w*GRID_SIZE) && my > rY && my < rY+(o.h*GRID_SIZE)) { hovering = o; break; } }
     if(hovering && !isDragging && !isResizing) { tooltip.style.display = 'block'; tooltip.style.left = e.clientX + 'px'; tooltip.style.top = (e.clientY + 20) + 'px'; tooltip.innerHTML = `<span style="color:#fff">Name:</span> ${hovering.name}<br><span style="color:#fff">Type:</span> ${hovering.type.toUpperCase()}`; } else { tooltip.style.display = 'none'; }
-    if (isDragging && dragOffsets.length > 0) { dragOffsets.forEach(item => { item.obj.x = Math.floor(mx/GRID_SIZE) - item.dx; item.obj.y = Math.floor(my/GRID_SIZE) - item.dy; }); syncGeometryUI(); } 
+    if (isDragging && dragOffsets.length > 0) { 
+        dragOffsets.forEach(item => { 
+            let nX = Math.floor(mx/GRID_SIZE) - item.dx; 
+            let nY = Math.floor(my/GRID_SIZE) - item.dy; 
+            let dX = nX - item.obj.x; 
+            let dY = nY - item.obj.y; 
+            
+            item.obj.x = nX; 
+            item.obj.y = nY; 
+            
+            if(item.obj.type === 'group' && item.obj.children) {
+                const moveChildren = (children, _dx, _dy) => {
+                    children.forEach(c => { 
+                        c.x += _dx; 
+                        c.y += _dy; 
+                        if(c.type === 'group' && c.children) moveChildren(c.children, _dx, _dy); 
+                    });
+                };
+                moveChildren(item.obj.children, dX, dY);
+            }
+        }); 
+        syncGeometryUI(); 
+    } 
     else if (isResizing && selectedObjs.length === 1) {
         let s = selectedObjs[0]; let gX = Math.round(mx / GRID_SIZE); let gY = Math.round(my / GRID_SIZE);
         if (resizeDir === 'e') { s.w = Math.min(PROJECT_W, Math.max(1, gX - s.x)); } else if (resizeDir === 's') { s.h = Math.min(PROJECT_H, Math.max(1, gY - s.y)); } else if (resizeDir === 'w') { let oldX = s.x; let newW = s.w + (oldX - gX); if (newW >= 1 && newW <= PROJECT_W) { s.x = gX; s.w = newW; } } else if (resizeDir === 'n') { let oldY = s.y; let newH = s.h + (oldY - gY); if (newH >= 1 && newH <= PROJECT_H) { s.y = gY; s.h = newH; } }
@@ -215,10 +300,50 @@ function renderTree() {
         if (sIdx === activeScreenIdx) { const buildNodes = (list, parentIsGroup = false) => { list.forEach(o => { let oDiv = document.createElement('div'); oDiv.className = 'tree-item obj-item ' + (selectedObjs.includes(o) ? ' selected ' : '') + (!o.visibleCanvas ? ' hidden-obj ' : '') + (parentIsGroup ? ' child-item' : ''); let icon = o.type === 'group' ? '📁' : o.type === 'sholat' || o.type === 'auto_sholat' ? '🕌' : o.type === 'sholat_name' ? '📿' : o.type === 'iqomah' ? '⏱️' : o.type === 'image' ? '🖼️' : o.type === 'line' ? '➖' : o.type === 'drawing' ? '🎨' : '📄'; let ledIcon = !o.visibleLed ? '<span style="color:#e74c3c; margin-right:4px;">💡🚫</span>' : ''; oDiv.innerHTML = `<span>${ledIcon}<span class="tree-icon">${icon}</span> ${o.name}</span><span style="font-size:10px; cursor:pointer;" onclick="event.stopPropagation(); toggleVisibility('${o.name}')">${o.visibleCanvas ? '👁️' : '🕶️'}</span>`; oDiv.onclick = (e) => { if(isSimulating) return; e.stopPropagation(); if (e.shiftKey) { if(selectedObjs.includes(o)) selectedObjs = selectedObjs.filter(x=>x!==o); else selectedObjs.push(o); } else { selectedObjs = [o]; } setMode('select'); syncPropPanel(); renderTree(); }; container.appendChild(oDiv); if (o.type === 'group' && o.children) { buildNodes(o.children, true); } }); }; buildNodes(scr.objects); }
     });
 }
-function toggleVisibility(objName) { if(isSimulating) return; function findAndToggle(list) { for(let o of list) { if(o.name === objName) { o.visibleCanvas = !o.visibleCanvas; return true; } if(o.type === 'group' && o.children) { if(findAndToggle(o.children)) return true; } } return false; } findAndToggle(objects); syncPropPanel(); renderTree(); }
+function toggleVisibility(objName) { if(isSimulating) return; function findAndToggle(list) { for(let o of list) { if(o.name === objName) { o.visibleCanvas = !o.visibleCanvas; o.visibleLed = o.visibleCanvas; return true; } if(o.type === 'group' && o.children) { if(findAndToggle(o.children)) return true; } } return false; } findAndToggle(objects); syncPropPanel(); renderTree(); }
 function updateSidebarButtons() { }
-function groupObjects() { document.getElementById('ctxMenu').style.display = 'none'; if (selectedObjs.length < 2) return; saveState(); let minX = Math.min(...selectedObjs.map(o => o.x)); let minY = Math.min(...selectedObjs.map(o => o.y)); let maxW = Math.max(...selectedObjs.map(o => o.x + o.w)) - minX; let maxH = Math.max(...selectedObjs.map(o => o.y + o.h)) - minY; let group = new PixelObject(getUniqueName("Group"), "group", minX, minY); group.w = Math.min(PROJECT_W, maxW); group.h = Math.min(PROJECT_H, maxH); group.children = selectedObjs.map(o => { o.x -= minX; o.y -= minY; return o; }); objects = objects.filter(o => !selectedObjs.includes(o)); screens[activeScreenIdx].objects = objects; objects.push(group); selectedObjs = [group]; syncPropPanel(); renderTree(); }
-function ungroupObjects() { document.getElementById('ctxMenu').style.display = 'none'; if (selectedObjs.length !== 1 || selectedObjs[0].type !== 'group') return; saveState(); let group = selectedObjs[0]; group.children.forEach(c => { c.x += group.x; c.y += group.y; objects.push(c); }); objects = objects.filter(o => o !== group); screens[activeScreenIdx].objects = objects; selectedObjs = [...group.children]; syncPropPanel(); renderTree(); }
+
+function groupObjects() { 
+    document.getElementById('ctxMenu').style.display = 'none'; 
+    if (selectedObjs.length < 2) return; 
+    saveState(); 
+    let minX = Math.min(...selectedObjs.map(o => o.x)); 
+    let minY = Math.min(...selectedObjs.map(o => o.y)); 
+    let maxW = Math.max(...selectedObjs.map(o => o.x + o.w)) - minX; 
+    let maxH = Math.max(...selectedObjs.map(o => o.y + o.h)) - minY; 
+    
+    let group = new PixelObject(getUniqueName("Group"), "group", minX, minY); 
+    group.w = Math.min(PROJECT_W, maxW); 
+    group.h = Math.min(PROJECT_H, maxH); 
+    
+    // PERBAIKAN: Masukkan objek apa adanya, TANPA mengubah koordinat
+    group.children = selectedObjs.map(o => o); 
+    
+    objects = objects.filter(o => !selectedObjs.includes(o)); 
+    screens[activeScreenIdx].objects = objects; 
+    objects.push(group); 
+    selectedObjs = [group]; 
+    syncPropPanel(); 
+    renderTree(); 
+}
+
+function ungroupObjects() { 
+    document.getElementById('ctxMenu').style.display = 'none'; 
+    if (selectedObjs.length !== 1 || selectedObjs[0].type !== 'group') return; 
+    saveState(); 
+    let group = selectedObjs[0]; 
+    
+    // PERBAIKAN: Keluarkan objek apa adanya, tidak perlu penyesuaian parent lagi
+    group.children.forEach(c => { 
+        objects.push(c); 
+    }); 
+    
+    objects = objects.filter(o => o !== group); 
+    screens[activeScreenIdx].objects = objects; 
+    selectedObjs = [...group.children]; 
+    syncPropPanel(); 
+    renderTree(); 
+}
 
 let currentFlowchartZoom = 1;
 function zoomFlowchart(step) { let diagram = document.getElementById('mermaidDiagram'); if (!diagram) return; if (step === 0) currentFlowchartZoom = 1; else currentFlowchartZoom = Math.min(4, Math.max(0.2, currentFlowchartZoom + step)); diagram.style.transform = `scale(${currentFlowchartZoom})`; }

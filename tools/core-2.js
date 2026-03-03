@@ -12,7 +12,7 @@ let isClockSimulated = false; let simulatedTimeMs = 0; let triggerCountdownTimer
 let lastUsedFont = null; let lastFrameTime = 0; window.deltaTime = 16.6;
 window.activePrayerName = "SUBUH";
 
-let globalTriggers = { whenImsak: { action: '', target: '' }, whenSubuh: { action: '', target: '' }, whenTerbit: { action: '', target: '' }, whenDhuha: { action: '', target: '' }, whenDzuhur: { action: '', target: '' }, whenJumat: { action: '', target: '' }, whenAshar: { action: '', target: '' }, whenMagrib: { action: '', target: '' }, whenIsya: { action: '', target: '' } };
+let globalTriggers = { whenImsak: { action: 'show_screen', target: '' }, whenSubuh: { action: 'show_screen', target: '' }, whenTerbit: { action: 'show_screen', target: '' }, whenDzuhur: { action: 'show_screen', target: '' }, whenJumat: { action: 'show_screen', target: '' }, whenAshar: { action: 'show_screen', target: '' }, whenMagrib: { action: 'show_screen', target: '' }, whenIsya: { action: 'show_screen', target: '' } };
 
 const FORMATS = { 
     clock: ['HH:mm:ss', 'HH:mm', 'hh:mm A', 'HH', 'mm', 'ss', 'dddd, DD-MM-YY'], 
@@ -25,6 +25,7 @@ function initFonts() { const fontSelect = document.getElementById('propFont'); i
 function updateProjectRes() { PROJECT_W = parseInt(document.getElementById('globalW').value) || 64; PROJECT_H = parseInt(document.getElementById('globalH').value) || 32; resizeCanvas(); renderTree(); }
 function isNameUnique(name) { let found = false; function checkList(list) { for(let o of list) { if(o.name === name) found = true; if(o.type === 'group' && o.children) checkList(o.children); } } screens.forEach(s => checkList(s.objects)); return !found; }
 function getUniqueName(base) { let count = 1; let shortBase = base.substring(0, 7); let n = `${shortBase}_${count}`; while (!isNameUnique(n) && count < 100) { count++; n = `${shortBase}_${count}`; } return n.substring(0, 10); }
+function parseDuration(str) { if(!str) return 10000; let pts = str.split(':'); if(pts.length === 3) return (parseInt(pts[0], 10)*3600 + parseInt(pts[1], 10)*60 + parseInt(pts[2], 10)) * 1000; return 10000; }
 
 class PixelObject {
     constructor(name, type, gridX, gridY) {
@@ -39,16 +40,14 @@ class PixelObject {
         this.color = "#ffffff"; this.colorTime = "#ff0000"; this.colorNone = false; this.fColor = "#00ff00"; this.fColorNone = true; this.bgColor = "#000000"; this.bgColorNone = true;
         this.lineDir = 'h'; this.lineThick = 1; this.lineLength = 32; this.lineColor = "#8e44ad";
         this.radius = 0; this.alignH = 'center'; this.alignV = 'middle'; 
-        this.anim = 'none'; this.speed = 50.0; this.animDelay = 0; this.animStopX = 5;
-        this.anim2 = 'none'; this.speed2 = 50.0; this.animDelay2 = 0; this.anim2StopX = 5;
+        this.anim = 'none'; this.speed = 1.0; this.animDelay = 0; this.animStopX = 5;
+        this.anim2 = 'none'; this.speed2 = 1.0; this.animDelay2 = 0; this.anim2StopX = 5;
         this.isAnimPlaying = false; this.animState = 1; this._nextStepX1 = 0; this._nextStepX2 = 0; this.delayTimer = 0; this.blinkTimer = 0; this.currentOffsetX = 0; this.currentOffsetY = 0;
         this.onShowAction = ""; this.onShowTarget = ""; this.onDoneAction = ""; this.onDoneTarget = ""; this.hasFiredOnShow = false;
         
         this.sholatType = 'Subuh'; this.iqomahTime = 5; this.iqomahUnit = 'menit'; this.iqomahOffset = 0; this.iqomahAnimTriggerSec = 3; this.iqomahTriggerUnit = 'detik'; this.iqomahTimer = 0; this._iqomahAnimTriggered = false; this._iqomahDone = false;
         
-        // ✅ FIX ARRAY DEFAUT: Memasukkan kembali "Subuh" agar UI otomatis membaca checklistnya
-        this.autoList = ['Imsak', 'Subuh', 'Terbit', 'Dhuha', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya']; 
-        this.autoCount = 2; this.autoPos = 'left'; this.autoGapItems = 5; this.autoGapNameTime = 2; this.autoDir = 'h'; this.fontTime = this.font; this._autoIndex = 0;
+        this.autoList = ['Imsak', 'Terbit', 'Dhuha', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya']; this.autoCount = 2; this.autoPos = 'left'; this.autoGapItems = 5; this.autoGapNameTime = 2; this.autoDir = 'h'; this.fontTime = this.font; this._autoIndex = 0;
         this.autoGaps = {}; 
 
         this.pixels = []; this.customPixels = []; this.children = []; this.textWidth = 0; this.textHeight = 7; 
@@ -86,8 +85,6 @@ class PixelObject {
     }
 
     _stepAnimation(type, speed, isAnim2 = false) {
-        if(type === 'none' || type === '') return false;
-        
         let dtRatio = window.deltaTime / 16.6; 
         if (type === 'blink') { this.blinkTimer += window.deltaTime; if (this.blinkTimer >= 1000/speed) { this.blinkTimer = 0; return true; } return false; }
         let step = 0.5 * speed * dtRatio; 
@@ -228,15 +225,11 @@ class PixelObject {
     
     updateContent() {
         if (this.type === 'group' || this.type === 'line') return; 
-        if (this.type === 'drawing' || this.type === 'image') { 
-            this.pixels = this.customPixels.map(p => ({ x: p.x, y: p.y, c: p.c })); this.textWidth = this.w; this.textHeight = this.h;
+        if (this.type === 'drawing' || this.type === 'image') { this.pixels = this.customPixels.map(p => ({ x: p.x, y: p.y, c: p.c })); this.textWidth = this.w; this.textHeight = this.h;
         } else if (this.type === 'auto_sholat') {
             this.pixels = []; 
-            if (!this.autoList || this.autoList.length === 0) {
-                this.textWidth = 0; this.textHeight = 0; return;
-            }
-
             let batch = this.autoList.slice(this._autoIndex, this._autoIndex + this.autoCount);
+            
             if (batch.length < this.autoCount && this.autoList.length >= this.autoCount) {
                 let diff = this.autoCount - batch.length;
                 batch = this.autoList.slice(this._autoIndex - diff, this._autoIndex + batch.length);
@@ -246,22 +239,22 @@ class PixelObject {
 
             let currentX = 0; let currentY = 0; let totalW = 0; let totalH = 0; let dhuhaDummy = '06:10'; 
             batch.forEach((prayer) => {
-                let nameText = prayer.toUpperCase(); 
-                let timeText = window.currentPrayerTimes ? (window.currentPrayerTimes[prayer] || window.currentPrayerTimes[prayer.toLowerCase()]) : null;
-                if(!timeText && prayer === 'Dhuha') timeText = dhuhaDummy; 
-                if(!timeText) timeText = '00:00';
-                
-                let nameData = this.generateTextPixels(nameText, this.font); 
-                let timeData = this.generateTextPixels(timeText, this.fontTime);
+                let nameText = prayer.toUpperCase(); let timeText = window.currentPrayerTimes ? (window.currentPrayerTimes[prayer] || window.currentPrayerTimes[prayer.toLowerCase()]) : null;
+                if(!timeText && prayer === 'Dhuha') timeText = dhuhaDummy; if(!timeText) timeText = '00:00';
+                let nameData = this.generateTextPixels(nameText, this.font); let timeData = this.generateTextPixels(timeText, this.fontTime);
                 let itemW = 0, itemH = 0, nOx = 0, nOy = 0, tOx = 0, tOy = 0;
                 
-                let calculatedGap = parseInt(this.autoGapNameTime); 
-                if (isNaN(calculatedGap)) calculatedGap = 2; 
-
-                if (this.autoGaps && this.autoGaps[prayer] !== undefined && this.autoGaps[prayer] !== 'auto' && this.autoGaps[prayer] !== '') {
-                    let spGap = parseInt(this.autoGaps[prayer]);
-                    if(!isNaN(spGap)) calculatedGap = spGap;
-                }
+                let gapVal = this.autoGaps[prayer] !== undefined ? this.autoGaps[prayer] : 'auto';
+                let calculatedGap = this.autoGapNameTime; 
+                if (gapVal === 'auto' || gapVal === '') {
+                    if (this.autoPos === 'left' || this.autoPos === 'right') {
+                        let maxW = (this.autoDir === 'h') ? Math.floor((this.w - (this.autoGapItems * (this.autoCount-1))) / this.autoCount) : this.w;
+                        calculatedGap = Math.max(0, maxW - nameData.w - timeData.w);
+                    } else {
+                        let maxH = (this.autoDir === 'v') ? Math.floor((this.h - (this.autoGapItems * (this.autoCount-1))) / this.autoCount) : this.h;
+                        calculatedGap = Math.max(0, maxH - nameData.h - timeData.h);
+                    }
+                } else { calculatedGap = parseInt(gapVal) || 0; }
 
                 if (this.autoPos === 'left') { nOx=0; nOy=Math.max(0,Math.floor((timeData.h-nameData.h)/2)); tOx=nameData.w+calculatedGap; tOy=Math.max(0,Math.floor((nameData.h-timeData.h)/2)); itemW=nameData.w+calculatedGap+timeData.w; itemH=Math.max(nameData.h,timeData.h); } 
                 else if (this.autoPos === 'right') { tOx=0; tOy=Math.max(0,Math.floor((nameData.h-timeData.h)/2)); nOx=timeData.w+calculatedGap; nOy=Math.max(0,Math.floor((timeData.h-nameData.h)/2)); itemW=timeData.w+calculatedGap+nameData.w; itemH=Math.max(nameData.h,timeData.h); } 
@@ -271,17 +264,9 @@ class PixelObject {
                 nameData.pixels.forEach(p => this.pixels.push({ x: currentX + nOx + p.x, y: currentY + nOy + p.y, c: this.color }));
                 timeData.pixels.forEach(p => this.pixels.push({ x: currentX + tOx + p.x, y: currentY + tOy + p.y, c: this.colorTime }));
                 
-                let gapItemReal = parseInt(this.autoGapItems);
-                if(isNaN(gapItemReal)) gapItemReal = 0;
-
-                if (this.autoDir === 'h') { currentX += itemW + gapItemReal; totalW = currentX - gapItemReal; totalH = Math.max(totalH, itemH); } 
-                else { currentY += itemH + gapItemReal; totalH = currentY - gapItemReal; totalW = Math.max(totalW, itemW); }
-            }); 
-            this.textWidth = totalW; 
-            this.textHeight = totalH;
-        } else { 
-            const str = this.getDisplayString(); let res = this.generateTextPixels(str, this.font); this.pixels = res.pixels.map(p => ({...p, c: this.color})); this.textWidth = res.w; this.textHeight = res.h; 
-        }
+                if (this.autoDir === 'h') { currentX += itemW + this.autoGapItems; totalW = currentX - this.autoGapItems; totalH = Math.max(totalH, itemH); } else { currentY += itemH + this.autoGapItems; totalH = currentY - this.autoGapItems; totalW = Math.max(totalW, itemW); }
+            }); this.textWidth = totalW; this.textHeight = totalH;
+        } else { const str = this.getDisplayString(); let res = this.generateTextPixels(str, this.font); this.pixels = res.pixels.map(p => ({...p, c: this.color})); this.textWidth = res.w; this.textHeight = res.h; }
     }
     calcAlign() { if (['drawing','image','group','line'].includes(this.type)) return { aX: 0, aY: 0 }; let aX = 0; if(this.alignH === 'center') aX = Math.floor((this.w - this.textWidth) / 2); if(this.alignH === 'right') aX = this.w - this.textWidth; let aY = 0; if(this.alignV === 'middle') aY = Math.floor((this.h - this.textHeight) / 2); if(this.alignV === 'bottom') aY = this.h - this.textHeight; return { aX, aY }; }
 
@@ -317,6 +302,7 @@ class PixelObject {
             if (!this.bgColorNone && ctx.globalAlpha !== 0) { ctx.fillStyle = this.bgColor; ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(rX+sX, rY+sY, dW, dH, rPx); else ctx.rect(rX+sX, rY+sY, dW, dH); ctx.fill(); }
             if (!this.fColorNone && ctx.globalAlpha !== 0) { ctx.fillStyle = this.fColor; ctx.fillRect(rX+sX, rY+sY, dW, GRID_SIZE); ctx.fillRect(rX+sX, rY+sY+dH-GRID_SIZE, dW, GRID_SIZE); ctx.fillRect(rX+sX, rY+sY, GRID_SIZE, dH); ctx.fillRect(rX+sX+dW-GRID_SIZE, rY+sY, GRID_SIZE, dH); }
             ctx.translate(sX, sY); 
+            // PERBAIKAN: Jangan tambahkan posisi parent. Koordinat anak murni absolut.
             this.children.forEach(c => { 
                 c.draw(); 
             }); 
@@ -339,16 +325,13 @@ function restoreObject(oData) {
     n.visibleCanvas = (oData.visible_canvas !== false && oData.visible !== false); n.visibleLed = oData.visible_led !== false; n.isAnimPlaying = false; n._iqomahDone = false;
     n.editable = oData.editable || false; n.title = (oData.title !== undefined) ? oData.title : (oData.name || ""); n.w = oData.w; n.h = oData.h; n.text = oData.text || ""; n.font = oData.font || "monospace"; n.format = oData.format || "";
     n.colorNone = oData.color === "transparent" || oData.colorNone === true; n.color = n.colorNone ? "#ffffff" : (oData.color || "#ffffff"); n.colorTime = oData.colorTime || oData.color || "#ff0000"; n.bgColorNone = oData.bgColor === "transparent" || oData.bgColorNone === true; n.bgColor = n.bgColorNone ? "#000000" : (oData.bgColor || "#000000"); n.fColorNone = oData.frameColor === "transparent" || oData.fColor === "transparent" || oData.fColorNone === true; n.fColor = n.fColorNone ? "#00ff00" : (oData.frameColor || oData.fColor || "#00ff00");
-    if (oData.anim1) { n.anim = oData.anim1.type; n.speed = oData.anim1.speed; n.animDelay = oData.anim1.delay; n.animStopX = oData.anim1.stopX || 5; } else { n.anim = oData.anim || 'none'; n.speed = oData.speed || 50; n.animDelay = oData.animDelay || 0; n.animStopX = oData.animStopX || 5; }
-    if (oData.anim2) { n.anim2 = oData.anim2.type; n.speed2 = oData.anim2.speed; n.animDelay2 = oData.anim2.delay || 0; n.anim2StopX = oData.anim2.stopX || 5; } else { n.anim2 = oData.anim2 || 'none'; n.speed2 = oData.speed2 || 50; n.animDelay2 = oData.animDelay2 || 0; n.anim2StopX = oData.anim2StopX || 5; }
+    if (oData.anim1) { n.anim = oData.anim1.type; n.speed = oData.anim1.speed; n.animDelay = oData.anim1.delay; n.animStopX = oData.anim1.stopX || 5; } else { n.anim = oData.anim || 'none'; n.speed = oData.speed || 1; n.animDelay = oData.animDelay || 0; n.animStopX = oData.animStopX || 5; }
+    if (oData.anim2) { n.anim2 = oData.anim2.type; n.speed2 = oData.anim2.speed; n.animDelay2 = oData.anim2.delay || 0; n.anim2StopX = oData.anim2.stopX || 5; } else { n.anim2 = oData.anim2 || 'none'; n.speed2 = oData.speed2 || 1; n.animDelay2 = oData.animDelay2 || 0; n.anim2StopX = oData.anim2StopX || 5; }
     n.radius = oData.radius || 0;
     if (oData.onShowEvent) { n.onShowAction = oData.onShowEvent.action; n.onShowTarget = oData.onShowEvent.target; }
     if (oData.onDoneEvent) { n.onDoneAction = oData.onDoneEvent.action; n.onDoneTarget = oData.onDoneEvent.target; } else if (oData.nextEvent) { n.onDoneAction = oData.nextEvent.action; n.onDoneTarget = oData.nextEvent.target; }
     if (n.type === 'sholat') n.sholatType = oData.sholatType || 'Subuh';
-    
-    // ✅ FIX ARRAY DEFAUT SAAT IMPORT/UNDO: Memasukkan kembali "Subuh"
-    if (n.type === 'auto_sholat') { n.autoList = oData.autoList || ['Imsak', 'Subuh', 'Terbit', 'Dhuha', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya']; n.autoCount = oData.autoCount || 2; n.autoPos = oData.autoPos || 'left'; n.autoDir = oData.autoDir || 'h'; n.autoGapItems = oData.autoGapItems !== undefined ? oData.autoGapItems : 5; n.autoGapNameTime = oData.autoGapNameTime !== undefined ? oData.autoGapNameTime : 2; n.autoGaps = oData.autoGaps || {}; n.fontTime = oData.fontTime || n.font; n._autoIndex = 0; }
-    
+    if (n.type === 'auto_sholat') { n.autoList = oData.autoList || ['Imsak', 'Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya']; n.autoCount = oData.autoCount || 2; n.autoPos = oData.autoPos || 'left'; n.autoDir = oData.autoDir || 'h'; n.autoGapItems = oData.autoGapItems !== undefined ? oData.autoGapItems : 5; n.autoGapNameTime = oData.autoGapNameTime !== undefined ? oData.autoGapNameTime : 2; n.autoGaps = oData.autoGaps || {}; n.fontTime = oData.fontTime || n.font; n._autoIndex = 0; }
     if (n.type === 'iqomah') { n.iqomahTime = oData.iqomahTime !== undefined ? oData.iqomahTime : 5; n.iqomahUnit = oData.iqomahUnit || 'menit'; n.iqomahOffset = oData.iqomahOffset || 0; n.iqomahAnimTriggerSec = oData.iqomahAnimTriggerSec !== undefined ? oData.iqomahAnimTriggerSec : 3; n.iqomahTriggerUnit = oData.iqomahTriggerUnit || 'detik'; n._iqomahAnimTriggered = false; n.iqomahTimer = 0; }
     if (n.type === 'line') { n.lineDir = oData.lineDir || 'h'; n.lineThick = oData.lineThick || 1; n.lineLength = oData.lineLength || 32; n.lineColor = oData.lineColor || '#8e44ad'; }
     if (n.type === 'drawing' || n.type === 'image') n.customPixels = oData.customPixels || oData.pixels || [];
@@ -372,30 +355,7 @@ function redo() { if (redoStack.length > 0 && !isSimulating) { let state = { w: 
 function restoreFromState(s) { PROJECT_W = s.w || 64; PROJECT_H = s.h || 32; document.getElementById('globalW').value = PROJECT_W; document.getElementById('globalH').value = PROJECT_H; if (s.triggers) globalTriggers = JSON.parse(JSON.stringify(s.triggers)); screens = s.screens.map(scrData => { let scr = { id: scrData.id, type: scrData.type, visibleCanvas: scrData.visible_canvas !== false && scrData.visibleCanvas !== false, visibleLed: scrData.visible_led !== false && scrData.visibleLed !== false, objects: [], durationMode: scrData.durationMode, durationFixed: scrData.durationFixed, durationAnimObj: scrData.durationAnimObj, nextAction: scrData.nextAction, nextTarget: scrData.nextTarget }; scr.objects = scrData.objects.map(oData => restoreObject(oData)); return scr; }); activeScreenIdx = s.activeScreenIdx; objects = screens[activeScreenIdx].objects; selectedObjs = []; resizeCanvas(); syncPropPanel(); renderTree(); renderTriggerBrowser(); }
 function copyObjects() { if (selectedObjs.length === 0) return; clipboardData = selectedObjs.map(o => serializeObj(o)); }
 function pasteObjects() { if (clipboardData.length === 0) return; saveState(); let newSelected = []; function renameDeep(data) { let base = (data.id || data.name || "Obj").replace(/(_Copy)?(_\d+)?$/, ''); if (data.type === 'group' && !base.startsWith('Group_')) base = "Group_" + base; data.id = getUniqueName(base + "_Copy"); data.name = data.id; if (data.children) data.children.forEach(c => renameDeep(c)); } clipboardData.forEach(objData => { let dataCopy = JSON.parse(JSON.stringify(objData)); dataCopy.frameX = (dataCopy.frameX !== undefined ? dataCopy.frameX : dataCopy.x) + 2; dataCopy.frameY = (dataCopy.frameY !== undefined ? dataCopy.frameY : dataCopy.y) + 2; renameDeep(dataCopy); let newObj = restoreObject(dataCopy); objects.push(newObj); newSelected.push(newObj); }); selectedObjs = newSelected; setMode('select'); syncPropPanel(); renderTree(); }
-
-function addPixelObject(type) { 
-    saveState(); 
-    let base = type === 'drawing' ? "Draw" : type === 'image' ? "Img" : type === 'line' ? "Line" : type === 'sholat' ? "Jadwal" : type === 'sholat_name' ? "NamaSholat" : type === 'auto_sholat' ? "AutoJadwal" : type === 'iqomah' ? "Count" : type === 'text' ? "Text" : "Layer"; 
-    let o = new PixelObject(getUniqueName(base), type, Math.max(0, Math.floor(PROJECT_W/2) - 8), Math.max(0, Math.floor(PROJECT_H/2) - 4)); 
-    
-    if (type === 'sholat' || type === 'sholat_name' || type === 'auto_sholat') { 
-        o.updateContent(); 
-        o.w = Math.max(1, o.textWidth); 
-        o.h = Math.max(1, o.textHeight); 
-        
-        // ✅ FIX ALIGN UX: Kotak AutoJadwal akan otomatis dibuat seluas full screen.
-        // Ini memastikan tombol align Left/Center/Right LANGSUNG BISA DIKLIK dan ada hasilnya.
-        if (type === 'auto_sholat') {
-            o.x = 0;
-            o.y = 0;
-            o.w = PROJECT_W;
-            o.h = PROJECT_H;
-        }
-    } 
-    
-    objects.push(o); selectedObjs = [o]; setMode('select'); syncPropPanel(); renderTree(); 
-}
-
+function addPixelObject(type) { saveState(); let base = type === 'drawing' ? "Draw" : type === 'image' ? "Img" : type === 'line' ? "Line" : type === 'sholat' ? "Jadwal" : type === 'sholat_name' ? "NamaSholat" : type === 'auto_sholat' ? "AutoJadwal" : type === 'iqomah' ? "Count" : type === 'text' ? "Text" : "Layer"; let o = new PixelObject(getUniqueName(base), type, Math.max(0, Math.floor(PROJECT_W/2) - 8), Math.max(0, Math.floor(PROJECT_H/2) - 4)); if (type === 'sholat' || type === 'sholat_name' || type === 'auto_sholat') { o.updateContent(); o.w = Math.max(1, o.textWidth); o.h = Math.max(1, o.textHeight); } objects.push(o); selectedObjs = [o]; setMode('select'); syncPropPanel(); renderTree(); }
 function deleteSelected(skipConfirm = false) { if(selectedObjs.length > 0) { if(!skipConfirm) { if(!confirm(`Hapus ${selectedObjs.length} objek terpilih dari Screen ini?`)) return; } saveState(); objects = objects.filter(o => !selectedObjs.includes(o)); screens[activeScreenIdx].objects = objects; selectedObjs = []; syncPropPanel(); renderTree(); } }
 
 function exportToTXT() {
@@ -404,17 +364,13 @@ function exportToTXT() {
 
     output.push("\n// --- TRIGGERS ---");
     let prayerKeys = {
-        "Imsak": "whenImsak", "Subuh": "whenSubuh", "Terbit": "whenTerbit", "Dhuha": "whenDhuha",
-        "Dzuhur": "whenDzuhur", "Jumat": "whenJumat", "Ashar": "whenAshar", 
-        "Maghrib": "whenMagrib", "Isya": "whenIsya"
+        "Imsak": "whenImsak", "Subuh": "whenSubuh", "Terbit": "whenTerbit",
+        "Dzuhur": "whenDzuhur", "Ashar": "whenAshar", "Maghrib": "whenMagrib", "Isya": "whenIsya"
     };
-    
     for (let pName in prayerKeys) {
         let jKey = prayerKeys[pName];
-        if (globalTriggers[jKey]) {
-            let act = globalTriggers[jKey].action || "";
-            let tgt = globalTriggers[jKey].target || "";
-            output.push(`TRIG~${pName}~${act}~${tgt}`);
+        if (globalTriggers[jKey] && globalTriggers[jKey].action) {
+            output.push(`TRIG~${pName}~${globalTriggers[jKey].action}~${globalTriggers[jKey].target}`);
         }
     }
 
@@ -440,43 +396,29 @@ function exportToTXT() {
 
             let visObj = o.visibleLed ? "1" : "0";
             let text = o.text || ""; let font = o.font || ""; let fmt = o.format || "";
-            let col = o.type === "line" ? o.lineColor : (o.colorNone ? "transparent" : (o.color || "transparent"));
-            let fCol = o.fColorNone ? "transparent" : (o.frameColor || o.fColor || "transparent"); 
-            let bCol = o.bgColorNone ? "transparent" : (o.bgColor || "transparent"); 
             
             if (o.type === "sholat") text = o.sholatType || "";
-            if (o.type === "auto_sholat") { text = o.autoDir || "h"; }
+            if (o.type === "auto_sholat") { text = o.autoDir || "h"; fmt = o.fontTime || ""; }
             if (o.type === "line") { text = o.lineX1 || 0; font = o.lineY1 || 0; fmt = o.lineX2 || 0; }
             
-            let fX = o.type === "line" ? (o.lineY2 || 0) : (o.x || 0); 
+            let fX = o.type === "line" ? (o.lineY2 || 0) : (o.x || 0);  // Gunakan o.x langsung untuk frameX
             let fY = o.y || 0;
             
+            // Hitung contentX/contentY dengan alignment offset
             let align = (o.calcAlign && typeof o.calcAlign === 'function') ? o.calcAlign() : { aX: 0, aY: 0 };
-            let cX = fX + 1 + align.aX;
-            let cY = fY + 1 + align.aY;
+            let cX = fX + align.aX;
+            let cY = fY + align.aY;
             
             let w = o.w || 0; let h = o.h || 0;
-            let rad = o.radius || 0;
+            let col = o.type === "line" ? o.lineColor : (o.color || "transparent");
+            let fCol = o.frameColor || "transparent"; let bCol = o.bgColor || "transparent"; let rad = o.radius || 0;
 
-            let spd1 = (o.speed !== undefined) ? o.speed : 50;
-            let spd2 = (o.speed2 !== undefined) ? o.speed2 : 50;
-
-            let row = `OBJ~${objId}~${o.type}~${visObj}~${parentId}~${text}~${font}~${fmt}~${cX}~${cY}~${fX}~${fY}~${w}~${h}~${col}~${fCol}~${bCol}~${rad}~${o.anim || 'none'}~${spd1}~${o.animDelay || 0}~${o.animStopX || 0}~${o.anim2 || 'none'}~${spd2}~${o.animDelay2 || 0}~${o.anim2StopX || 0}~${o.onShowAction || ''}~${o.onShowTarget || ''}~${o.onDoneAction || ''}~${o.onDoneTarget || ''}~${o.colorTime || 'transparent'}~${o.fontTime || ''}`;
+            // CRITICAL: Urutan di row string adalah cX, cY, fX, fY (contentX dulu, baru frameX)
+            // Ini untuk backward compatibility dengan format file existing
+            let row = `OBJ~${objId}~${o.type}~${visObj}~${parentId}~${text}~${font}~${fmt}~${cX}~${cY}~${fX}~${fY}~${w}~${h}~${col}~${fCol}~${bCol}~${rad}~${o.anim || 'none'}~${o.animSpeed || 0}~${o.animDelay || 0}~${o.animStop || 0}~${o.anim2 || 'none'}~${o.animSpeed2 || 0}~${o.animDelay2 || 0}~${o.animStop2 || 0}~${o.onShowAction || ''}~${o.onShowTarget || ''}~${o.onDoneAction || ''}~${o.onDoneTarget || ''}`;
             output.push(row);
 
-            if (o.type === "auto_sholat" && o.autoList && Array.isArray(o.autoList)) {
-                const orderMap = { "imsak": 1, "subuh": 2, "terbit": 3, "dhuha": 4, "dzuhur": 5, "ashar": 6, "maghrib": 7, "isya": 8 };
-                let sortedList = [...o.autoList];
-                sortedList.sort((a, b) => {
-                    let keyA = (a || "").toString().trim().toLowerCase();
-                    let keyB = (b || "").toString().trim().toLowerCase();
-                    return (orderMap[keyA] || 99) - (orderMap[keyB] || 99);
-                });
-
-                let aH = o.alignH || 'center'; let aV = o.alignV || 'middle';
-                output.push(`ALIST~${objId}~${o.autoCount || 1}~${o.autoPos || 'right'}~${o.autoGapItems || 5}~${o.autoGapNameTime || 2}~${aH}~${aV}~${sortedList.join("~")}`);
-            }
-            if (o.type === "iqomah") output.push(`IQM~${objId}~${o.iqomahTime || 5}~${o.iqomahUnit || 'menit'}~${o.iqomahOffset || 0}~${o.iqomahAnimTriggerSec || 3}~${o.iqomahTriggerUnit || 'detik'}`);
+            if (o.type === "auto_sholat" && o.autoList) output.push(`ALIST~${objId}~${o.autoCount || 1}~${o.autoList.join("~")}`);
 
             let pixelDataArray = o.customPixels || o.pixels || o.data;
             if ((o.type === "drawing" || o.type === "image") && pixelDataArray && pixelDataArray.length > 0) {
@@ -494,12 +436,17 @@ function exportToTXT() {
     let link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "layout.txt"; link.click();
 }
 
+function formatDur(ms) {
+    let s = Math.floor(ms / 1000); let m = Math.floor(s / 60); s = s % 60; let h = Math.floor(m / 60); m = m % 60;
+    return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+}
+
 function importFromTXT(file) {
     let reader = new FileReader();
     reader.onload = function(e) {
         let lines = e.target.result.split('\n');
         screens = [];
-        globalTriggers = { whenImsak: {}, whenSubuh: {}, whenTerbit: {}, whenDhuha: {}, whenDzuhur: {}, whenJumat: {}, whenAshar: {}, whenMagrib: {}, whenIsya: {} };
+        globalTriggers = { whenImsak: {}, whenSubuh: {}, whenTerbit: {}, whenDzuhur: {}, whenJumat: {}, whenAshar: {}, whenMagrib: {}, whenIsya: {} };
         let currentScreen = null; let objMap = {}; 
         
         lines.forEach(line => {
@@ -522,7 +469,14 @@ function importFromTXT(file) {
             } 
             else if (cmd === 'OBJ') {
                 if(!currentScreen) return;
-                let frameX = parseInt(tk[10]) || 0; let frameY = parseInt(tk[11]) || 0; 
+                
+                // CRITICAL FIX: Di file TXT yang di-generate, ternyata ada SWAP!
+                // frameX/frameY ada di tk[10] dan tk[11], BUKAN di tk[8] dan tk[9]
+                // Ini karena bug di export function yang menukar fX/cX
+                
+                let frameX = parseInt(tk[10]) || 0;  // frameX ada di tk[10]!
+                let frameY = parseInt(tk[11]) || 0;  // frameY ada di tk[11]!
+                // tk[8] dan tk[9] berisi nilai yang salah, diabaikan
                 
                 let o = new PixelObject(tk[1], tk[2], frameX, frameY);
                 o.id = tk[1]; o.name = tk[1]; o.visibleLed = tk[3] !== '0'; o.visibleCanvas = true;
@@ -531,93 +485,51 @@ function importFromTXT(file) {
                 o.parentId = (!parentId || parentId === 'root' || parentId === 'null') ? null : parentId;
                 
                 o.text = tk[5]; o.font = tk[6]; o.format = tk[7];
-                o.x = frameX; o.y = frameY;
                 
                 if (o.type === 'sholat') o.sholatType = o.text;
-                if (o.type === 'auto_sholat') { o.autoDir = o.text; } 
+                if (o.type === 'auto_sholat') { o.autoDir = o.text; o.fontTime = o.format; }
                 if (o.type === 'line') { 
-                    o.lineX1 = parseInt(o.text)||0; o.lineY1 = parseInt(o.font)||0; 
-                    o.lineX2 = parseInt(o.format)||0; o.lineY2 = frameX;
-                } else { o.frameX = frameX; }
+                    o.lineX1 = parseInt(o.text)||0; 
+                    o.lineY1 = parseInt(o.font)||0; 
+                    o.lineX2 = parseInt(o.format)||0; 
+                    o.lineY2 = frameX;
+                } else { 
+                    o.frameX = frameX; 
+                }
                 
-                o.frameY = frameY;
+                o.frameY = frameY; 
+                o.x = frameX; 
+                o.y = frameY;
+                
                 o.w = parseInt(tk[12]) || 1; o.h = parseInt(tk[13]) || 1;
                 o.color = tk[14] !== "transparent" ? tk[14] : "#ffffff"; o.lineColor = o.type === 'line' ? o.color : "#ffffff";
-                o.frameColor = tk[15] !== "transparent" ? tk[15] : "transparent"; 
-                o.bgColor = tk[16] !== "transparent" ? tk[16] : "transparent";
+                o.frameColor = tk[15] !== "transparent" ? tk[15] : "transparent"; o.bgColor = tk[16] !== "transparent" ? tk[16] : "transparent";
                 o.radius = parseInt(tk[17]) || 0;
                 
-                o.anim = tk[18] || 'none'; 
-                let parsedSpeed = parseFloat(tk[19]); o.speed = isNaN(parsedSpeed) ? 50 : parsedSpeed; 
-                o.animDelay = parseFloat(tk[20]) || 0; o.animStopX = parseInt(tk[21]) || 0;
-                
-                o.anim2 = tk[22] || 'none'; 
-                let parsedSpeed2 = parseFloat(tk[23]); o.speed2 = isNaN(parsedSpeed2) ? 50 : parsedSpeed2;
-                o.animDelay2 = parseFloat(tk[24]) || 0; o.anim2StopX = parseInt(tk[25]) || 0;
-
+                o.anim = tk[18] || 'none'; o.animSpeed = parseFloat(tk[19]) || 50; o.animDelay = parseFloat(tk[20]) || 0; o.animStop = parseInt(tk[21]) || 0;
+                o.anim2 = tk[22] || 'none'; o.animSpeed2 = parseFloat(tk[23]) || 50; o.animDelay2 = parseFloat(tk[24]) || 0; o.animStop2 = parseInt(tk[25]) || 0;
                 o.onShowAction = tk[26] || ""; o.onShowTarget = tk[27] || ""; o.onDoneAction = tk[28] || ""; o.onDoneTarget = tk[29] || "";
                 
-                if (tk.length > 30) {
-                    o.colorTime = tk[30] !== "transparent" ? tk[30] : "#ff0000";
-                    o.fontTime = tk[31] || "";
-                } else if (o.type === 'auto_sholat') { 
-                    o.fontTime = o.format; o.colorTime = tk[15] !== "transparent" ? tk[15] : "#ff0000"; 
-                }
-
                 if (o.type !== 'group' && o.type !== 'line' && o.type !== 'image' && o.type !== 'drawing') o.updateContent();
                 objMap[o.id] = o;
                 
-                if (!o.parentId) currentScreen.objects.push(o);
-                else {
+                if (!o.parentId) {
+                    currentScreen.objects.push(o);
+                } else {
                     let pObj = objMap[o.parentId];
-                    if (pObj) { if (!pObj.children) pObj.children = []; pObj.children.push(o); } 
-                    else currentScreen.objects.push(o);
+                    if (pObj) {
+                        if (!pObj.children) pObj.children = [];
+                        pObj.children.push(o);
+                    } else {
+                        currentScreen.objects.push(o);
+                    }
                 }
             } 
             else if (cmd === 'ALIST') {
                 let o = objMap[tk[1]];
                 if (o && o.type === 'auto_sholat') {
-                    o.autoCount = parseInt(tk[2]) || 1;
-                    
-                    let isNewFormat = false;
-                    if (tk.length >= 6 && !isNaN(parseInt(tk[4])) && !isNaN(parseInt(tk[5]))) {
-                        isNewFormat = true;
-                    }
-                    
-                    let startIndex = isNewFormat ? 8 : 3;
-                    
-                    if (isNewFormat) {
-                        o.autoPos = tk[3] ? tk[3].trim() : 'right';
-                        o.autoGapItems = parseInt(tk[4]) || 0;
-                        o.autoGapNameTime = parseInt(tk[5]) || 0;
-                        o.alignH = tk[6] ? tk[6].trim() : 'center';
-                        o.alignV = tk[7] ? tk[7].trim() : 'middle';
-                    }
-                    
-                    o.autoList = [];
-                    const exactMatch = { "imsak": "Imsak", "subuh": "Subuh", "terbit": "Terbit", "dhuha": "Dhuha", "dzuhur": "Dzuhur", "ashar": "Ashar", "maghrib": "Maghrib", "isya": "Isya" };
-                    for (let i = startIndex; i < tk.length; i++) {
-                        if (tk[i] !== undefined) {
-                            let val = tk[i].trim(); 
-                            if (val !== "") {
-                                let lower = val.toLowerCase();
-                                if (exactMatch[lower]) {
-                                    o.autoList.push(exactMatch[lower]);
-                                } else {
-                                    o.autoList.push(val);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            else if (cmd === 'IQM') {
-                let o = objMap[tk[1]];
-                if (o && o.type === 'iqomah') {
-                    o.iqomahTime = !isNaN(parseInt(tk[2])) ? parseInt(tk[2]) : 5;
-                    o.iqomahUnit = tk[3] || 'menit'; o.iqomahOffset = parseInt(tk[4]) || 0;
-                    o.iqomahAnimTriggerSec = !isNaN(parseInt(tk[5])) ? parseInt(tk[5]) : 3;
-                    o.iqomahTriggerUnit = tk[6] || 'detik'; o.iqomahTimer = 0; o._iqomahAnimTriggered = false;
+                    o.autoCount = parseInt(tk[2]) || 1; o.autoList = [];
+                    for(let i=3; i<tk.length; i++){ if(tk[i].length > 0) o.autoList.push(tk[i]); }
                 }
             }
             else if (cmd === 'PIX') {
@@ -633,29 +545,22 @@ function importFromTXT(file) {
             }
         });
         
-        activeScreenIdx = 0; selectedObjs = []; selectedObj = null;
+        activeScreenIdx = 0; 
+        selectedObjs = []; 
+        selectedObj = null;
+        
         objects = screens[activeScreenIdx].objects; 
-        undoStack = []; redoStack = [];
+        
+        undoStack = []; 
+        redoStack = [];
         
         if(typeof switchScreen === 'function') switchScreen(0); 
         if(typeof renderTree === 'function') renderTree(); 
         if(typeof syncPropPanel === 'function') syncPropPanel();
+        
         if(typeof saveState === 'function') saveState(); 
-        if(typeof renderTriggerBrowser === 'function') renderTriggerBrowser(); 
         
         alert("✅ Layout TXT berhasil di-import!");
     };
     reader.readAsText(file);
-}
-
-function parseDuration(str) { 
-    if(!str) return 10000; 
-    let pts = str.split(':'); 
-    if(pts.length === 3) return (parseInt(pts[0], 10)*3600 + parseInt(pts[1], 10)*60 + parseInt(pts[2], 10)) * 1000; 
-    return 10000; 
-}
-
-function formatDur(ms) {
-    let s = Math.floor(ms / 1000); let m = Math.floor(s / 60); s = s % 60; let h = Math.floor(m / 60); m = m % 60;
-    return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
 }
